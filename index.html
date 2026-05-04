@@ -671,6 +671,54 @@ body{
 .red{color:var(--danger)}
 .orange{color:var(--charging)}
 .blue{color:var(--sda)}
+
+/* ═══ BUZZER SETTINGS ═══ */
+.slider{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;
+  background:var(--surface2);outline:none;cursor:pointer}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;
+  border-radius:50%;background:#a78bfa;cursor:pointer;box-shadow:0 0 6px #a78bfa88}
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.slider-label{font-size:.76rem;color:var(--text2);width:140px;flex-shrink:0}
+.slider-val{font-family:'IBM Plex Mono',monospace;font-size:.76rem;
+  color:#a78bfa;width:80px;text-align:right;flex-shrink:0}
+--buzz:#a78bfa;
+.timeline{position:relative;padding:12px 0}
+.timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;
+  width:2px;background:var(--brd);border-radius:2px}
+.tl-item{display:flex;gap:12px;margin-bottom:18px;position:relative}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;position:relative;z-index:1;border:2px solid}
+.tl-dot.bl1{background:#0d1a10;border-color:var(--ok)}
+.tl-dot.bl2{background:#1a1500;border-color:var(--warn)}
+.tl-dot.bl3{background:#200808;border-color:var(--danger)}
+.tl-dot.bl4{background:#200020;border-color:#a78bfa;animation:bpulse 1.5s infinite}
+@keyframes bpulse{0%,100%{box-shadow:0 0 8px #a78bfa55}50%{box-shadow:0 0 18px #a78bfaaa}}
+.tl-content{flex:1;padding-top:8px}
+.tl-title{font-size:.85rem;font-weight:700;margin-bottom:3px}
+.tl-desc{font-size:.74rem;color:var(--text2);line-height:1.5}
+.tl-badge{display:inline-block;padding:1px 7px;border-radius:99px;
+  font-size:.63rem;font-family:'IBM Plex Mono',monospace;margin-left:6px;font-weight:600}
+.buzz-bar-bg{background:var(--surface2);border-radius:3px 3px 0 0}
+.buzz-viz{display:flex;align-items:flex-end;gap:2px;height:54px;
+  padding:6px;background:var(--surface2);border-radius:10px;margin-top:10px}
+.test-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.test-btn-b{background:var(--surface2);border:1px solid var(--brd);
+  border-radius:10px;color:var(--text);cursor:pointer;padding:10px 4px;
+  font-size:.72rem;font-family:'IBM Plex Sans Thai',sans-serif;
+  text-align:center;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:3px}
+.test-btn-b:hover{border-color:#a78bfa;background:var(--surface)}
+.test-btn-b:active{transform:scale(.95)}
+.test-btn-b.active-test{border-color:#a78bfa;background:#150020}
+.bzz-code{background:#0a0e14;border:1px solid var(--brd);border-radius:10px;
+  padding:12px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;
+  line-height:1.8;overflow-x:auto;max-height:280px;overflow-y:auto}
+.bzz-code .cc{color:#4a5568}.bzz-code .ck{color:#a78bfa}
+.bzz-code .cv{color:#39d353}.bzz-code .cf{color:#58a6ff}
+.bzz-code .cs{color:#e3b341}
+
 </style>
 </head>
 <body class="fs-md">
@@ -700,7 +748,7 @@ body{
   <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
   <div class="splash-status" id="splashStatus">Initializing system...</div>
 
-  <div class="splash-version">v4.6.0 · Hardware v3.3 · Firmware v3.2</div>
+  <div class="splash-version">v4.7.0 · Hardware v3.3 · Firmware v3.2</div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════
@@ -744,7 +792,7 @@ body{
       <div class="logo-name">Happy HIP</div>
       <div class="logo-tagline">Smart Recovery Pillow System</div>
     </div>
-    <span id="verBadge" style="font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--text2);background:var(--surface2);border:1px solid var(--brd);padding:1px 8px;border-radius:99px;font-weight:400;white-space:nowrap">v4.6.0</span>
+    <span id="verBadge" style="font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--text2);background:var(--surface2);border:1px solid var(--brd);padding:1px 8px;border-radius:99px;font-weight:400;white-space:nowrap">v4.7.0</span>
   </div>
 
   <!-- Charging indicator -->
@@ -826,6 +874,10 @@ body{
     <div class="nav-item" onclick="nav('hardware')">
       <span class="nav-icon">🔧</span>
       <span data-th="ฮาร์ดแวร์" data-en="Hardware">ฮาร์ดแวร์</span>
+    </div>
+    <div class="nav-item" onclick="nav('buzzer')">
+      <span class="nav-icon">🔔</span>
+      <span data-th="ตั้งค่า Buzzer" data-en="Buzzer Settings">ตั้งค่า Buzzer</span>
     </div>
     <div class="nav-item" onclick="nav('settings')">
       <span class="nav-icon">⚙️</span>
@@ -1232,6 +1284,175 @@ body{
       </div>
     </div>
 
+
+    <!-- ─────── BUZZER SETTINGS ─────── -->
+    <div class="page" id="page-buzzer">
+      <div class="inline-flex mb12">
+        <div>
+          <div class="page-title" data-th="ตั้งค่า Buzzer Alert" data-en="Buzzer Alert Settings">ตั้งค่า Buzzer Alert</div>
+          <div class="page-subtitle" data-th="Progressive Alert System · GPIO27 Active Buzzer (MH-FMD)" data-en="Progressive Alert System · GPIO27 Active Buzzer (MH-FMD)">Progressive Alert System · GPIO27 Active Buzzer (MH-FMD)</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- LEFT -->
+        <div>
+          <div class="card mb18">
+            <div class="card-title">⚙️ <span data-th="การตั้งค่าหลัก" data-en="Main Settings">การตั้งค่าหลัก</span></div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-th="เปิด/ปิด Buzzer" data-en="Enable Buzzer">เปิด/ปิด Buzzer</div>
+                <div class="setting-desc" data-th="เสียงแจ้งเตือน GPIO27 Active Buzzer" data-en="Alert sound GPIO27">เสียงแจ้งเตือน GPIO27 Active Buzzer</div>
+              </div>
+              <div class="toggle on" id="togBuzz" onclick="toggleSet('togBuzz')"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-th="Progressive Alert" data-en="Progressive Alert">Progressive Alert</div>
+                <div class="setting-desc" data-th="เสียงค่อยๆ ดังขึ้นถ้าผู้ป่วยไม่ตอบสนอง" data-en="Sound escalates if no response">เสียงค่อยๆ ดังขึ้นถ้าผู้ป่วยไม่ตอบสนอง</div>
+              </div>
+              <div class="toggle on" id="togProg" onclick="toggleSet('togProg')"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-th="Buzzer + Motor พร้อมกัน" data-en="Sync Buzzer + Motor">Buzzer + Motor พร้อมกัน</div>
+                <div class="setting-desc" data-th="เสียงและสั่นทำงานพร้อมกัน" data-en="Sound and vibration together">เสียงและสั่นทำงานพร้อมกัน</div>
+              </div>
+              <div class="toggle on" id="togSync" onclick="toggleSet('togSync')"></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-th="เงียบช่วงกลางคืน" data-en="Night Silence Mode">เงียบช่วงกลางคืน</div>
+                <div class="setting-desc" data-th="ปิดเสียง 22:00–06:00 (ยังสั่น Motor)" data-en="Mute 22:00–06:00 (Motor still vibrates)">ปิดเสียง 22:00–06:00 (ยังสั่น Motor)</div>
+              </div>
+              <div class="toggle" id="togNight" onclick="toggleSet('togNight')"></div>
+            </div>
+          </div>
+
+          <div class="card mb18">
+            <div class="card-title">⏱️ <span data-th="ตั้งเวลา Progressive" data-en="Progressive Timer">ตั้งเวลา Progressive</span></div>
+            <div class="slider-row">
+              <span class="slider-label" data-th="Level 2 หลังจาก" data-en="Level 2 after">Level 2 หลังจาก</span>
+              <input type="range" class="slider" min="1" max="10" value="2" id="bt2" oninput="bUpdateSlider('bt2','btv2'); bUpdateTimeline()">
+              <span class="slider-val" id="btv2">2 นาที</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label" data-th="Level 3 หลังจาก" data-en="Level 3 after">Level 3 หลังจาก</span>
+              <input type="range" class="slider" min="2" max="10" value="5" id="bt3" oninput="bUpdateSlider('bt3','btv3'); bUpdateTimeline()">
+              <span class="slider-val" id="btv3">5 นาที</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label" data-th="Level 4 หลังจาก" data-en="Level 4 after">Level 4 หลังจาก</span>
+              <input type="range" class="slider" min="3" max="15" value="8" id="bt4" oninput="bUpdateSlider('bt4','btv4'); bUpdateTimeline()">
+              <span class="slider-val" id="btv4">8 นาที</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🎵 <span data-th="Pattern เสียง" data-en="Sound Pattern">Pattern เสียง</span></div>
+            <div class="slider-row">
+              <span class="slider-label">Level 1</span>
+              <input type="range" class="slider" min="1" max="5" value="1" id="bp1" oninput="bUpdatePat('bp1','bpv1'); bUpdateViz()">
+              <span class="slider-val" id="bpv1">1 ครั้ง</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">Level 2</span>
+              <input type="range" class="slider" min="1" max="8" value="3" id="bp2" oninput="bUpdatePat('bp2','bpv2'); bUpdateViz()">
+              <span class="slider-val" id="bpv2">3 ครั้ง</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">Level 3</span>
+              <input type="range" class="slider" min="2" max="10" value="5" id="bp3" oninput="bUpdatePat('bp3','bpv3'); bUpdateViz()">
+              <span class="slider-val" id="bpv3">5 ครั้ง</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">Level 4</span>
+              <input type="range" class="slider" min="5" max="20" value="10" id="bp4" oninput="bUpdatePat('bp4','bpv4',true); bUpdateViz()">
+              <span class="slider-val" id="bpv4">10 วิ</span>
+            </div>
+            <div class="buzz-viz" id="bViz"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div>
+          <div class="card mb18">
+            <div class="card-title">📊 <span data-th="Progressive Alert Timeline" data-en="Progressive Alert Timeline">Progressive Alert Timeline</span></div>
+            <!-- Live timer -->
+            <div style="display:flex;align-items:center;justify-content:space-between;
+              background:var(--surface2);border:1px solid var(--brd2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+              <div>
+                <div class="text-sm text-muted" data-th="เวลาที่ Alert ค้าง" data-en="Alert Duration">เวลาที่ Alert ค้าง</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;font-weight:700;color:#a78bfa" id="bTimerVal">0:00</div>
+              </div>
+              <div style="text-align:right">
+                <div class="text-sm text-muted" data-th="ระดับปัจจุบัน" data-en="Current Level">ระดับปัจจุบัน</div>
+                <div style="font-size:1.2rem;font-weight:700" id="bCurLevel">—</div>
+                <button class="btn-primary" onclick="bResetTimer()" style="margin-top:6px;padding:5px 12px;font-size:.72rem;background:var(--ok)"
+                  data-th="✅ ผู้ป่วยปรับท่าแล้ว" data-en="✅ Patient corrected">✅ ผู้ป่วยปรับท่าแล้ว</button>
+              </div>
+            </div>
+            <div class="timeline" id="bTimeline"></div>
+          </div>
+
+          <div class="card mb18">
+            <div class="card-title">🧪 <span data-th="ทดสอบเสียง" data-en="Sound Test">ทดสอบเสียง</span></div>
+            <div class="test-grid">
+              <button class="test-btn-b" onclick="bTest(1)"><span style="font-size:1.2rem">🟢</span><span>Level 1</span><span class="text-sm text-muted" data-th="เบา" data-en="Soft">เบา</span></button>
+              <button class="test-btn-b" onclick="bTest(2)"><span style="font-size:1.2rem">🟡</span><span>Level 2</span><span class="text-sm text-muted" data-th="ปานกลาง" data-en="Med">ปานกลาง</span></button>
+              <button class="test-btn-b" onclick="bTest(3)"><span style="font-size:1.2rem">🔴</span><span>Level 3</span><span class="text-sm text-muted" data-th="ดัง" data-en="Loud">ดัง</span></button>
+              <button class="test-btn-b" onclick="bTest(4)"><span style="font-size:1.2rem">🚨</span><span>Level 4</span><span class="text-sm text-muted" data-th="Max" data-en="Max">Max</span></button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn-primary" onclick="bTestAll()" data-th="▶ ทดสอบทุก Level" data-en="▶ Test All">▶ ทดสอบทุก Level</button>
+              <button class="btn-primary" style="background:var(--danger)" onclick="bStop()" data-th="■ หยุดเสียง" data-en="■ Stop">■ หยุดเสียง</button>
+            </div>
+            <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.74rem">
+              <div class="inline-flex" id="bBuzzStatus">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0"></span>
+                <span class="text-muted" data-th="Buzzer พร้อม · GPIO27 · MH-FMD" data-en="Buzzer ready · GPIO27 · MH-FMD">Buzzer พร้อม · GPIO27 · MH-FMD</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">💾 <span data-th="Firmware Code" data-en="Firmware Code">Firmware Code (คัดลอกไปใส่ .ino)</span></div>
+            <div class="bzz-code" id="bCode"><span class="cc">// ═══ Buzzer Progressive Alert v1.0 ═══</span>
+<span class="ck">#define</span> PIN_BUZZER <span class="cv">27</span>
+<span class="ck">unsigned long</span> alertStartMs=<span class="cv">0</span>; <span class="ck">int</span> alertLevel=<span class="cv">0</span>; <span class="ck">bool</span> alertActive=<span class="cv">false</span>;
+
+<span class="ck">void</span> <span class="cf">buzzerBeep</span>(<span class="ck">int</span> n,<span class="ck">int</span> on=<span class="cv">200</span>,<span class="ck">int</span> off=<span class="cv">150</span>){
+  <span class="ck">for</span>(<span class="ck">int</span> i=<span class="cv">0</span>;i&lt;n;i++){
+    digitalWrite(PIN_BUZZER,HIGH);delay(on);
+    digitalWrite(PIN_BUZZER,LOW);if(i&lt;n-<span class="cv">1</span>)delay(off);
+  }
+}
+<span class="ck">void</span> <span class="cf">progressiveAlert</span>(){
+  <span class="ck">if</span>(!alertActive){alertStartMs=millis();alertActive=<span class="cv">true</span>;alertLevel=<span class="cv">0</span>;}
+  <span class="ck">unsigned long</span> mins=(millis()-alertStartMs)/<span class="cv">60000UL</span>;
+  <span class="cc">// Level 1 → ทันที</span>
+  <span class="ck">if</span>(mins&lt;<span class="cv">2</span>&&alertLevel&lt;<span class="cv">1</span>){alertLevel=<span class="cv">1</span>;<span class="cf">buzzerBeep</span>(<span class="cv">1</span>);}
+  <span class="cc">// Level 2 → 2 นาที + LINE พยาบาล</span>
+  <span class="ck">else if</span>(mins&gt;=<span class="cv">2</span>&&alertLevel&lt;<span class="cv">2</span>){alertLevel=<span class="cv">2</span>;<span class="cf">buzzerBeep</span>(<span class="cv">3</span>,<span class="cv">250</span>,<span class="cv">120</span>);
+    <span class="cf">sendLINE</span>(LINE_NURSE,<span class="cs">"⚠️ L2: ไม่ตอบสนอง 2 นาที"</span>);}
+  <span class="cc">// Level 3 → 5 นาที + LINE แพทย์</span>
+  <span class="ck">else if</span>(mins&gt;=<span class="cv">5</span>&&alertLevel&lt;<span class="cv">3</span>){alertLevel=<span class="cv">3</span>;<span class="cf">buzzerBeep</span>(<span class="cv">5</span>,<span class="cv">300</span>,<span class="cv">100</span>);
+    <span class="cf">sendLINE</span>(LINE_DOCTOR,<span class="cs">"🚨 L3: ไม่ตอบสนอง 5 นาที"</span>);}
+  <span class="cc">// Level 4 → 8 นาที CRITICAL</span>
+  <span class="ck">else if</span>(mins&gt;=<span class="cv">8</span>&&alertLevel&lt;<span class="cv">4</span>){alertLevel=<span class="cv">4</span>;
+    digitalWrite(PIN_BUZZER,HIGH);delay(<span class="cv">10000</span>);digitalWrite(PIN_BUZZER,LOW);
+    <span class="cf">sendLINE</span>(LINE_DOCTOR,<span class="cs">"🆘 CRITICAL: ไม่ตอบสนอง 8 นาที!"</span>);}
+}
+<span class="ck">void</span> <span class="cf">resetAlert</span>(){alertActive=<span class="cv">false</span>;alertLevel=<span class="cv">0</span>;digitalWrite(PIN_BUZZER,LOW);}</div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn-primary" onclick="bCopyCode()" data-th="📋 คัดลอก Code" data-en="📋 Copy Code">📋 คัดลอก Code</button>
+              <button class="btn-primary" onclick="bSave()" data-th="💾 บันทึก" data-en="💾 Save">💾 บันทึกการตั้งค่า</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1517,6 +1738,99 @@ function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
     alert(lang==='th'?'ล้างข้อมูลแล้ว':'Data cleared');
 }
+
+
+// ═══════════════════════════════════════════
+// BUZZER SETTINGS
+// ═══════════════════════════════════════════
+let bTimerInt=null, bAlertSec=0, bTestTO=null;
+
+function bUpdateSlider(id,vid){ document.getElementById(vid).textContent=document.getElementById(id).value+' นาที'; }
+function bUpdatePat(id,vid,isSec=false){ const v=document.getElementById(id).value; document.getElementById(vid).textContent=v+(isSec?' วิ':' ครั้ง'); }
+
+function bUpdateViz(){
+  const vals=[+document.getElementById('bp1').value,+document.getElementById('bp2').value,+document.getElementById('bp3').value,+document.getElementById('bp4').value];
+  const cols=['#39d353','#e3b341','#f85149','#a78bfa'];
+  const mx=Math.max(...vals);
+  const viz=document.getElementById('bViz'); if(!viz) return;
+  viz.innerHTML='';
+  vals.forEach((v,li)=>{
+    for(let i=0;i<v;i++){
+      const b=document.createElement('div');
+      b.style.cssText=`flex:1;min-width:3px;height:${Math.max(6,(v/mx)*42)}px;background:${cols[li]};opacity:${0.4+li*0.18};border-radius:2px 2px 0 0`;
+      viz.appendChild(b);
+    }
+    if(li<3){const s=document.createElement('div');s.style.cssText='width:2px;background:var(--brd2);flex-shrink:0';viz.appendChild(s);}
+  });
+}
+
+function bUpdateTimeline(){
+  const t2=+document.getElementById('bt2').value, t3=+document.getElementById('bt3').value, t4=+document.getElementById('bt4').value;
+  const p1=document.getElementById('bp1').value, p2=document.getElementById('bp2').value, p3=document.getElementById('bp3').value, p4=document.getElementById('bp4').value;
+  const tl=document.getElementById('bTimeline'); if(!tl) return;
+  tl.innerHTML=[
+    {cls:'bl1',icon:'🟢',title:'Level 1 — เบา',badge:'ทันที',bc:'#052010',fc:'#39d353',
+     desc:`บีบสั้น ${p1} ครั้ง · Motor สั่น 1 วิ · LED แดงกะพริบ`},
+    {cls:'bl2',icon:'🟡',title:'Level 2 — ปานกลาง',badge:t2+' นาที',bc:'#1a1000',fc:'#e3b341',
+     desc:`บีบ ${p2} ครั้ง · Motor สั่น 2 วิ · ส่ง LINE พยาบาล`},
+    {cls:'bl3',icon:'🔴',title:'Level 3 — ดัง',badge:t3+' นาที',bc:'#200808',fc:'#f85149',
+     desc:`บีบ ${p3} ครั้ง ดัง · Motor สั่น 3 วิ · ส่ง LINE แพทย์+พยาบาล`},
+    {cls:'bl4',icon:'🚨',title:'Level 4 — CRITICAL',badge:t4+' นาที',bc:'#200020',fc:'#a78bfa',
+     desc:`เสียงต่อเนื่อง ${p4} วิ · Motor ต่อเนื่อง · ส่ง LINE ฉุกเฉิน+Web Alert`},
+  ].map(l=>`<div class="tl-item"><div class="tl-dot ${l.cls}">${l.icon}</div>
+    <div class="tl-content"><div class="tl-title">${l.title}
+      <span class="tl-badge" style="background:${l.bc};color:${l.fc};border:1px solid ${l.fc}55">${l.badge}</span>
+    </div><div class="tl-desc">${l.desc}</div></div></div>`).join('');
+}
+
+function bResetTimer(){
+  clearInterval(bTimerInt); bAlertSec=0; bTimerInt=null;
+  const tv=document.getElementById('bTimerVal'); if(tv) tv.textContent='0:00';
+  const cl=document.getElementById('bCurLevel'); if(cl){cl.textContent='—';cl.style.color='var(--text)';}
+}
+
+function bStartTimer(){
+  if(bTimerInt) return;
+  bTimerInt=setInterval(()=>{
+    bAlertSec++;
+    const m=Math.floor(bAlertSec/60), s=bAlertSec%60;
+    const tv=document.getElementById('bTimerVal'); if(tv) tv.textContent=m+':'+(s<10?'0':'')+s;
+    const t2=+document.getElementById('bt2').value*60, t3=+document.getElementById('bt3').value*60, t4=+document.getElementById('bt4').value*60;
+    let lv='L1 🟢', lc='var(--ok)';
+    if(bAlertSec>=t4){lv='L4 🚨';lc='#a78bfa';}
+    else if(bAlertSec>=t3){lv='L3 🔴';lc='var(--danger)';}
+    else if(bAlertSec>=t2){lv='L2 🟡';lc='var(--warn)';}
+    const cl=document.getElementById('bCurLevel'); if(cl){cl.textContent=lv;cl.style.color=lc;}
+  },1000);
+}
+
+function bTest(lv){
+  clearTimeout(bTestTO);
+  document.querySelectorAll('.test-btn-b').forEach(b=>b.classList.remove('active-test'));
+  const btns=document.querySelectorAll('.test-btn-b');
+  if(btns[lv-1]) btns[lv-1].classList.add('active-test');
+  const cols=['#39d353','#e3b341','#f85149','#a78bfa'];
+  const st=document.getElementById('bBuzzStatus');
+  if(st) st.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${cols[lv-1]};flex-shrink:0;animation:blink .4s infinite"></span><span style="color:${cols[lv-1]}">🔊 ทดสอบ Level ${lv}... (จำลอง)</span>`;
+  if(!bTimerInt) bStartTimer();
+  bTestTO=setTimeout(()=>{
+    document.querySelectorAll('.test-btn-b').forEach(b=>b.classList.remove('active-test'));
+    if(st) st.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0"></span><span class="text-muted">Buzzer พร้อม · GPIO27 · MH-FMD</span>';
+  },2000);
+}
+
+function bTestAll(){ let i=0; function n(){ if(i>=4) return; bTest(i+1); i++; bTestTO=setTimeout(n,2600);} n(); }
+function bStop(){
+  clearTimeout(bTestTO);
+  document.querySelectorAll('.test-btn-b').forEach(b=>b.classList.remove('active-test'));
+  const st=document.getElementById('bBuzzStatus');
+  if(st) st.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0"></span><span class="text-muted">Buzzer หยุด · GPIO27</span>';
+}
+function bCopyCode(){ const c=document.getElementById('bCode'); if(c) navigator.clipboard.writeText(c.innerText).then(()=>showToast('📋 คัดลอก Firmware Code แล้ว!')); }
+function bSave(){ showToast('💾 บันทึกการตั้งค่า Buzzer แล้ว ✅'); }
+
+// init buzzer page on first load
+setTimeout(()=>{ bUpdateTimeline(); bUpdateViz(); },300);
 
 // ═══════════════════════════════════════════
 // INIT

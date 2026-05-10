@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>ลงทะเบียน — Happy HIP DVT</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--green:#06C755;--gdark:#05a649;--glight:#e8f5e9;--border:#e0e0e0;--text:#222;--muted:#777;--warn:#e65100;--wbg:#fff8e1;--blue:#1565c0;--blight:#e3f2fd}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f9f4;min-height:100vh;font-family:'Sarabun',sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px 16px}
+.card{background:#fff;border-radius:20px;width:100%;max-width:390px;box-shadow:0 4px 28px rgba(0,0,0,.10);overflow:hidden}
+.card-header{background:var(--green);padding:22px 20px 18px;text-align:center;color:#fff}
+.header-icon{font-size:2.2rem;margin-bottom:6px}
+.header-title{font-size:1.05rem;font-weight:700}
+.header-sub{font-size:.8rem;opacity:.85;margin-top:2px}
+.card-body{padding:20px}
+.how-box{background:var(--blight);border:1px solid #90caf9;border-radius:12px;padding:12px 14px;margin-bottom:18px}
+.how-title{font-size:.82rem;font-weight:700;color:var(--blue);margin-bottom:8px}
+.how-step{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.how-step:last-child{margin-bottom:0}
+.hs-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.hs-text{font-size:.8rem;color:#333;line-height:1.5}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.82rem;font-weight:600;color:#444;margin-bottom:5px;display:block}
+.form-req{color:#c62828}
+.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.95rem;font-family:'Sarabun',sans-serif;color:var(--text);transition:border-color .2s;background:#fff}
+.form-input:focus{outline:none;border-color:var(--green)}
+.form-input.err{border-color:#c62828}
+.error-hint{font-size:.75rem;color:#c62828;margin-top:4px;display:none}
+.role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.role-card{border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;user-select:none}
+.role-card:hover{border-color:var(--green)}
+.role-card.selected{border-color:var(--green);background:var(--glight)}
+.role-icon{font-size:1.5rem;margin-bottom:4px}
+.role-name{font-size:.75rem;font-weight:600;color:#444}
+.role-card.selected .role-name{color:#1b5e20}
+.role-err{font-size:.75rem;color:#c62828;margin-top:6px;display:none}
+.privacy{background:var(--wbg);border:1px solid #ffe082;border-radius:10px;padding:10px 12px;margin-bottom:16px;display:flex;gap:8px;align-items:flex-start}
+.privacy-text{font-size:.76rem;color:var(--warn);line-height:1.5}
+.btn-line{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-line:hover{background:var(--gdark)}
+.btn-line:active{transform:scale(.98)}
+.btn-line:disabled{background:#aaa;cursor:not-allowed}
+.line-icon{width:22px;height:22px;flex-shrink:0}
+/* Step 2 - ส่งข้อความ */
+#step2{display:none}
+.msg-preview{background:#f0f9f4;border:2px solid var(--green);border-radius:14px;padding:14px;margin:14px 0}
+.msg-label{font-size:.75rem;color:var(--muted);margin-bottom:6px}
+.msg-bubble{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid var(--border);font-family:'Courier New',monospace;font-size:.8rem;color:#333;line-height:1.7;word-break:break-all}
+.msg-note{font-size:.76rem;color:var(--muted);margin-top:6px}
+.btn-copy{width:100%;padding:10px;background:var(--blight);color:var(--blue);border:1px solid #90caf9;border-radius:10px;font-size:.88rem;font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:600;margin-bottom:8px;transition:background .2s}
+.btn-copy:hover{background:#bbdefb}
+.btn-open-line{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-open-line:hover{background:var(--gdark)}
+.btn-back{width:100%;padding:10px;background:#f5f5f5;color:#555;border:none;border-radius:10px;font-size:.85rem;font-family:'Sarabun',sans-serif;cursor:pointer;margin-top:8px}
+/* Success */
+#success-state{display:none;text-align:center;padding:28px 20px}
+.success-icon{font-size:3.5rem;margin-bottom:12px}
+.success-title{font-size:1.1rem;font-weight:700;color:#2e7d32;margin-bottom:8px}
+.success-desc{font-size:.85rem;color:var(--muted);line-height:1.7}
+.success-step{display:flex;gap:8px;align-items:center;font-size:.8rem;color:#555;margin-bottom:6px;text-align:left}
+.sc{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <div class="header-icon">🛏️</div>
+    <div class="header-title">Happy HIP DVT Monitor</div>
+    <div class="header-sub">ลงทะเบียนรับการแจ้งเตือนผู้ป่วย</div>
+  </div>
+
+  <!-- Step 1: Form -->
+  <div id="step1" class="card-body">
+    <div class="how-box">
+      <div class="how-title">📋 วิธีลงทะเบียน (2 ขั้นตอน)</div>
+      <div class="how-step"><div class="hs-num">1</div><div class="hs-text">กรอกข้อมูลด้านล่าง → กดปุ่มสีเขียว</div></div>
+      <div class="how-step"><div class="hs-num">2</div><div class="hs-text">แอป LINE จะเปิดขึ้นมา → กด <strong>ส่ง</strong> → รอ Admin อนุมัติ</div></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ชื่อ-นามสกุล / คำนำหน้า <span class="form-req">*</span></label>
+      <input class="form-input" id="inp-name" type="text" placeholder="เช่น นพ.สมชาย ใจดี">
+      <div class="error-hint" id="err-name">กรุณากรอกชื่อ</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">บทบาท <span class="form-req">*</span></label>
+      <div class="role-grid">
+        <div class="role-card" id="rc-doctor" onclick="selectRole('doctor','แพทย์')">
+          <div class="role-icon">👨‍⚕️</div><div class="role-name">แพทย์</div>
+        </div>
+        <div class="role-card" id="rc-nurse" onclick="selectRole('nurse','พยาบาล')">
+          <div class="role-icon">👩‍⚕️</div><div class="role-name">พยาบาล</div>
+        </div>
+        <div class="role-card" id="rc-admin" onclick="selectRole('admin','Admin')">
+          <div class="role-icon">👑</div><div class="role-name">Admin</div>
+        </div>
+      </div>
+      <div class="role-err" id="err-role">กรุณาเลือกบทบาท</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">แผนก / Ward</label>
+      <input class="form-input" id="inp-dept" type="text" placeholder="เช่น ออร์โธปิดิกส์">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">เบอร์โทร</label>
+      <input class="form-input" id="inp-tel" type="tel" placeholder="0812345678">
+    </div>
+
+    <div class="privacy">
+      <span>🔒</span>
+      <div class="privacy-text">ระบบเก็บ <strong>ชื่อ บทบาท และ LINE User ID</strong> เพื่อส่งแจ้งเตือนผู้ป่วยเท่านั้น</div>
+    </div>
+
+    <button class="btn-line" onclick="goStep2()">
+      <svg class="line-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+      </svg>
+      ถัดไป — ส่งผ่าน LINE
+    </button>
+  </div>
+
+  <!-- Step 2: Open LINE -->
+  <div id="step2" class="card-body">
+    <div class="how-box" style="margin-bottom:14px">
+      <div class="how-title">📩 ขั้นตอนที่ 2 — ส่งข้อความใน LINE</div>
+      <div class="how-step"><div class="hs-num">1</div><div class="hs-text">กดปุ่มสีเขียวด้านล่าง → LINE เปิดขึ้น</div></div>
+      <div class="how-step"><div class="hs-num">2</div><div class="hs-text">กด <strong>ส่ง</strong> ใน LINE (ข้อความถูกกรอกอัตโนมัติ)</div></div>
+      <div class="how-step"><div class="hs-num">3</div><div class="hs-text">รอ Admin อนุมัติ (ได้รับ LINE ยืนยัน)</div></div>
+    </div>
+
+    <div class="msg-preview">
+      <div class="msg-label">ข้อความที่จะส่ง (อัตโนมัติ)</div>
+      <div class="msg-bubble" id="msg-preview">—</div>
+      <div class="msg-note">⚠️ ระบบจะได้รับ LINE User ID ของคุณจากข้อความนี้</div>
+    </div>
+
+    <button class="btn-copy" onclick="copyMsg()">📋 คัดลอกข้อความ (สำรอง)</button>
+    <button class="btn-open-line" onclick="openLINE()">
+      <svg style="width:22px;height:22px;flex-shrink:0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+      </svg>
+      เปิด LINE และส่งข้อความ
+    </button>
+    <button class="btn-back" onclick="goBack()">← แก้ไขข้อมูล</button>
+
+    <!-- Done button (after LINE opened) -->
+    <div id="done-section" style="display:none;margin-top:14px;text-align:center">
+      <button class="btn-line" onclick="showSuccess()" style="background:#1565c0">
+        ✅ ส่งข้อความแล้ว — เสร็จสิ้น
+      </button>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="success-state" class="card-body">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">ลงทะเบียนสำเร็จ!</div>
+    <div class="success-desc">Admin จะตรวจสอบและอนุมัติ<br>คุณจะได้รับ LINE แจ้งเตือนเมื่ออนุมัติแล้ว</div>
+    <div style="text-align:left;margin-top:16px">
+      <div class="success-step"><div class="sc">1</div>รอ Admin กด อนุมัติ ใน Web App</div>
+      <div class="success-step"><div class="sc">2</div>ได้รับ LINE "ยินดีต้อนรับ!" จาก Happy HIP</div>
+      <div class="success-step"><div class="sc">3</div>รับการแจ้งเตือนผู้ป่วย DVT อัตโนมัติ</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ตั้งค่า — แก้ค่านี้ ─────────────────────────────────────
+// หา LINE OA ID: LINE Developers → Messaging API Tab → Bot basic ID (เช่น @happyhip)
+const LINE_OA_ID = "@531ewyor";  // ← ใส่ LINE OA ID เช่น @happyhip
+// ────────────────────────────────────────────────────────────
+
+let selectedRole = '', selectedRoleTH = '', formData = {};
+
+function selectRole(role, roleTH) {
+  selectedRole = role; selectedRoleTH = roleTH;
+  ['doctor','nurse','admin'].forEach(r =>
+    document.getElementById('rc-'+r).classList.toggle('selected', r===role));
+  document.getElementById('err-role').style.display = 'none';
+}
+
+function goStep2() {
+  const name = document.getElementById('inp-name').value.trim();
+  let ok = true;
+  if (!name) {
+    document.getElementById('inp-name').classList.add('err');
+    document.getElementById('err-name').style.display = 'block'; ok = false;
+  } else {
+    document.getElementById('inp-name').classList.remove('err');
+    document.getElementById('err-name').style.display = 'none';
+  }
+  if (!selectedRole) {
+    document.getElementById('err-role').style.display = 'block'; ok = false;
+  }
+  if (!ok) return;
+
+  formData = {
+    name, role: selectedRole, roleTH: selectedRoleTH,
+    dept: document.getElementById('inp-dept').value.trim(),
+    tel:  document.getElementById('inp-tel').value.trim()
+  };
+
+  const msg = buildMsg();
+  document.getElementById('msg-preview').textContent = msg;
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+}
+
+function buildMsg() {
+  const dept = formData.dept ? ' แผนก: '+formData.dept : '';
+  const tel  = formData.tel  ? ' โทร: '+formData.tel   : '';
+  return `register|${formData.name}|${formData.role}|${formData.dept||''}|${formData.tel||''}`;
+}
+
+function buildMsgDisplay() {
+  return `register|${formData.name}|${selectedRoleTH}|${formData.dept||'-'}|${formData.tel||'-'}`;
+}
+
+function openLINE() {
+  const msg = buildMsg();
+  // LINE URL Scheme — เปิดหน้าแชท OA พร้อมข้อความสำเร็จรูป
+  const lineUrl = `https://line.me/R/oaMessage/${encodeURIComponent(LINE_OA_ID)}/?${encodeURIComponent(msg)}`;
+  window.open(lineUrl, '_blank');
+  // แสดงปุ่ม "ส่งแล้ว"
+  setTimeout(() => {
+    document.getElementById('done-section').style.display = 'block';
+  }, 1500);
+}
+
+function copyMsg() {
+  const msg = buildMsg();
+  navigator.clipboard.writeText(msg).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ คัดลอกแล้ว!';
+    setTimeout(() => btn.textContent = '📋 คัดลอกข้อความ (สำรอง)', 2000);
+  });
+}
+
+function goBack() {
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+}
+
+function showSuccess() {
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('success-state').style.display = 'block';
+}
+</script>
+</body>
+</html>

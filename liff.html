@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Happy HIP — ดู LINE User ID</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#f0f9f4;min-height:100vh;
+  font-family:'Sarabun',sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.card{
+  background:#fff;border-radius:20px;padding:28px 22px;
+  width:100%;max-width:360px;
+  box-shadow:0 4px 24px rgba(0,0,0,.1);
+}
+.logo{text-align:center;margin-bottom:20px}
+.logo-icon{
+  width:68px;height:68px;border-radius:50%;
+  background:linear-gradient(135deg,#e8f5e9,#c8e6c9);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;margin:0 auto 10px;
+}
+.logo-title{font-size:1rem;font-weight:700;color:#1b5e20}
+.logo-sub{font-size:.78rem;color:#777;margin-top:2px}
+
+/* Loading state */
+#loading{text-align:center;padding:20px 0}
+.spinner{
+  width:40px;height:40px;border:3px solid #e8f5e9;
+  border-top-color:#4CAF50;border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 12px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-text{font-size:.88rem;color:#777}
+
+/* Profile section */
+#profile{display:none}
+.avatar{
+  width:72px;height:72px;border-radius:50%;
+  border:3px solid #4CAF50;margin:0 auto 10px;
+  display:block;object-fit:cover;
+}
+.display-name{
+  text-align:center;font-size:1rem;font-weight:700;
+  color:#222;margin-bottom:16px;
+}
+
+/* ID Box */
+.id-label{
+  font-size:.75rem;font-weight:600;color:#555;
+  margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.id-label::before{
+  content:'';width:3px;height:14px;
+  background:#4CAF50;border-radius:2px;
+}
+.id-box{
+  background:#f0f9f4;border:2px solid #4CAF50;
+  border-radius:12px;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-bottom:10px;
+}
+.id-value{
+  font-family:'Courier New',monospace;font-size:.95rem;
+  font-weight:700;color:#1b5e20;
+  word-break:break-all;flex:1;
+}
+.copy-btn{
+  background:#4CAF50;color:#fff;border:none;
+  border-radius:8px;padding:8px 12px;
+  font-size:.8rem;font-family:'Sarabun',sans-serif;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:background .2s;
+}
+.copy-btn:hover{background:#43a047}
+.copy-btn:active{transform:scale(.96)}
+.copy-btn.copied{background:#2196F3}
+
+/* Info pills */
+.info-row{
+  display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;
+}
+.pill{
+  background:#f5f5f5;border-radius:99px;
+  padding:4px 12px;font-size:.75rem;color:#666;
+}
+.pill span{font-weight:600;color:#333}
+
+/* How to use */
+.how-box{
+  background:#fff9e6;border:1px solid #ffe082;
+  border-radius:10px;padding:12px 14px;margin-top:4px;
+}
+.how-title{font-size:.8rem;font-weight:600;color:#e65100;margin-bottom:6px}
+.how-step{display:flex;gap:8px;align-items:flex-start;margin-bottom:5px}
+.how-step:last-child{margin-bottom:0}
+.how-num{
+  width:18px;height:18px;border-radius:50%;
+  background:#ff9800;color:#fff;font-size:.65rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;
+}
+.how-text{font-size:.78rem;color:#666;line-height:1.5}
+
+/* Error state */
+#error{display:none;text-align:center;padding:10px 0}
+.err-icon{font-size:2.5rem;margin-bottom:8px}
+.err-title{font-size:.95rem;font-weight:700;color:#c62828;margin-bottom:6px}
+.err-desc{font-size:.8rem;color:#777;line-height:1.6}
+.retry-btn{
+  background:#f44336;color:#fff;border:none;border-radius:10px;
+  padding:10px 24px;font-size:.88rem;font-family:'Sarabun',sans-serif;
+  cursor:pointer;margin-top:12px;width:100%;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🛏️</div>
+    <div class="logo-title">Happy HIP DVT Monitor</div>
+    <div class="logo-sub">ดู LINE User ID ของคุณ</div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="load-text">กำลังโหลดข้อมูล LINE...</div>
+  </div>
+
+  <!-- Profile + ID -->
+  <div id="profile">
+    <img id="avatar-img" class="avatar" src="" alt="profile">
+    <div class="display-name" id="display-name">—</div>
+
+    <div class="id-label">LINE User ID ของคุณ</div>
+    <div class="id-box">
+      <div class="id-value" id="user-id">—</div>
+      <button class="copy-btn" id="copy-btn" onclick="copyId()">📋 Copy</button>
+    </div>
+
+    <div class="info-row">
+      <div class="pill">Status: <span id="status-val">—</span></div>
+      <div class="pill">LIFF: <span id="liff-val">loaded</span></div>
+    </div>
+
+    <div class="how-box">
+      <div class="how-title">📌 วิธีส่งให้ Admin</div>
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-text">กด <strong>Copy</strong> เพื่อคัดลอก User ID</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-text">ส่งให้ Admin ทาง LINE / แอป</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-text">Admin เพิ่มในหน้า <strong>Admin Setup 👑</strong> ของ Web App</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="error">
+    <div class="err-icon">⚠️</div>
+    <div class="err-title">ไม่สามารถโหลดได้</div>
+    <div class="err-desc" id="err-desc">กรุณาเปิดลิงก์นี้ผ่านแอป LINE เท่านั้น</div>
+    <button class="retry-btn" onclick="location.reload()">ลองใหม่</button>
+  </div>
+</div>
+
+<script>
+// ── ตั้งค่า LIFF ID — แก้ตรงนี้ ─────────────────────────────
+// LIFF ID ได้จาก: LINE Developers → Channel → LIFF tab → สร้าง LIFF App
+const LIFF_ID = "YOUR_LIFF_ID";  // ← ใส่ LIFF ID เช่น 2007654321-AbCdEfGh
+// ─────────────────────────────────────────────────────────────
+
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    const profile = await liff.getProfile();
+    const context = liff.getContext();
+
+    // Show profile
+    document.getElementById('avatar-img').src = profile.pictureUrl || '🧑';
+    document.getElementById('display-name').textContent = profile.displayName;
+    document.getElementById('user-id').textContent = profile.userId;
+    document.getElementById('status-val').textContent = liff.isInClient() ? 'In LINE' : 'Browser';
+    document.getElementById('liff-val').textContent = 'v' + liff.getVersion();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('profile').style.display = 'block';
+
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('err-desc').textContent = e.message || 'เปิดผ่าน LINE App เท่านั้น';
+    console.error(e);
+  }
+}
+
+function copyId() {
+  const id = document.getElementById('user-id').textContent;
+  navigator.clipboard.writeText(id).then(()=>{
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ Copied!';
+    btn.className = 'copy-btn copied';
+    setTimeout(()=>{
+      btn.textContent = '📋 Copy';
+      btn.className = 'copy-btn';
+    }, 2000);
+  }).catch(()=>{
+    // Fallback สำหรับ iOS
+    const el = document.getElementById('user-id');
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    alert('คัดลอกแล้ว: ' + id);
+  });
+}
+
+init();
+</script>
+</body>
+</html>

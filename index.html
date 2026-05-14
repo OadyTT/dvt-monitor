@@ -925,7 +925,7 @@ body{
 <!-- ══════════════════════════════════════════════════════
      PIN MODAL
 ══════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="pinModal">
+<div class="modal-overlay hidden" id="pinModal">
   <div class="modal">
     <div class="modal-title" data-th="🔐 ยืนยันตัวตน" data-en="🔐 Authenticate">🔐 ยืนยันตัวตน</div>
     <div class="modal-sub" id="pinSubtitle" data-th="กรอก PIN 4 หลักสำหรับ Admin" data-en="Enter 4-digit Admin PIN">กรอก PIN 4 หลักสำหรับ Admin</div>
@@ -1064,7 +1064,7 @@ body{
       <span class="nav-icon">🔔</span>
       <span data-th="ตั้งค่า Buzzer" data-en="Buzzer Settings">ตั้งค่า Buzzer</span>
     </div>
-    <div class="nav-item" onclick="nav('admin')">
+    <div class="nav-item" onclick="navToAdmin(event)">
       <span class="nav-icon">👑</span>
       <span data-th="Admin Setup" data-en="Admin Setup">Admin Setup</span>
     </div>
@@ -2242,6 +2242,13 @@ function pinInput(d) {
       if(pinBuffer===PIN) {
         role='admin'; updateRoleBadge();
         document.getElementById('pinModal').classList.add('hidden');
+        if(_pendingAdminNav) {
+          _pendingAdminNav = false;
+          document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+          document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+          document.getElementById('page-admin').classList.add('active');
+          document.querySelector('.nav-item[onclick*="navToAdmin"]').classList.add('active');
+        }
       } else {
         document.getElementById('pinError').textContent = lang==='th'?'PIN ไม่ถูกต้อง':'Incorrect PIN';
         pinBuffer=''; updatePinDots();
@@ -2250,7 +2257,29 @@ function pinInput(d) {
   }
 }
 function pinClear() { pinBuffer=pinBuffer.slice(0,-1); updatePinDots(); }
-function pinClose() { document.getElementById('pinModal').classList.add('hidden'); }
+function pinClose() { 
+  document.getElementById('pinModal').classList.add('hidden'); 
+  _pendingAdminNav = false;
+}
+
+// Navigate to admin (requires PIN)
+let _pendingAdminNav = false;
+function navToAdmin(evt) {
+  if(role === 'admin') {
+    // Already admin — go directly
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('page-admin').classList.add('active');
+    if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+    return;
+  }
+  // Need PIN
+  _pendingAdminNav = true;
+  pinBuffer='';
+  document.getElementById('pinModal').classList.remove('hidden');
+  updatePinDots();
+  document.getElementById('pinError').textContent='';
+}
 function updatePinDots() {
   for(let i=0;i<4;i++) {
     document.getElementById('pd'+i).classList.toggle('filled', i<pinBuffer.length);

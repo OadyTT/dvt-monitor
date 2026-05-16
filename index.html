@@ -39,10 +39,10 @@
   --charging:  #ffa657;
   --font-size: 16px;
 }
-.fs-sm  { --font-size: 14px; }
+.fs-sm  { --font-size: 13px; }
 .fs-md  { --font-size: 16px; }
-.fs-lg  { --font-size: 16px; }
-.fs-xl  { --font-size: 18px; }
+.fs-lg  { --font-size: 19px; }
+.fs-xl  { --font-size: 22px; }
 
 *{box-sizing:border-box;margin:0;padding:0}
 html{font-size:var(--font-size)}
@@ -1231,6 +1231,7 @@ function setFs(sz) {
   document.body.className = 'fs-'+sz;
   document.querySelectorAll('.fs-btn').forEach(b=>b.classList.remove('active'));
   event.currentTarget.classList.add('active');
+  localStorage.setItem('fontSize', sz);
 }
 
 // ═══════════════════════════════════════════
@@ -1696,6 +1697,12 @@ if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
 console.log('[v4.9.6] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+// โหลด font size ที่บันทึกไว้
+const savedFs = localStorage.getItem('fontSize') || 'md';
+document.body.className = 'fs-' + savedFs;
+document.querySelectorAll('.fs-btn').forEach(b => {
+  b.classList.toggle('active', b.getAttribute('onclick') === `setFs('${savedFs}')`);
+});
 updateDataModeUI();
 loadThresh();
 

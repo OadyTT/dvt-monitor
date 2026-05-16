@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.6</title>
+<title>Smart HIP DVT System v4.9.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -39,13 +39,14 @@
   --charging:  #ffa657;
   --font-size: 16px;
 }
-.fs-sm  { --font-size: 13px; }
-.fs-md  { --font-size: 16px; }
-.fs-lg  { --font-size: 19px; }
-.fs-xl  { --font-size: 22px; }
+/* Font size applied to html element */
+html.fs-sm  { font-size: 13px; }
+html.fs-md  { font-size: 16px; }
+html.fs-lg  { font-size: 19px; }
+html.fs-xl  { font-size: 22px; }
 
 *{box-sizing:border-box;margin:0;padding:0}
-html{font-size:var(--font-size)}
+html{font-size:16px}  /* default, overridden by fs classes */
 body{
   background:var(--bg);
   color:var(--text);
@@ -453,6 +454,53 @@ body{
 .btn-primary:hover{opacity:.85}
 .btn-danger{background:var(--danger)}
 
+/* ── LINE FAB Button ── */
+.line-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.line-fab-tooltip {
+  background: #06c755;
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 99px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+.line-fab-btn {
+  width: 56px;
+  height: 56px;
+  background: #06c755;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: all;
+  border: none;
+  text-decoration: none;
+  transition: transform .2s;
+}
+.line-fab-btn:hover { transform: scale(1.08); }
+.line-fab-btn:hover ~ .line-fab-tooltip,
+.line-fab:hover .line-fab-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+.line-fab:hover .line-fab-tooltip { opacity: 1; transform: translateX(0); }
+
 /* ═══════════════════════════════════════════
    PIN MODAL
 ═══════════════════════════════════════════ */
@@ -580,7 +628,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.6</span>
+    <span id="verBadge">v4.9.8</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1228,7 +1276,10 @@ function setLang(l) {
 // FONT SIZE
 // ═══════════════════════════════════════════
 function setFs(sz) {
-  document.body.className = 'fs-'+sz;
+  // ลบ class fs- เดิมออกจาก html ก่อน
+  document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
+  // เพิ่ม class ใหม่ที่ html element
+  document.documentElement.classList.add('fs-'+sz);
   document.querySelectorAll('.fs-btn').forEach(b=>b.classList.remove('active'));
   event.currentTarget.classList.add('active');
   localStorage.setItem('fontSize', sz);
@@ -1353,29 +1404,91 @@ const chartCfg = (label,data,color,y2)=>({
             y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},min:0,max:y2}}}
 });
 
+// ── Real Data Buffer (เก็บ 30 จุดล่าสุด) ──────────────────
+const chartBuf = {
+  labels:  Array.from({length:30},(_,i)=>''),
+  hipX:    Array(30).fill(0),
+  hipY:    Array(30).fill(0),
+  ankL:    Array(30).fill(0),
+  ankR:    Array(30).fill(0),
+  fsrL:    Array(30).fill(0),
+  fsrR:    Array(30).fill(0),
+  batt:    Array(30).fill(0),
+};
+
+function pushChartData(d) {
+  const t = new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  chartBuf.labels.push(t);   chartBuf.labels.shift();
+  chartBuf.hipX.push(parseFloat(d.hipAngleX)||0);  chartBuf.hipX.shift();
+  chartBuf.hipY.push(parseFloat(d.hipAngleY)||0);  chartBuf.hipY.shift();
+  chartBuf.ankL.push(Math.abs(parseFloat(d.ankLAngleX)||0)); chartBuf.ankL.shift();
+  chartBuf.ankR.push(Math.abs(parseFloat(d.ankRAngleX)||0)); chartBuf.ankR.shift();
+  chartBuf.fsrL.push(parseInt(d.fsrL)||0);  chartBuf.fsrL.shift();
+  chartBuf.fsrR.push(parseInt(d.fsrR)||0);  chartBuf.fsrR.shift();
+  chartBuf.batt.push(parseFloat(d.battVolt)||0); chartBuf.batt.shift();
+  updateChartData();
+}
+
+function updateChartData() {
+  if (!chartHip) return;
+  chartHip.data.labels    = [...chartBuf.labels];
+  chartHip.data.datasets[0].data = [...chartBuf.hipX];
+  chartHip.data.datasets[1].data = [...chartBuf.hipY];
+  chartHip.update('none');
+
+  chartAnkle.data.labels  = [...chartBuf.labels];
+  chartAnkle.data.datasets[0].data = [...chartBuf.ankL];
+  chartAnkle.data.datasets[1].data = [...chartBuf.ankR];
+  chartAnkle.update('none');
+
+  chartFsr.data.labels    = [...chartBuf.labels];
+  chartFsr.data.datasets[0].data = [...chartBuf.fsrL];
+  chartFsr.data.datasets[1].data = [...chartBuf.fsrR];
+  chartFsr.update('none');
+
+  chartBatt.data.labels   = [...chartBuf.labels];
+  chartBatt.data.datasets[0].data = [...chartBuf.batt];
+  chartBatt.update('none');
+}
+
 function initCharts() {
   if(chartHip) return;
   const cc = id=>document.getElementById(id).getContext('2d');
-  chartHip = new Chart(cc('chartHip'),{type:'line',data:{labels:labels30,datasets:[
-    {label:'Hip X',data:randArr(5,35),borderColor:'#58a6ff',backgroundColor:'#58a6ff22',borderWidth:2,fill:false,tension:.35,pointRadius:0},
-    {label:'Hip Y',data:randArr(2,20),borderColor:'#bc8cff',backgroundColor:'#bc8cff22',borderWidth:2,fill:false,tension:.35,pointRadius:0},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},scales:{x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:8}},y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},min:0,max:50}}}});
-  chartAnkle = new Chart(cc('chartAnkle'),{type:'line',data:{labels:labels30,datasets:[
-    {label:'Ankle L',data:randArr(2,40),borderColor:'#f85149',backgroundColor:'#f8514922',borderWidth:2,fill:false,tension:.35,pointRadius:0},
-    {label:'Ankle R',data:randArr(2,15),borderColor:'#39d353',backgroundColor:'#39d35322',borderWidth:2,fill:false,tension:.35,pointRadius:0},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},scales:{x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:8}},y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},min:0,max:60}}}});
-  chartFsr = new Chart(cc('chartFsr'),{type:'line',data:{labels:labels30,datasets:[
-    {label:'FSR หมอนซ้าย (L)',data:randArr(300,2000),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:true,tension:.35,pointRadius:0},
-    {label:'FSR หมอนขวา (R)',data:randArr(100,1500),borderColor:'#ff9f1c',backgroundColor:'#ff9f1c22',borderWidth:2,fill:true,tension:.35,pointRadius:0},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},scales:{x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:8}},y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},min:0,max:4095}}}});
-  chartBatt = new Chart(cc('chartBatt'),{type:'line',data:{labels:labels30,datasets:[
-    {label:'Voltage (V)',data:randArr(3.7,4.2),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:false,tension:.35,pointRadius:0,yAxisID:'y'},
-    {label:'Current (mA)',data:randArr(-200,50),borderColor:'#58a6ff',backgroundColor:'#58a6ff22',borderWidth:2,fill:false,tension:.35,pointRadius:0,yAxisID:'y1'},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},scales:{
-    x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:8}},
-    y:{grid:{color:'#1e2d3d'},ticks:{color:'#e3b341'},min:3.0,max:4.3,position:'left'},
-    y1:{grid:{display:false},ticks:{color:'#58a6ff'},position:'right'},
-  }}});
+  const empty30 = ()=>Array(30).fill(0);
+  const emptyL  = ()=>Array.from({length:30},(_,i)=>'');
+  const opt = (extra={})=>({
+    responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},
+    scales:{
+      x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:6,maxRotation:0}},
+      y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},...extra}
+    }
+  });
+
+  chartHip = new Chart(cc('chartHip'),{type:'line',data:{labels:emptyL(),datasets:[
+    {label:'Hip X (Flexion)',  data:empty30(),borderColor:'#58a6ff',backgroundColor:'#58a6ff22',borderWidth:2,fill:false,tension:.35,pointRadius:0},
+    {label:'Hip Y (Abduction)',data:empty30(),borderColor:'#bc8cff',backgroundColor:'#bc8cff22',borderWidth:2,fill:false,tension:.35,pointRadius:0},
+  ]},options:opt({min:0,max:90})});
+
+  chartAnkle = new Chart(cc('chartAnkle'),{type:'line',data:{labels:emptyL(),datasets:[
+    {label:'Ankle L ซ้าย',data:empty30(),borderColor:'#f85149',backgroundColor:'#f8514922',borderWidth:2,fill:false,tension:.35,pointRadius:0},
+    {label:'Ankle R ขวา',data:empty30(),borderColor:'#39d353',backgroundColor:'#39d35322',borderWidth:2,fill:false,tension:.35,pointRadius:0},
+  ]},options:opt({min:0,max:180})});
+
+  chartFsr = new Chart(cc('chartFsr'),{type:'line',data:{labels:emptyL(),datasets:[
+    {label:'FSR หมอนซ้าย (L)',data:empty30(),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:true,tension:.35,pointRadius:0},
+    {label:'FSR หมอนขวา (R)',data:empty30(),borderColor:'#ff9f1c',backgroundColor:'#ff9f1c22',borderWidth:2,fill:true,tension:.35,pointRadius:0},
+  ]},options:opt({min:0,max:4095})});
+
+  chartBatt = new Chart(cc('chartBatt'),{type:'line',data:{labels:emptyL(),datasets:[
+    {label:'แรงดัน (V)',data:empty30(),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:false,tension:.35,pointRadius:0},
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},
+    scales:{
+      x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:6,maxRotation:0}},
+      y:{grid:{color:'#1e2d3d'},ticks:{color:'#e3b341'},min:3.0,max:4.3},
+    }
+  }});
 }
 
 // ═══════════════════════════════════════════
@@ -1528,6 +1641,9 @@ function updateDashboard(d) {
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
+
+  // Push data to charts (real-time buffer)
+  pushChartData(d);
 
   // Pump Count
   const pL = parseInt(d.pumpCountL) || 0;
@@ -1696,10 +1812,11 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.6] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.8] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
-document.body.className = 'fs-' + savedFs;
+document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
+document.documentElement.classList.add('fs-' + savedFs);
 document.querySelectorAll('.fs-btn').forEach(b => {
   b.classList.toggle('active', b.getAttribute('onclick') === `setFs('${savedFs}')`);
 });
@@ -1709,5 +1826,17 @@ loadThresh();
 updateLive();
 setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle
 </script>
+<!-- LINE FAB -->
+<div class="line-fab" id="lineFab">
+  <div class="line-fab-tooltip">รับแจ้งเตือน LINE OA</div>
+  <a class="line-fab-btn" id="lineFabBtn"
+     href="/liff.html" target="_blank"
+     title="ลงทะเบียนรับแจ้งเตือน LINE">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+      <path d="M12 2C6.48 2 2 6.03 2 11c0 3.18 1.63 5.99 4.16 7.73-.18.65-.66 2.37-.75 2.74-.11.44.16.44.34.32.14-.09 2.17-1.47 3.05-2.07.38.05.77.08 1.17.08 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
+    </svg>
+  </a>
+</div>
+
 </body>
 </html>

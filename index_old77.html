@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.2</title>
+<title>Smart HIP DVT System v4.9.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -580,7 +580,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.2</span>
+    <span id="verBadge">v4.9.1</span>
   </div>
 
   <!-- Charging indicator -->
@@ -724,9 +724,9 @@ body{
                   <circle cx="45" cy="45" r="36" fill="none" stroke="var(--sda)" stroke-width="7"
                     stroke-dasharray="226" id="gaugeHipX" stroke-dashoffset="170" stroke-linecap="round"/>
                 </svg>
-                <div class="gauge-val"><div class="gauge-num blue" id="vHipX">18°</div><div class="gauge-u">Flexion</div></div>
+                <div class="gauge-val"><div class="gauge-num blue" id="vHipX">18°</div><div class="gauge-u">Hip X</div></div>
               </div>
-              <div class="text-sm text-muted">สะโพก (Flexion)</div>
+              <div class="text-sm text-muted">สะโพก X</div>
             </div>
             <div class="gauge-wrap">
               <div class="gauge-ring">
@@ -735,9 +735,9 @@ body{
                   <circle cx="45" cy="45" r="36" fill="none" stroke="var(--scl)" stroke-width="7"
                     stroke-dasharray="226" id="gaugeHipY" stroke-dashoffset="195" stroke-linecap="round"/>
                 </svg>
-                <div class="gauge-val"><div class="gauge-num" style="color:var(--scl)" id="vHipY">11°</div><div class="gauge-u">Abduction</div></div>
+                <div class="gauge-val"><div class="gauge-num" style="color:var(--scl)" id="vHipY">11°</div><div class="gauge-u">Hip Y</div></div>
               </div>
-              <div class="text-sm text-muted">สะโพก (Abduction)</div>
+              <div class="text-sm text-muted">สะโพก Y</div>
             </div>
             <div class="gauge-wrap">
               <div class="gauge-ring">
@@ -746,7 +746,7 @@ body{
                   <circle cx="45" cy="45" r="36" fill="none" stroke="var(--danger)" stroke-width="7"
                     stroke-dasharray="226" id="gaugeAnkL" stroke-dashoffset="80" stroke-linecap="round"/>
                 </svg>
-                <div class="gauge-val"><div class="gauge-num red" id="vAnkL">35°</div><div class="gauge-u">ข้อเท้าซ้าย</div></div>
+                <div class="gauge-val"><div class="gauge-num red" id="vAnkL">35°</div><div class="gauge-u">Ank L</div></div>
               </div>
               <div class="text-sm text-muted" style="color:var(--danger)">⚠️ ข้อเท้าซ้าย</div>
             </div>
@@ -757,7 +757,7 @@ body{
                   <circle cx="45" cy="45" r="36" fill="none" stroke="var(--ok)" stroke-width="7"
                     stroke-dasharray="226" id="gaugeAnkR" stroke-dashoffset="200" stroke-linecap="round"/>
                 </svg>
-                <div class="gauge-val"><div class="gauge-num green" id="vAnkR">9°</div><div class="gauge-u">ข้อเท้าขวา</div></div>
+                <div class="gauge-val"><div class="gauge-num green" id="vAnkR">9°</div><div class="gauge-u">Ank R</div></div>
               </div>
               <div class="text-sm text-muted">ข้อเท้าขวา</div>
             </div>
@@ -766,11 +766,11 @@ body{
 
         <div class="card">
           <div class="card-title">
-            👟 <span data-th="แรงกด FSR หมอน" data-en="Pillow FSR Pressure">แรงกด FSR หมอน</span>
+            👟 <span data-th="แรงกด FSR406" data-en="Pressure FSR406">แรงกด FSR406</span>
           </div>
           <div class="prog-row">
             <div class="prog-label">
-              <span data-th="หมอนซ้าย (FSR L)" data-en="Pillow L">หมอนซ้าย (FSR L)</span>
+              <span data-th="สะโพก (Hip)" data-en="Hip">สะโพก (Hip)</span>
               <span class="font-mono" id="vFsrHip">1840</span>
             </div>
             <div class="prog-track">
@@ -779,7 +779,7 @@ body{
           </div>
           <div class="prog-row">
             <div class="prog-label">
-              <span data-th="หมอนขวา (FSR R)" data-en="Pillow R">หมอนขวา (FSR R)</span>
+              <span data-th="ข้อเท้า (Ankle)" data-en="Ankle">ข้อเท้า (Ankle)</span>
               <span class="font-mono" id="vFsrAnk">320</span>
             </div>
             <div class="prog-track">
@@ -836,7 +836,7 @@ body{
     <!-- ─────── GRAPHS ─────── -->
     <div class="page" id="page-graphs">
       <div class="page-title" data-th="กราฟเซ็นเซอร์" data-en="Sensor Graphs">กราฟเซ็นเซอร์</div>
-      <div class="page-subtitle" data-th="มุมองศา MPU6050 และแรงกด FSR หมอน ย้อนหลัง 30 รอบ" data-en="MPU6050 angles and FSR pillow pressure last 30 cycles">มุมองศา MPU6050 และแรงกด FSR หมอน ย้อนหลัง 30 รอบ</div>
+      <div class="page-subtitle" data-th="มุมองศา MPU6050 และแรงกด FSR406 ย้อนหลัง 30 รอบ" data-en="MPU6050 angles and FSR406 pressure last 30 cycles">มุมองศา MPU6050 และแรงกด FSR406 ย้อนหลัง 30 รอบ</div>
       <div class="grid-2 mb18">
         <div class="card">
           <div class="card-title" data-th="มุมสะโพก (Hip Angle)" data-en="Hip Angle">มุมสะโพก (Hip Angle)</div>
@@ -848,7 +848,7 @@ body{
         </div>
       </div>
       <div class="card">
-        <div class="card-title" data-th="แรงกด FSR หมอน (ซ้าย + ขวา)" data-en="FSR Pillow Pressure (L + R)">แรงกด FSR หมอน (ซ้าย + ขวา)</div>
+        <div class="card-title" data-th="แรงกด FSR406 (Hip + Ankle)" data-en="FSR406 Pressure (Hip + Ankle)">แรงกด FSR406 (Hip + Ankle)</div>
         <div class="chart-wrap-lg"><canvas id="chartFsr"></canvas></div>
       </div>
       <div class="sep"></div>
@@ -898,7 +898,7 @@ body{
             <tr><td class="fw600">MPU6050 Ankle L</td><td>Gyro+Accel, CH1</td><td class="font-mono">TCA CH1</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
             <tr><td class="fw600">MPU6050 Ankle R</td><td>Gyro+Accel, CH2</td><td class="font-mono">TCA CH2</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
             <tr><td class="fw600">INA219</td><td>Current/Voltage Monitor</td><td class="font-mono">TCA CH3</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600 green">RFP-611 ×2 🆕</td><td>FSR หมอนซ้าย(GPIO34) + ขวา(GPIO35)</td><td class="font-mono">GPIO34/35</td><td><span class="hw-chip chip-new">🆕 Upgraded</span></td></tr>
+            <tr><td class="fw600 green">FSR406 ×2 🆕</td><td>Force Sensor Ø38mm (จาก FSR402)</td><td class="font-mono">GPIO34/35</td><td><span class="hw-chip chip-new">🆕 Upgraded</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1222,11 +1222,11 @@ function renderBeds() {
           <span class="bed-sensor-val ${b.ankL>30?'red':''}">${b.ankL}° / ${b.ankR}°</span>
         </div>
         <div class="bed-sensor-row">
-          <span class="bed-sensor-label">FSR หมอน ซ้าย</span>
+          <span class="bed-sensor-label">FSR406 Hip</span>
           <span class="bed-sensor-val ${b.fsrH<500?'red':''}">${b.fsrH}</span>
         </div>
         <div class="bed-sensor-row">
-          <span class="bed-sensor-label">FSR หมอน ขวา</span>
+          <span class="bed-sensor-label">FSR406 Ankle</span>
           <span class="bed-sensor-val ${b.fsrA<500?'red':''}">${b.fsrA}</span>
         </div>
         <div class="bed-sensor-row">
@@ -1278,8 +1278,8 @@ function initCharts() {
     {label:'Ankle R',data:randArr(2,15),borderColor:'#39d353',backgroundColor:'#39d35322',borderWidth:2,fill:false,tension:.35,pointRadius:0},
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},scales:{x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:8}},y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},min:0,max:60}}}});
   chartFsr = new Chart(cc('chartFsr'),{type:'line',data:{labels:labels30,datasets:[
-    {label:'FSR หมอนซ้าย (L)',data:randArr(300,2000),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:true,tension:.35,pointRadius:0},
-    {label:'FSR หมอนขวา (R)',data:randArr(100,1500),borderColor:'#ff9f1c',backgroundColor:'#ff9f1c22',borderWidth:2,fill:true,tension:.35,pointRadius:0},
+    {label:'FSR406 Hip',data:randArr(300,2000),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:true,tension:.35,pointRadius:0},
+    {label:'FSR406 Ankle',data:randArr(100,1500),borderColor:'#ff9f1c',backgroundColor:'#ff9f1c22',borderWidth:2,fill:true,tension:.35,pointRadius:0},
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab0',boxWidth:12}}},scales:{x:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f',maxTicksLimit:8}},y:{grid:{color:'#1e2d3d'},ticks:{color:'#6e7f8f'},min:0,max:4095}}}});
   chartBatt = new Chart(cc('chartBatt'),{type:'line',data:{labels:labels30,datasets:[
     {label:'Voltage (V)',data:randArr(3.7,4.2),borderColor:'#e3b341',backgroundColor:'#e3b34122',borderWidth:2,fill:false,tension:.35,pointRadius:0,yAxisID:'y'},
@@ -1305,14 +1305,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function toggleDataMode() {
+  // อ่าน GAS URL จาก input ก่อนถ้ายังไม่ได้ save
+  const inp = document.getElementById('inpGas');
+  if (inp && inp.value.trim()) {
+    gasUrl = inp.value.trim();
+    localStorage.setItem('gasUrl', gasUrl);
+  }
   if (!gasUrl) {
-    alert(lang==='th' ? 'กรุณาใส่ GAS URL และบันทึกก่อน' : 'Please enter and save GAS URL first');
+    alert(lang==='th' ? 'กรุณาใส่ GAS URL ในช่องด้านบนก่อน' : 'Please enter GAS URL first');
     return;
   }
   useRealData = !useRealData;
   localStorage.setItem('useRealData', useRealData.toString());
   updateDataModeUI();
-  if (useRealData) fetchGASData();
+  if (useRealData) {
+    fetchGASData();
+  }
 }
 
 function updateDataModeUI() {
@@ -1434,9 +1442,9 @@ function updateDashboard(d) {
   gaugeSet('gaugeAnkL',al,60);
   gaugeSet('gaugeAnkR',ar,60);
 
-  // FSR — หมอนซ้าย (FSR_L=GPIO34), หมอนขวา (FSR_R=GPIO35)
-  const fh = parseInt(d.fsrL) || parseInt(d.fsrHip) || 0;  // FSR ซ้าย
-  const fa = parseInt(d.fsrR) || parseInt(d.fsrAnkle) || 0; // FSR ขวา
+  // FSR
+  const fh = parseInt(d.fsrHip)   || parseInt(d.fsrL) || 0;
+  const fa = parseInt(d.fsrAnkle) || parseInt(d.fsrR) || 0;
   if (safe('vFsrHip')) safe('vFsrHip').textContent = fh;
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
@@ -1510,7 +1518,7 @@ function toggleSet(id) {
 }
 function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
 function saveThresh() { alert(lang==='th'?'บันทึกเกณฑ์แล้ว ✅':'Thresholds saved ✅'); }
-function saveSettings() { alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅'); }
+// saveSettings moved above
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
     alert(lang==='th'?'ล้างข้อมูลแล้ว':'Data cleared');
@@ -1529,7 +1537,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.2] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.1] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 updateDataModeUI();
 
 updateLive();

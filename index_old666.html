@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.3</title>
+<title>Smart HIP DVT System v4.9.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -580,7 +580,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.3</span>
+    <span id="verBadge">v4.9.2</span>
   </div>
 
   <!-- Charging indicator -->
@@ -761,33 +761,6 @@ body{
               </div>
               <div class="text-sm text-muted">ข้อเท้าขวา</div>
             </div>
-          </div>
-        </div>
-
-        <!-- ── Pump Count Card ── -->
-        <div class="card" style="border-color:var(--ok)">
-          <div class="card-title" style="color:var(--ok)">
-            🦶 <span data-th="นับกระดกข้อเท้า (Ankle Pump)" data-en="Ankle Pump Count">นับกระดกข้อเท้า (Ankle Pump)</span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;padding:8px 0">
-            <div>
-              <div style="font-size:2rem;font-weight:800;color:var(--ok)" id="vPumpL">0</div>
-              <div style="font-size:0.75rem;color:var(--text2)">ซ้าย (L)</div>
-            </div>
-            <div style="border-left:1px solid var(--brd);border-right:1px solid var(--brd)">
-              <div style="font-size:2.5rem;font-weight:900;color:var(--ok)" id="vPumpTotal">0</div>
-              <div style="font-size:0.75rem;color:var(--text2)">รวมทั้งหมด</div>
-            </div>
-            <div>
-              <div style="font-size:2rem;font-weight:800;color:var(--ok)" id="vPumpR">0</div>
-              <div style="font-size:0.75rem;color:var(--text2)">ขวา (R)</div>
-            </div>
-          </div>
-          <div class="prog-track" style="margin-top:4px">
-            <div class="prog-fill" id="pPumpTotal" style="width:0%;background:var(--ok);transition:.5s"></div>
-          </div>
-          <div style="font-size:0.7rem;color:var(--text2);text-align:center;margin-top:4px">
-            เป้าหมาย: <span id="vPumpGoal">100</span> ครั้ง/วัน
           </div>
         </div>
 
@@ -1469,16 +1442,6 @@ function updateDashboard(d) {
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
 
-  // Pump Count
-  const pL = parseInt(d.pumpCountL) || 0;
-  const pR = parseInt(d.pumpCountR) || 0;
-  const pT = parseInt(d.pumpTotal)  || (pL + pR);
-  const goal = 100;
-  if (safe('vPumpL'))     safe('vPumpL').textContent     = pL;
-  if (safe('vPumpR'))     safe('vPumpR').textContent     = pR;
-  if (safe('vPumpTotal')) safe('vPumpTotal').textContent = pT;
-  if (safe('pPumpTotal')) safe('pPumpTotal').style.width = Math.min(pT/goal*100, 100)+'%';
-
   // Alert status
   const isAlert = d.alert === true || d.alert === 'TRUE';
   const alertLv = parseInt(d.alertLevel) || 0;
@@ -1566,7 +1529,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.3] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.2] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 updateDataModeUI();
 
 updateLive();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.1</title>
+<title>Smart HIP DVT System v4.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -580,7 +580,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.1</span>
+    <span id="verBadge">v4.9.0</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1305,22 +1305,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function toggleDataMode() {
-  // อ่าน GAS URL จาก input ก่อนถ้ายังไม่ได้ save
-  const inp = document.getElementById('inpGas');
-  if (inp && inp.value.trim()) {
-    gasUrl = inp.value.trim();
-    localStorage.setItem('gasUrl', gasUrl);
-  }
   if (!gasUrl) {
-    alert(lang==='th' ? 'กรุณาใส่ GAS URL ในช่องด้านบนก่อน' : 'Please enter GAS URL first');
+    alert(lang==='th' ? 'กรุณาใส่ GAS URL และบันทึกก่อน' : 'Please enter and save GAS URL first');
     return;
   }
   useRealData = !useRealData;
   localStorage.setItem('useRealData', useRealData.toString());
   updateDataModeUI();
-  if (useRealData) {
-    fetchGASData();
-  }
+  if (useRealData) fetchGASData();
 }
 
 function updateDataModeUI() {
@@ -1518,7 +1510,7 @@ function toggleSet(id) {
 }
 function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
 function saveThresh() { alert(lang==='th'?'บันทึกเกณฑ์แล้ว ✅':'Thresholds saved ✅'); }
-// saveSettings moved above
+function saveSettings() { alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅'); }
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
     alert(lang==='th'?'ล้างข้อมูลแล้ว':'Data cleared');
@@ -1537,7 +1529,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.1] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.0] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 updateDataModeUI();
 
 updateLive();

@@ -546,7 +546,7 @@ body{
 <!-- ══════════════════════════════════════════════════════
      PIN MODAL
 ══════════════════════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="pinModal">
+<div class="modal-overlay" id="pinModal">
   <div class="modal">
     <div class="modal-title" data-th="🔐 ยืนยันตัวตน" data-en="🔐 Authenticate">🔐 ยืนยันตัวตน</div>
     <div class="modal-sub" id="pinSubtitle" data-th="กรอก PIN 4 หลักสำหรับ Admin" data-en="Enter 4-digit Admin PIN">กรอก PIN 4 หลักสำหรับ Admin</div>
@@ -1053,29 +1053,10 @@ body{
             </div>
             <input class="input-field" placeholder="https://script.google.com/..." id="inpGas">
           </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="โหมดข้อมูล" data-en="Data Mode">โหมดข้อมูล</div>
-              <div class="setting-desc" id="dataModeDesc">Mock Data (ยังไม่ได้เชื่อม GAS)</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <span id="dataModeLabel" style="font-size:0.8rem;color:var(--text2)">MOCK</span>
-              <div id="dataModeToggle" onclick="toggleDataMode()"
-                style="width:44px;height:24px;border-radius:12px;background:var(--surface2);
-                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
-                <div id="dataModeThumb"
-                  style="width:20px;height:20px;border-radius:50%;background:#666;
-                         position:absolute;top:2px;left:2px;transition:.3s"></div>
-              </div>
-              <span id="dataModeLabelR" style="font-size:0.8rem;color:var(--ok)">LIVE</span>
-            </label>
-          </div>
-          <div style="padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary" onclick="saveSettings()" data-th="บันทึกและเชื่อมต่อ GAS" data-en="Save & Connect GAS">บันทึกและเชื่อมต่อ GAS</button>
-            <button class="btn-primary" onclick="testGASConn()" style="background:var(--surface2)">ทดสอบการเชื่อมต่อ</button>
+          <div style="padding-top:12px;display:flex;gap:8px">
+            <button class="btn-primary" onclick="saveSettings()" data-th="บันทึกทั้งหมด" data-en="Save All">บันทึกทั้งหมด</button>
             <button class="btn-primary btn-danger" onclick="clearData()" data-th="ล้างข้อมูล" data-en="Clear Data">ล้างข้อมูล</button>
           </div>
-          <div id="gasTestResult" style="margin-top:8px;font-size:0.8rem;color:var(--ok);display:none"></div>
         </div>
       </div>
     </div>
@@ -1304,67 +1285,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (inp && gasUrl) inp.value = gasUrl;
 });
 
-function toggleDataMode() {
-  if (!gasUrl) {
-    alert(lang==='th' ? 'กรุณาใส่ GAS URL และบันทึกก่อน' : 'Please enter and save GAS URL first');
-    return;
-  }
-  useRealData = !useRealData;
-  localStorage.setItem('useRealData', useRealData.toString());
-  updateDataModeUI();
-  if (useRealData) fetchGASData();
-}
-
-function updateDataModeUI() {
-  const toggle = document.getElementById('dataModeToggle');
-  const thumb  = document.getElementById('dataModeThumb');
-  const desc   = document.getElementById('dataModeDesc');
-  const label  = document.getElementById('dataModeLabel');
-  if (!toggle) return;
-  if (useRealData) {
-    toggle.style.background = 'var(--ok)';
-    thumb.style.left = '22px';
-    thumb.style.background = '#fff';
-    if (desc)  desc.textContent = 'Real Data จาก GAS ✅';
-    if (label) label.style.color = 'var(--text2)';
-  } else {
-    toggle.style.background = 'var(--surface2)';
-    thumb.style.left = '2px';
-    thumb.style.background = '#666';
-    if (desc)  desc.textContent = 'Mock Data (จำลอง)';
-    if (label) label.style.color = 'var(--text2)';
-  }
-}
-
-async function testGASConn() {
-  const inp = document.getElementById('inpGas');
-  const url = (inp && inp.value.trim()) || gasUrl;
-  const res = document.getElementById('gasTestResult');
-  if (!url) { alert('กรุณาใส่ GAS URL ก่อน'); return; }
-  if (res) { res.style.display='block'; res.textContent = '🔄 กำลังทดสอบ...'; res.style.color='var(--text2)'; }
-  try {
-    const r = await fetch(url, { method:'GET', redirect:'follow' });
-    const d = await r.json();
-    if (d && d.status === 'ok') {
-      if (res) { res.textContent = '✅ เชื่อมต่อสำเร็จ! boot#'+d.boot; res.style.color='var(--ok)'; }
-    } else {
-      if (res) { res.textContent = '✅ ได้รับข้อมูลแล้ว'; res.style.color='var(--ok)'; }
-    }
-  } catch(err) {
-    if (res) { res.textContent = '❌ Error: '+err.message; res.style.color='var(--danger)'; }
-  }
-}
-
 function saveSettings() {
   const inp = document.getElementById('inpGas');
-  if (inp && inp.value.trim()) {
+  if (inp && inp.value) {
     gasUrl = inp.value.trim();
     localStorage.setItem('gasUrl', gasUrl);
     useRealData = true;
     localStorage.setItem('useRealData', 'true');
-    updateDataModeUI();
-    fetchGASData();
     alert(lang==='th' ? 'บันทึกแล้ว! เชื่อมต่อ GAS สำเร็จ ✅' : 'Saved! GAS connected ✅');
+    fetchGASData();
   } else {
     alert(lang==='th' ? 'กรุณาใส่ GAS URL ก่อน' : 'Please enter GAS URL');
   }
@@ -1530,7 +1459,6 @@ if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
 console.log('[v4.9.0] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
-updateDataModeUI();
 
 updateLive();
 setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle

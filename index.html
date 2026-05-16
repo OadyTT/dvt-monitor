@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.8</title>
+<title>Smart HIP DVT System v4.9.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -628,7 +628,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.8</span>
+    <span id="verBadge">v4.9.9</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1024,6 +1024,21 @@ body{
       <div class="page-subtitle" data-th="จัดการการแจ้งเตือน LINE และการเชื่อมต่อ" data-en="Manage LINE alerts and connections">จัดการการแจ้งเตือน LINE และการเชื่อมต่อ</div>
 
       <div class="grid-2">
+        <!-- Pending Users Card (Admin only) -->
+        <div class="card" style="border-color:var(--warn)">
+          <div class="card-title" style="color:var(--warn)">
+            ⏳ รออนุมัติ LINE Users
+          </div>
+          <div id="pendingList" style="margin-bottom:10px">
+            <div style="font-size:.82rem;color:var(--text2)">กด Refresh เพื่อโหลดรายชื่อ</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-primary" onclick="loadPendingUsers()" style="background:var(--surface2)">
+              🔄 Refresh รายชื่อ
+            </button>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title" data-th="LINE Messaging API" data-en="LINE Messaging API">LINE Messaging API</div>
           <div class="setting-row">
@@ -1725,6 +1740,60 @@ function toggleSet(id) {
   el.classList.toggle('on');
 }
 function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
+// ── Pending Users (Admin) ──────────────────────────────────
+async function loadPendingUsers() {
+  if (!gasUrl) { alert('กรุณาตั้งค่า GAS URL ก่อน'); return; }
+  const el = document.getElementById('pendingList');
+  if (!el) return;
+  el.innerHTML = '<div style="font-size:.82rem;color:var(--text2)">กำลังโหลด...</div>';
+  try {
+    const res = await fetch(gasUrl + '?action=getPending', { redirect:'follow' });
+    const users = await res.json();
+    if (!Array.isArray(users) || users.length === 0) {
+      el.innerHTML = '<div style="font-size:.82rem;color:var(--ok)">✅ ไม่มีรายชื่อรออนุมัติ</div>';
+      return;
+    }
+    el.innerHTML = users.map(u => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--brd)">
+        <div style="flex:1">
+          <div style="font-size:.9rem;font-weight:600;color:var(--text)">${u.displayName||'ไม่ระบุ'}</div>
+          <div style="font-size:.72rem;color:var(--text2);font-family:monospace">${u.userId}</div>
+          <div style="font-size:.72rem;color:var(--text2)">${u.requestedAt||''}</div>
+        </div>
+        <button onclick="approveUser('${u.userId}')"
+          style="background:var(--ok);color:#fff;border:none;border-radius:8px;
+                 padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
+          ✅ อนุมัติ
+        </button>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:.82rem;color:var(--danger)">Error: '+e.message+'</div>';
+  }
+}
+
+async function approveUser(uid) {
+  if (!gasUrl) return;
+  if (!confirm('อนุมัติ User: ' + uid + ' ?')) return;
+  try {
+    const res = await fetch(gasUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'approveUser', userId:uid}),
+      redirect: 'follow',
+    });
+    const d = await res.json();
+    if (d.status === 'ok') {
+      alert('✅ อนุมัติสำเร็จ! User จะได้รับแจ้งเตือนแล้ว');
+      loadPendingUsers();
+    } else {
+      alert('Error: ' + (d.error || d.message));
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
 async function saveThresh() {
   const angle    = parseFloat(document.getElementById('inpAngle')?.value)    || 45;
   const fsr      = parseInt(document.getElementById('inpFsr')?.value)         || 500;
@@ -1812,7 +1881,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.8] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.9] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');

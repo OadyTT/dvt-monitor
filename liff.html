@@ -3,146 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Happy HIP — ลงทะเบียนรับแจ้งเตือน LINE</title>
+<title>Happy HIP — ลงทะเบียนรับแจ้งเตือน</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  background:linear-gradient(135deg,#e8f5e9 0%,#f1f8e9 100%);
+  background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
   min-height:100vh;font-family:'Sarabun',sans-serif;
   display:flex;align-items:center;justify-content:center;padding:20px;
 }
 .card{
-  background:#fff;border-radius:24px;padding:32px 24px;
+  background:#fff;border-radius:24px;padding:28px 22px;
   width:100%;max-width:380px;
-  box-shadow:0 8px 32px rgba(0,0,0,.12);
+  box-shadow:0 8px 32px rgba(0,0,0,.1);
+  text-align:center;
 }
-.logo{text-align:center;margin-bottom:24px}
 .logo-icon{
-  width:80px;height:80px;border-radius:50%;
+  width:72px;height:72px;border-radius:50%;
   background:linear-gradient(135deg,#e8f5e9,#c8e6c9);
   display:flex;align-items:center;justify-content:center;
-  font-size:2.2rem;margin:0 auto 12px;
+  font-size:2rem;margin:0 auto 12px;
 }
-.logo-title{font-size:1.2rem;font-weight:700;color:#1b5e20}
-.logo-sub{font-size:.85rem;color:#777;margin-top:4px}
+.logo-title{font-size:1.1rem;font-weight:700;color:#1b5e20}
+.logo-sub{font-size:.82rem;color:#777;margin-top:4px;margin-bottom:20px}
 
-.steps{margin:20px 0}
-.step{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
-.step-num{
-  width:32px;height:32px;border-radius:50%;
-  background:#06c755;color:#fff;font-size:.9rem;font-weight:700;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+/* States */
+.state{display:none}
+.state.active{display:block}
+
+/* Loading */
+.spinner{
+  width:44px;height:44px;border:3px solid #e8f5e9;
+  border-top-color:#4CAF50;border-radius:50%;
+  animation:spin .8s linear infinite;margin:20px auto;
 }
-.step-content{}
-.step-title{font-size:.95rem;font-weight:700;color:#222;margin-bottom:2px}
-.step-desc{font-size:.82rem;color:#666;line-height:1.5}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-text{font-size:.88rem;color:#777;margin-bottom:8px}
 
-.add-btn{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  background:#06c755;color:#fff;border:none;border-radius:16px;
-  padding:16px;width:100%;font-size:1.1rem;font-weight:700;
-  font-family:'Sarabun',sans-serif;cursor:pointer;
-  text-decoration:none;margin:8px 0;
-  box-shadow:0 4px 16px rgba(6,199,85,.35);
-  transition:transform .2s,box-shadow .2s;
+/* Profile */
+.avatar{
+  width:80px;height:80px;border-radius:50%;
+  border:3px solid #4CAF50;margin:0 auto 10px;
+  display:block;object-fit:cover;
 }
-.add-btn:active{transform:scale(.97);box-shadow:0 2px 8px rgba(6,199,85,.3)}
-
-.divider{
-  display:flex;align-items:center;gap:10px;margin:16px 0;color:#ccc;font-size:.8rem;
-}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:#eee}
-
-.info-box{
+.display-name{font-size:1rem;font-weight:700;color:#222;margin-bottom:4px}
+.uid-box{
   background:#f0fdf4;border:1.5px solid #86efac;
-  border-radius:12px;padding:14px;margin-top:12px;
+  border-radius:10px;padding:10px 14px;
+  font-family:monospace;font-size:.82rem;color:#166534;
+  margin:10px 0;word-break:break-all;text-align:left;
 }
-.info-title{font-size:.82rem;font-weight:700;color:#15803d;margin-bottom:8px}
-.info-item{display:flex;gap:8px;font-size:.8rem;color:#555;margin-bottom:5px;line-height:1.5}
-.info-item:last-child{margin-bottom:0}
 
-.oa-id{
-  text-align:center;margin:12px 0;
-  font-size:.85rem;color:#777;
+/* Success */
+.success-icon{font-size:3rem;margin:10px 0}
+.success-title{font-size:1.1rem;font-weight:700;color:#15803d;margin-bottom:6px}
+.success-desc{font-size:.85rem;color:#555;line-height:1.6;margin-bottom:16px}
+.alert-list{
+  background:#f0fdf4;border:1.5px solid #86efac;
+  border-radius:10px;padding:12px 14px;text-align:left;
+  margin-bottom:16px;
 }
-.oa-id strong{color:#06c755;font-family:monospace;font-size:1rem}
+.alert-item{font-size:.82rem;color:#555;margin-bottom:5px;line-height:1.5}
+.alert-item:last-child{margin-bottom:0}
 
-.footer-note{
-  text-align:center;font-size:.75rem;color:#999;
-  margin-top:16px;line-height:1.6;
+/* Already registered */
+.already-icon{font-size:3rem;margin:10px 0}
+.already-title{font-size:1rem;font-weight:700;color:#1d4ed8;margin-bottom:6px}
+
+/* Error */
+.err-icon{font-size:2.5rem;margin:10px 0}
+.err-title{font-size:.95rem;font-weight:700;color:#c62828;margin-bottom:6px}
+.err-desc{font-size:.8rem;color:#777;line-height:1.6}
+
+/* Buttons */
+.btn{
+  display:block;width:100%;padding:13px;border:none;
+  border-radius:12px;font-size:.95rem;font-weight:700;
+  font-family:'Sarabun',sans-serif;cursor:pointer;
+  text-decoration:none;margin-top:10px;
 }
+.btn-green{background:#06c755;color:#fff}
+.btn-gray{background:#f5f5f5;color:#444}
+.btn:active{transform:scale(.97)}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="logo">
-    <div class="logo-icon">🛏️</div>
-    <div class="logo-title">Happy HIP DVT Monitor</div>
-    <div class="logo-sub">ลงทะเบียนรับแจ้งเตือนผ่าน LINE OA</div>
+  <div class="logo-icon">🛏️</div>
+  <div class="logo-title">Happy HIP DVT Monitor</div>
+  <div class="logo-sub">ลงทะเบียนรับแจ้งเตือนผ่าน LINE</div>
+
+  <!-- Loading -->
+  <div class="state active" id="stLoading">
+    <div class="spinner"></div>
+    <div class="load-text">กำลังตรวจสอบข้อมูล LINE...</div>
   </div>
 
-  <!-- Steps -->
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-content">
-        <div class="step-title">เพิ่มเพื่อน LINE OA</div>
-        <div class="step-desc">กดปุ่มด้านล่างเพื่อเพิ่มเพื่อน Happy HIP Monitor</div>
-      </div>
+  <!-- Confirm Register -->
+  <div class="state" id="stConfirm">
+    <img id="avatar" class="avatar" src="" alt="">
+    <div class="display-name" id="dispName">—</div>
+    <div class="uid-box" id="dispUid">—</div>
+    <div style="font-size:.82rem;color:#555;margin-bottom:12px">
+      กดปุ่มด้านล่างเพื่อลงทะเบียนรับแจ้งเตือนจากระบบ Happy HIP DVT
     </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-content">
-        <div class="step-title">ส่งข้อความใดก็ได้</div>
-        <div class="step-desc">พิมพ์อะไรก็ได้ เช่น "สวัสดี" หรือ "ลงทะเบียน" ส่งเข้า OA</div>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-content">
-        <div class="step-title">รับแจ้งเตือนอัตโนมัติ</div>
-        <div class="step-desc">ระบบจะลงทะเบียนให้ทันที และส่งแจ้งเตือนเมื่อตรวจพบความผิดปกติ</div>
-      </div>
-    </div>
+    <button class="btn btn-green" onclick="doRegister()">
+      ✅ ลงทะเบียนรับแจ้งเตือน
+    </button>
+    <button class="btn btn-gray" onclick="liff.closeWindow()">ยกเลิก</button>
   </div>
 
-  <!-- Add Friend Button -->
-  <a class="add-btn" id="addFriendBtn" href="#" target="_blank">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-      <path d="M12 2C6.48 2 2 6.03 2 11c0 3.18 1.63 5.99 4.16 7.73-.18.65-.66 2.37-.75 2.74-.11.44.16.44.34.32.14-.09 2.17-1.47 3.05-2.07.38.05.77.08 1.17.08 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
-    </svg>
-    เพิ่มเพื่อน Happy HIP OA
-  </a>
-
-  <div class="oa-id">LINE OA ID: <strong id="oaIdDisplay">@531ewyor</strong></div>
-
-  <div class="divider">หรือค้นหาใน LINE</div>
-
-  <!-- Info Box -->
-  <div class="info-box">
-    <div class="info-title">🔔 จะได้รับแจ้งเตือนเมื่อ</div>
-    <div class="info-item">⚠️ ตรวจพบท่านอนสะโพกผิดปกติ</div>
-    <div class="info-item">🦶 ถึงเวลากระดกข้อเท้า (Ankle Pump)</div>
-    <div class="info-item">🔋 แบตเตอรี่อุปกรณ์ต่ำ</div>
-    <div class="info-item">🚨 ไม่มีการตอบสนองนาน 2+ นาที</div>
+  <!-- Registering -->
+  <div class="state" id="stRegistering">
+    <div class="spinner"></div>
+    <div class="load-text">กำลังลงทะเบียน...</div>
   </div>
 
-  <div class="footer-note">
-    Happy HIP DVT Monitor<br>
-    ระบบหมอนอัจฉริยะสำหรับผู้ป่วยหลังผ่าตัดสะโพก
+  <!-- Pending (รอ Admin Approve) -->
+  <div class="state" id="stSuccess">
+    <div class="success-icon">⏳</div>
+    <div class="success-title" style="color:#d97706">ส่งคำขอสำเร็จ!</div>
+    <div class="success-desc">
+      รอ Admin อนุมัติ<br>
+      เมื่ออนุมัติแล้วจะได้รับแจ้งเตือนจาก LINE OA
+    </div>
+    <div class="alert-list" style="border-color:#fcd34d;background:#fffbeb">
+      <div class="alert-item">📋 User ID บันทึกแล้ว รอการอนุมัติ</div>
+      <div class="alert-item">📱 Admin จะแจ้งกลับทาง LINE</div>
+      <div class="alert-item">✅ หลังอนุมัติ รับแจ้งเตือนอัตโนมัติ</div>
+    </div>
+    <button class="btn btn-green" onclick="liff.closeWindow()">ปิดหน้าต่าง</button>
+  </div>
+
+  <!-- Approved -->
+  <div class="state" id="stApproved">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">ได้รับการอนุมัติแล้ว!</div>
+    <div class="success-desc">
+      คุณพร้อมรับแจ้งเตือนจากระบบ<br>Happy HIP DVT โดยอัตโนมัติ
+    </div>
+    <div class="alert-list">
+      <div class="alert-item">⚠️ ตรวจพบท่านอนสะโพกผิดปกติ</div>
+      <div class="alert-item">🦶 ถึงเวลากระดกข้อเท้า</div>
+      <div class="alert-item">🔋 แบตเตอรี่อุปกรณ์ต่ำ</div>
+      <div class="alert-item">🚨 ไม่ตอบสนองนาน 2+ นาที</div>
+    </div>
+    <button class="btn btn-green" onclick="liff.closeWindow()">ปิดหน้าต่าง</button>
+  </div>
+
+  <!-- Already Registered -->
+  <div class="state" id="stAlready">
+    <div class="already-icon">✅</div>
+    <div class="already-title">คุณลงทะเบียนแล้ว!</div>
+    <div style="font-size:.82rem;color:#555;line-height:1.6;margin:8px 0 16px">
+      ระบบบันทึกข้อมูลของคุณไว้แล้ว<br>
+      และจะส่งแจ้งเตือนให้อัตโนมัติ
+    </div>
+    <button class="btn btn-green" onclick="liff.closeWindow()">ปิดหน้าต่าง</button>
+  </div>
+
+  <!-- Error -->
+  <div class="state" id="stError">
+    <div class="err-icon">⚠️</div>
+    <div class="err-title">เกิดข้อผิดพลาด</div>
+    <div class="err-desc" id="errDesc">กรุณาเปิดลิงก์ผ่านแอป LINE</div>
+    <button class="btn btn-gray" onclick="location.reload()">ลองใหม่</button>
   </div>
 </div>
 
 <script>
-// ── ตั้งค่า LINE OA Basic ID ─────────────────────────────────
-const LINE_OA_BASIC_ID = '@531ewyor'; // ← Basic ID ของ LINE OA
-// ─────────────────────────────────────────────────────────────
+// ── Config ──────────────────────────────────────────────────
+const LIFF_ID  = "2010082083-BF6wSZyp"; // ← LIFF ID
+const GAS_URL  = "https://script.google.com/macros/s/AKfycbzsuSDNOCQZr9ocP7xoFnTzkY_IUN-7nve7ewlj0Wm0LKOFs6ubhZ-xkQuzx1bAUqK3Bw/exec";
+// ────────────────────────────────────────────────────────────
 
-// Set Add Friend URL
-const addUrl = 'https://line.me/R/ti/p/' + LINE_OA_BASIC_ID;
-document.getElementById('addFriendBtn').href = addUrl;
-document.getElementById('oaIdDisplay').textContent = LINE_OA_BASIC_ID;
+let userProfile = null;
+
+function show(id) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+
+    userProfile = await liff.getProfile();
+
+    document.getElementById('avatar').src  = userProfile.pictureUrl || '';
+    document.getElementById('dispName').textContent = userProfile.displayName;
+    document.getElementById('dispUid').textContent  = userProfile.userId;
+
+    show('stConfirm');
+  } catch(e) {
+    show('stError');
+    document.getElementById('errDesc').textContent = e.message || 'กรุณาเปิดผ่าน LINE App';
+    console.error(e);
+  }
+}
+
+async function doRegister() {
+  if (!userProfile) return;
+  show('stRegistering');
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:      'saveUser',
+        userId:      userProfile.userId,
+        displayName: userProfile.displayName,
+        pictureUrl:  userProfile.pictureUrl || '',
+      }),
+      redirect: 'follow',
+    });
+
+    const data = await res.json();
+    console.log('[GAS]', data);
+
+    if (data.status === 'approved') {
+      show('stApproved');
+    } else if (data.status === 'already_registered' || data.status === 'pending') {
+      show(data.status === 'approved' ? 'stApproved' : 'stAlready');
+    } else if (data.status === 'ok' || data.status === 'pending') {
+      show('stSuccess');
+    } else {
+      throw new Error(data.message || 'GAS error');
+    }
+  } catch(e) {
+    show('stError');
+    document.getElementById('errDesc').textContent = 'ลงทะเบียนไม่สำเร็จ: ' + e.message;
+    console.error(e);
+  }
+}
+
+init();
 </script>
 </body>
 </html>

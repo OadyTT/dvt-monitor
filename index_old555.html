@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.5</title>
+<title>Smart HIP DVT System v4.9.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -580,7 +580,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.5</span>
+    <span id="verBadge">v4.9.3</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1033,20 +1033,6 @@ body{
               <div class="setting-desc" data-th="0-255 (AH024 PWM)" data-en="0-255 (AH024 PWM)">0-255 (AH024 PWM)</div>
             </div>
             <input class="input-field" value="200" id="inpPwm" style="width:80px" type="number">
-          </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="เป้ากระดกข้อเท้า/วัน" data-en="Ankle Pump Goal/Day">เป้ากระดกข้อเท้า/วัน</div>
-              <div class="setting-desc" data-th="ครั้ง (default 100)" data-en="times (default 100)">ครั้ง (default 100)</div>
-            </div>
-            <input class="input-field" value="100" id="inpPumpGoal" style="width:80px" type="number">
-          </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="มุม Ankle Pump (ขึ้น)" data-en="Pump Up Threshold">มุม Ankle Pump (กระดกขึ้น)</div>
-              <div class="setting-desc" data-th="องศา (default 20°)" data-en="Degrees (default 20°)">องศา — ตรงนี้ปรับใน Firmware</div>
-            </div>
-            <input class="input-field" value="20" id="inpPumpThresh" style="width:80px" type="number">
           </div>
           <div style="padding-top:12px">
             <button class="btn-primary" onclick="saveThresh()" data-th="บันทึกเกณฑ์" data-en="Save Thresholds">บันทึกเกณฑ์</button>
@@ -1560,74 +1546,7 @@ function toggleSet(id) {
   el.classList.toggle('on');
 }
 function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
-async function saveThresh() {
-  const angle    = parseFloat(document.getElementById('inpAngle')?.value)    || 45;
-  const fsr      = parseInt(document.getElementById('inpFsr')?.value)         || 500;
-  const battLow  = parseFloat(document.getElementById('inpBattLow')?.value)  || 15;
-  const pwm      = parseInt(document.getElementById('inpPwm')?.value)         || 200;
-  const pumpGoal = parseInt(document.getElementById('inpPumpGoal')?.value)    || 100;
-
-  // 1. บันทึกใน localStorage
-  localStorage.setItem('thresh_angle',   angle);
-  localStorage.setItem('thresh_fsr',     fsr);
-  localStorage.setItem('thresh_battLow', battLow);
-  localStorage.setItem('thresh_pwm',     pwm);
-  localStorage.setItem('thresh_pumpGoal',pumpGoal);
-
-  const vg = document.getElementById('vPumpGoal');
-  if (vg) vg.textContent = pumpGoal;
-
-  // 2. ส่งไป GAS ถ้ามี URL
-  if (gasUrl) {
-    try {
-      const res = await fetch(gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:       'saveConfig',
-          angleThresh:  angle,
-          fsrThresh:    fsr,
-          battLow:      battLow,
-          pwmMotor:     pwm,
-          pumpGoal:     pumpGoal,
-          pumpUpThresh: parseFloat(document.getElementById('inpPumpThresh')?.value)||20,
-        }),
-        redirect: 'follow',
-      });
-      const d = await res.json().catch(()=>({}));
-      const ok = d.status === 'ok';
-      alert(lang==='th'
-        ? `บันทึกเกณฑ์แล้ว ✅\nมุมสะโพก: ${angle}°  FSR: ${fsr}\nแบตต่ำ: ${battLow}%  Goal: ${pumpGoal} ครั้ง\n${ok ? '☁️ ส่งไป GAS สำเร็จ — ESP32 จะใช้ค่าใหม่ Boot หน้า' : '⚠️ บันทึก Local แล้ว แต่ GAS ไม่ตอบ'}`
-        : `Thresholds saved ✅\n${ok ? 'Synced to GAS!' : 'Local only'}`);
-    } catch(err) {
-      alert(lang==='th'
-        ? `บันทึก Local แล้ว ✅\n⚠️ GAS Error: ${err.message}`
-        : `Saved locally ✅\nGAS Error: ${err.message}`);
-    }
-  } else {
-    alert(lang==='th'
-      ? `บันทึก Local แล้ว ✅\n(ใส่ GAS URL เพื่อส่งไป ESP32 ด้วย)`
-      : 'Saved locally ✅ (Add GAS URL to sync ESP32)');
-  }
-}
-
-function loadThresh() {
-  const angle    = localStorage.getItem('thresh_angle')    || 45;
-  const fsr      = localStorage.getItem('thresh_fsr')      || 500;
-  const battLow  = localStorage.getItem('thresh_battLow')  || 15;
-  const pwm      = localStorage.getItem('thresh_pwm')      || 200;
-  const pumpGoal = localStorage.getItem('thresh_pumpGoal') || 100;
-
-  const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
-  set('inpAngle',    angle);
-  set('inpFsr',      fsr);
-  set('inpBattLow',  battLow);
-  set('inpPwm',      pwm);
-  set('inpPumpGoal', pumpGoal);
-
-  const vg = document.getElementById('vPumpGoal');
-  if (vg) vg.textContent = pumpGoal;
-}
+function saveThresh() { alert(lang==='th'?'บันทึกเกณฑ์แล้ว ✅':'Thresholds saved ✅'); }
 function saveSettings() { alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅'); }
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
@@ -1647,9 +1566,8 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.5] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.3] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 updateDataModeUI();
-loadThresh();
 
 updateLive();
 setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle

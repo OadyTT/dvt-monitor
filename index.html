@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.5</title>
+<title>Smart HIP DVT System v4.9.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -37,10 +37,10 @@
   --warn:      #e3b341;
   --ok:        #39d353;
   --charging:  #ffa657;
-  --font-size: 14px;
+  --font-size: 16px;
 }
-.fs-sm  { --font-size: 12px; }
-.fs-md  { --font-size: 14px; }
+.fs-sm  { --font-size: 14px; }
+.fs-md  { --font-size: 16px; }
 .fs-lg  { --font-size: 16px; }
 .fs-xl  { --font-size: 18px; }
 
@@ -580,7 +580,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.5</span>
+    <span id="verBadge">v4.9.6</span>
   </div>
 
   <!-- Charging indicator -->
@@ -999,8 +999,18 @@ body{
             </div>
             <input class="input-field" placeholder="Bearer token..." id="inpToken" type="password">
           </div>
-          <div style="padding-top:12px">
+          <div style="padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn-primary" onclick="saveLine()" data-th="บันทึก LINE" data-en="Save LINE">บันทึก LINE</button>
+            <a href="/liff.html" target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;
+                      background:#06c755;color:#fff;border-radius:8px;font-size:.85rem;
+                      text-decoration:none;font-weight:600">
+              🪪 ดู LINE User ID
+            </a>
+          </div>
+          <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.8rem;color:var(--text2)">
+            💡 Staff ใช้ลิงก์ <strong style="color:var(--ok)">ดู LINE User ID</strong> เพื่อหา User ID
+            แล้วนำมาใส่ในช่องแจ้งเตือนข้างบน
           </div>
         </div>
 
@@ -1134,12 +1144,47 @@ let PIN  = '1234';
 let pinBuffer = '';
 let isCharging = false;
 
+// เตียงจริง 1 เตียง — อัปเดตจาก GAS
 const bedData = [
-  {id:1, name:'เตียง 101', patient:'นาย ก.',   status:'danger', hipX:32, hipY:15, ankL:28, ankR:8,  fsrH:420, fsrA:280, batt:78},
-  {id:2, name:'เตียง 102', patient:'นาง ข.',   status:'ok',     hipX:12, hipY:6,  ankL:5,  ankR:4,  fsrH:1840,fsrA:1200,batt:65},
-  {id:3, name:'เตียง 103', patient:'นาย ค.',   status:'warn',   hipX:25, hipY:11, ankL:22, ankR:18, fsrH:900, fsrA:750, batt:42},
-  {id:4, name:'เตียง 104', patient:'นาง ง.',   status:'offline',hipX:0,  hipY:0,  ankL:0,  ankR:0,  fsrH:0,   fsrA:0,   batt:91},
+  {id:1, name:'เตียง B01', patient:'ผู้ป่วย',
+   status:'ok', hipX:0, hipY:0, ankL:0, ankR:0,
+   fsrH:0, fsrA:0, batt:0,
+   pumpL:0, pumpR:0, pumpTotal:0},
 ];
+// อัปเดต bedData[0] จาก GAS real data
+function updateBedFromGAS(d) {
+  if (!d || d.error) return;
+  const isAlert = d.alert===true || d.alert==='TRUE';
+  const hx = Math.abs(parseFloat(d.hipAngleX)||0);
+  const hy = Math.abs(parseFloat(d.hipAngleY)||0);
+  const thresh = parseFloat(localStorage.getItem('thresh_angle')||45);
+  const fsrT   = parseInt(localStorage.getItem('thresh_fsr')||500);
+  const fL = parseInt(d.fsrL)||0;
+  const fR = parseInt(d.fsrR)||0;
+  let st = 'ok';
+  if (isAlert || hx>thresh || hy>thresh) st='danger';
+  else if (fL<fsrT && fR<fsrT && (fL+fR)>0) st='warn';
+  bedData[0] = {
+    id:1, name:'เตียง '+(d.bedId||'B01'),
+    patient: localStorage.getItem('patientName')||'ผู้ป่วย',
+    status: st,
+    hipX: parseFloat(d.hipAngleX)||0,
+    hipY: parseFloat(d.hipAngleY)||0,
+    ankL: Math.abs(parseFloat(d.ankLAngleX)||0),
+    ankR: Math.abs(parseFloat(d.ankRAngleX)||0),
+    fsrH: fL, fsrA: fR,
+    batt: parseFloat(d.battPct)||0,
+    pumpL: parseInt(d.pumpCountL)||0,
+    pumpR: parseInt(d.pumpCountR)||0,
+    pumpTotal: parseInt(d.pumpTotal)||0,
+  };
+  renderBeds();
+  // อัปเดต stat cards
+  const safe = id => document.getElementById(id);
+  if(safe('svBeds'))   safe('svBeds').textContent   = '1';
+  if(safe('svAlert'))  safe('svAlert').textContent  = isAlert?'1':'0';
+  if(safe('svNormal')) safe('svNormal').textContent = isAlert?'0':'1';
+}
 
 const alertLog = [
   {time:'09:42:15', bed:'เตียง 101', type:'danger', detail:'ท่านอนผิด Hip X=32° (>30°)', line:'✅'},
@@ -1263,12 +1308,12 @@ function renderBeds() {
           <span class="bed-sensor-val ${b.ankL>30?'red':''}">${b.ankL}° / ${b.ankR}°</span>
         </div>
         <div class="bed-sensor-row">
-          <span class="bed-sensor-label">FSR หมอน ซ้าย</span>
-          <span class="bed-sensor-val ${b.fsrH<500?'red':''}">${b.fsrH}</span>
+          <span class="bed-sensor-label">FSR ซ้าย/ขวา</span>
+          <span class="bed-sensor-val ${(b.fsrH<500&&b.fsrA<500)?'red':''}">${b.fsrH}/${b.fsrA}</span>
         </div>
         <div class="bed-sensor-row">
-          <span class="bed-sensor-label">FSR หมอน ขวา</span>
-          <span class="bed-sensor-val ${b.fsrA<500?'red':''}">${b.fsrA}</span>
+          <span class="bed-sensor-label">Pump วันนี้</span>
+          <span class="bed-sensor-val green">${b.pumpTotal||0} ครั้ง</span>
         </div>
         <div class="bed-sensor-row">
           <span class="bed-sensor-label">Battery</span>
@@ -1493,6 +1538,9 @@ function updateDashboard(d) {
   if (safe('vPumpTotal')) safe('vPumpTotal').textContent = pT;
   if (safe('pPumpTotal')) safe('pPumpTotal').style.width = Math.min(pT/goal*100, 100)+'%';
 
+  // อัปเดต bed card จาก real data
+  updateBedFromGAS(d);
+
   // Alert status
   const isAlert = d.alert === true || d.alert === 'TRUE';
   const alertLv = parseInt(d.alertLevel) || 0;
@@ -1647,7 +1695,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.5] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.6] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 updateDataModeUI();
 loadThresh();
 

@@ -108,6 +108,24 @@ body{
 }
 .how-text{font-size:.78rem;color:#666;line-height:1.5}
 
+/* Add LINE OA button */
+.add-oa-box{
+  background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
+  border:2px solid #4CAF50;border-radius:14px;
+  padding:16px;margin-top:14px;text-align:center;
+}
+.add-oa-title{font-size:.82rem;font-weight:700;color:#1b5e20;margin-bottom:10px}
+.add-oa-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#06c755;color:#fff;border:none;
+  border-radius:12px;padding:12px 20px;
+  font-size:.9rem;font-weight:700;font-family:'Sarabun',sans-serif;
+  cursor:pointer;text-decoration:none;width:100%;
+  justify-content:center;margin-bottom:8px;
+}
+.add-oa-btn:active{transform:scale(.97)}
+.add-oa-sub{font-size:.72rem;color:#666;line-height:1.5}
+
 /* Error state */
 #error{display:none;text-align:center;padding:10px 0}
 .err-icon{font-size:2.5rem;margin-bottom:8px}
@@ -164,6 +182,24 @@ body{
       <div class="how-step">
         <div class="how-num">3</div>
         <div class="how-text">Admin เพิ่มในหน้า <strong>Admin Setup 👑</strong> ของ Web App</div>
+      </div>
+    </div>
+
+    <!-- Add LINE OA -->
+    <div class="add-oa-box">
+      <div class="add-oa-title">📲 เพิ่มเพื่อน LINE OA เพื่อรับแจ้งเตือน</div>
+      <a class="add-oa-btn" id="addOaBtn"
+         href="https://line.me/R/ti/p/@happyhip"
+         target="_blank">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C6.48 2 2 6.03 2 11c0 3.18 1.63 5.99 4.16 7.73-.18.65-.66 2.37-.75 2.74-.11.44.16.44.34.32.14-.09 2.17-1.47 3.05-2.07.38.05.77.08 1.17.08 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
+        </svg>
+        เพิ่มเพื่อน Happy HIP OA
+      </a>
+      <div class="add-oa-sub">
+        หลังเพิ่มเพื่อนแล้ว ส่งข้อความอะไรก็ได้เข้า OA<br>
+        ระบบจะตอบกลับ User ID ให้อัตโนมัติ<br>
+        จากนั้นนำ ID ด้านบนให้ Admin ลงทะเบียน
       </div>
     </div>
   </div>
@@ -234,6 +270,12 @@ function copyId() {
     alert('คัดลอกแล้ว: ' + id);
   });
 }
+
+// Set LINE OA add friend URL
+// แก้ @happyhip เป็น Basic ID ของ LINE OA จริงๆ
+const LINE_OA_BASIC_ID = '@531ewyor';
+document.getElementById('addOaBtn').href = 
+  'https://line.me/R/ti/p/' + LINE_OA_BASIC_ID;
 
 init();
 </script>

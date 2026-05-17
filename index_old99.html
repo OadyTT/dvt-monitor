@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.0</title>
+<title>Smart HIP DVT System v4.9.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -63,16 +63,6 @@ body{
 /* ═══════════════════════════════════════════
    TOPBAR
 ═══════════════════════════════════════════ */
-.hamburger{
-  display:none;
-  align-items:center;justify-content:center;
-  width:36px;height:36px;border-radius:8px;
-  background:var(--surface2);border:1px solid var(--brd);
-  cursor:pointer;flex-shrink:0;
-  font-size:1.1rem;color:var(--text);
-  margin-right:8px;
-}
-
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:100;
   height:56px;
@@ -261,57 +251,7 @@ body{
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-/* ══ MOBILE RESPONSIVE ══════════════════════ */
-@media(max-width:768px){
-  .grid-4{grid-template-columns:repeat(2,1fr)}
-  .grid-3{grid-template-columns:1fr}
-  .grid-2{grid-template-columns:1fr}
-
-  /* Sidebar ซ่อนไว้ เปิดด้วย hamburger */
-  .sidebar{
-    width:240px;
-    transform:translateX(-100%);
-    transition:transform .25s ease;
-    z-index:200;top:0;padding-top:72px;
-  }
-  .sidebar.open{transform:translateX(0)}
-
-  /* Overlay เมื่อ menu เปิด */
-  .nav-overlay{
-    display:none;
-    position:fixed;inset:0;
-    background:rgba(0,0,0,.5);
-    z-index:199;
-  }
-  .nav-overlay.show{display:block}
-
-  .main{margin-left:0 !important}
-
-  /* Hamburger button */
-  .hamburger{
-    display:flex !important;
-  }
-
-  /* Header compact */
-  .hamburger{
-  display:none;
-  align-items:center;justify-content:center;
-  width:36px;height:36px;border-radius:8px;
-  background:var(--surface2);border:1px solid var(--brd);
-  cursor:pointer;flex-shrink:0;
-  font-size:1.1rem;color:var(--text);
-  margin-right:8px;
-}
-
-.topbar{padding:0 12px}
-  #verBadge{display:none}
-
-  /* Cards full width */
-  .card{border-radius:12px}
-  .stat-card{padding:14px}
-}
-
-@media(max-width:900px) and (min-width:769px){
+@media(max-width:900px){
   .grid-4{grid-template-columns:repeat(2,1fr)}
   .grid-3{grid-template-columns:repeat(2,1fr)}
   .grid-2{grid-template-columns:1fr}
@@ -688,7 +628,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.10.0</span>
+    <span id="verBadge">v4.9.9</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1350,33 +1290,6 @@ function setLang(l) {
 // ═══════════════════════════════════════════
 // FONT SIZE
 // ═══════════════════════════════════════════
-// ── Mobile Navigation ──────────────────────────────────────
-function toggleNav() {
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('navOverlay');
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('show');
-}
-
-function closeNav() {
-  document.querySelector('.sidebar').classList.remove('open');
-  document.getElementById('navOverlay').classList.remove('show');
-}
-
-// ปิด nav เมื่อกด nav item บนมือถือ
-const origNav = window.nav;
-function nav(page) {
-  if (window.innerWidth <= 768) closeNav();
-  if (typeof origNav === 'function') origNav(page);
-  else {
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    const pg = document.getElementById('page-'+page);
-    if (pg) pg.classList.add('active');
-    event && event.currentTarget && event.currentTarget.classList.add('active');
-  }
-}
-
 function setFs(sz) {
   // ลบ class fs- เดิมออกจาก html ก่อน
   document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
@@ -1968,7 +1881,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.10.0] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.9.9] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');

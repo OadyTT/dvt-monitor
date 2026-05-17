@@ -94,6 +94,23 @@ body{
   <div class="logo-title">Happy HIP DVT Monitor</div>
   <div class="logo-sub">ลงทะเบียนรับแจ้งเตือนผ่าน LINE</div>
 
+  <!-- Tab switcher -->
+  <div style="display:flex;gap:0;border:1.5px solid #06c755;border-radius:10px;overflow:hidden;margin:14px 0 0">
+    <button id="tab1" onclick="switchTab(1)"
+      style="flex:1;padding:9px 4px;border:none;background:#06c755;color:#fff;
+             font-family:'Sarabun',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">
+      📱 ลงทะเบียนผ่านลิงก์
+    </button>
+    <button id="tab2" onclick="switchTab(2)"
+      style="flex:1;padding:9px 4px;border:none;background:#fff;color:#06c755;
+             font-family:'Sarabun',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">
+      💬 ส่งข้อความ LINE OA
+    </button>
+  </div>
+
+  <!-- TAB 1: LIFF -->
+  <div id="tabContent1">
+
   <!-- Loading -->
   <div class="state active" id="stLoading">
     <div class="spinner"></div>
@@ -170,7 +187,69 @@ body{
     <div class="err-desc" id="errDesc">กรุณาเปิดลิงก์ผ่านแอป LINE</div>
     <button class="btn btn-gray" onclick="location.reload()">ลองใหม่</button>
   </div>
-</div>
+</div><!-- end tabContent1 -->
+
+  <!-- TAB 2: LINE OA Message -->
+  <div id="tabContent2" style="display:none">
+    <div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:2rem;margin-bottom:8px">💬</div>
+      <div style="font-size:.95rem;font-weight:700;color:#1b5e20;margin-bottom:4px">
+        เพิ่มเพื่อน LINE OA
+      </div>
+      <div style="font-size:.8rem;color:#666;margin-bottom:16px;line-height:1.6">
+        แล้วส่งข้อความ "ลงทะเบียน" เข้ามา<br>
+        ระบบจะตอบกลับ User ID ให้อัตโนมัติ
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div style="text-align:left">
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">
+        <div style="width:28px;height:28px;border-radius:50%;background:#06c755;color:#fff;
+                    display:flex;align-items:center;justify-content:center;font-weight:700;
+                    font-size:.85rem;flex-shrink:0">1</div>
+        <div>
+          <div style="font-size:.9rem;font-weight:700;color:#222">เพิ่มเพื่อน Happy HIP OA</div>
+          <div style="font-size:.78rem;color:#666">กดปุ่มด้านล่าง หรือค้นหา @531ewyor</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">
+        <div style="width:28px;height:28px;border-radius:50%;background:#06c755;color:#fff;
+                    display:flex;align-items:center;justify-content:center;font-weight:700;
+                    font-size:.85rem;flex-shrink:0">2</div>
+        <div>
+          <div style="font-size:.9rem;font-weight:700;color:#222">ส่งข้อความ "ลงทะเบียน"</div>
+          <div style="font-size:.78rem;color:#666">พิมพ์คำว่า ลงทะเบียน แล้วส่ง</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:16px">
+        <div style="width:28px;height:28px;border-radius:50%;background:#06c755;color:#fff;
+                    display:flex;align-items:center;justify-content:center;font-weight:700;
+                    font-size:.85rem;flex-shrink:0">3</div>
+        <div>
+          <div style="font-size:.9rem;font-weight:700;color:#222">รอ Admin อนุมัติ</div>
+          <div style="font-size:.78rem;color:#666">ระบบจะแจ้งกลับทาง LINE เมื่ออนุมัติ</div>
+        </div>
+      </div>
+    </div>
+
+    <a id="addOaBtn2" href="https://line.me/R/ti/p/@531ewyor" target="_blank"
+      style="display:flex;align-items:center;justify-content:center;gap:8px;
+             background:#06c755;color:#fff;border-radius:14px;padding:14px;
+             font-size:1rem;font-weight:700;text-decoration:none;
+             box-shadow:0 3px 12px rgba(6,199,85,.3)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+        <path d="M12 2C6.48 2 2 6.03 2 11c0 3.18 1.63 5.99 4.16 7.73-.18.65-.66 2.37-.75 2.74-.11.44.16.44.34.32.14-.09 2.17-1.47 3.05-2.07.38.05.77.08 1.17.08 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
+      </svg>
+      เพิ่มเพื่อน Happy HIP OA
+    </a>
+
+    <div style="text-align:center;margin-top:10px;font-size:.78rem;color:#999">
+      LINE OA ID: <strong style="color:#06c755;font-family:monospace">@531ewyor</strong>
+    </div>
+  </div><!-- end tabContent2 -->
+
+</div><!-- end card -->
 
 <script>
 // ── Config ──────────────────────────────────────────────────
@@ -238,6 +317,15 @@ async function doRegister() {
     document.getElementById('errDesc').textContent = 'ลงทะเบียนไม่สำเร็จ: ' + e.message;
     console.error(e);
   }
+}
+
+function switchTab(n) {
+  document.getElementById('tabContent1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('tabContent2').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('tab1').style.background = n===1 ? '#06c755' : '#fff';
+  document.getElementById('tab1').style.color      = n===1 ? '#fff'    : '#06c755';
+  document.getElementById('tab2').style.background = n===2 ? '#06c755' : '#fff';
+  document.getElementById('tab2').style.color      = n===2 ? '#fff'    : '#06c755';
 }
 
 init();

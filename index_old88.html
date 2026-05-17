@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.1</title>
+<title>Smart HIP DVT System v4.10.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -688,7 +688,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.10.1</span>
+    <span id="verBadge">v4.10.0</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1645,7 +1645,7 @@ async function testGASConn() {
   if (!url) { alert('กรุณาใส่ GAS URL ก่อน'); return; }
   if (res) { res.style.display='block'; res.textContent = '🔄 กำลังทดสอบ...'; res.style.color='var(--text2)'; }
   try {
-    const r = await fetch(url + '?action=getData', { method:'GET', redirect:'follow' });
+    const r = await fetch(url, { method:'GET', redirect:'follow' });
     const d = await r.json();
     if (d && d.status === 'ok') {
       if (res) { res.textContent = '✅ เชื่อมต่อสำเร็จ! boot#'+d.boot; res.style.color='var(--ok)'; }
@@ -1675,13 +1675,11 @@ function saveSettings() {
 async function fetchGASData() {
   if (!gasUrl) return;
   try {
-    const res = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
+    const res = await fetch(gasUrl, { method: 'GET', redirect: 'follow' });
     const data = await res.json();
-    if (data && data.status === 'ok') {
+    if (data && !data.error) {
       lastGasData = data;
       updateDashboard(data);
-    } else {
-      console.warn('[GAS] response:', data);
     }
   } catch(err) {
     console.warn('[GAS] fetch error:', err.message);
@@ -1970,7 +1968,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.10.1] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.10.0] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');

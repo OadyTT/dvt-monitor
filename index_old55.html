@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.4</title>
+<title>Smart HIP DVT System v4.10.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -671,14 +671,10 @@ body{
 <!-- ══════════════════════════════════════════════════════
      TOPBAR
 ══════════════════════════════════════════════════════ -->
-<!-- Nav Overlay -->
-<div class="nav-overlay" id="navOverlay" onclick="closeNav()"></div>
-
 <div class="topbar">
-  <div class="hamburger" id="hamburgerBtn" onclick="toggleNav()">☰</div>
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.10.4</span>
+    <span id="verBadge">v4.10.3</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1112,25 +1108,6 @@ body{
             </div>
             <input class="input-field" placeholder="Bearer token..." id="inpToken" type="password">
           </div>
-          <!-- Toggle แจ้งเตือน LINE -->
-          <div class="setting-row" style="margin-top:8px">
-            <div class="setting-info">
-              <div class="setting-label">แจ้งเตือน LINE OA</div>
-              <div class="setting-desc" id="lineAlertDesc">เปิด = ส่ง LINE เมื่อตรวจพบ Alert</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <span style="font-size:.8rem;color:var(--text2)">ปิด</span>
-              <div id="lineAlertToggle" onclick="toggleLineAlert()"
-                style="width:48px;height:26px;border-radius:13px;background:var(--ok);
-                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
-                <div id="lineAlertThumb"
-                  style="width:22px;height:22px;border-radius:50%;background:#fff;
-                         position:absolute;top:2px;left:24px;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
-              </div>
-              <span style="font-size:.8rem;color:var(--ok)">เปิด</span>
-            </label>
-          </div>
-
           <div style="padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn-primary" onclick="saveLine()" data-th="บันทึก LINE" data-en="Save LINE">บันทึก LINE</button>
             <a href="/liff.html" target="_blank"
@@ -1168,24 +1145,6 @@ body{
               <div class="setting-desc" data-th="% (default 15%)" data-en="% (default 15%)">% (default 15%)</div>
             </div>
             <input class="input-field" value="15" id="inpBattLow" style="width:80px" type="number">
-          </div>
-          <!-- Toggle แจ้งเตือนแบต -->
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label">แจ้งเตือนแบตเตอรี่ต่ำ</div>
-              <div class="setting-desc" id="battAlertDesc">เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <span style="font-size:.8rem;color:var(--text2)">ปิด</span>
-              <div id="battAlertToggle" onclick="toggleBattAlert()"
-                style="width:48px;height:26px;border-radius:13px;background:var(--ok);
-                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
-                <div id="battAlertThumb"
-                  style="width:22px;height:22px;border-radius:50%;background:#fff;
-                         position:absolute;top:2px;left:24px;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
-              </div>
-              <span style="font-size:.8rem;color:var(--ok)">เปิด</span>
-            </label>
           </div>
           <div class="setting-row">
             <div class="setting-info">
@@ -1675,7 +1634,20 @@ async function testGASConn() {
   }
 }
 
-
+function saveSettings() {
+  const inp = document.getElementById('inpGas');
+  if (inp && inp.value.trim()) {
+    gasUrl = inp.value.trim();
+    localStorage.setItem('gasUrl', gasUrl);
+    useRealData = true;
+    localStorage.setItem('useRealData', 'true');
+    updateDataModeUI();
+    fetchGASData();
+    alert(lang==='th' ? 'บันทึกแล้ว! เชื่อมต่อ GAS สำเร็จ ✅' : 'Saved! GAS connected ✅');
+  } else {
+    alert(lang==='th' ? 'กรุณาใส่ GAS URL ก่อน' : 'Please enter GAS URL');
+  }
+}
 
 async function fetchGASData() {
   if (!gasUrl) return;
@@ -1833,46 +1805,6 @@ function toggleSet(id) {
   const el = document.getElementById(id);
   el.classList.toggle('on');
 }
-// ── Alert Toggles ────────────────────────────────────────
-let lineAlertOn = localStorage.getItem('lineAlertOn') !== 'false';
-let battAlertOn = localStorage.getItem('battAlertOn') !== 'false';
-
-function applyToggleUI(toggleId, thumbId, descId, isOn, onText, offText) {
-  const t = document.getElementById(toggleId);
-  const th = document.getElementById(thumbId);
-  const d  = document.getElementById(descId);
-  if (!t) return;
-  t.style.background  = isOn ? 'var(--ok)' : 'var(--surface2)';
-  th.style.left       = isOn ? '24px' : '2px';
-  th.style.background = isOn ? '#fff' : '#888';
-  if (d) d.textContent = isOn ? onText : offText;
-}
-
-function toggleLineAlert() {
-  lineAlertOn = !lineAlertOn;
-  localStorage.setItem('lineAlertOn', lineAlertOn.toString());
-  applyToggleUI('lineAlertToggle','lineAlertThumb','lineAlertDesc', lineAlertOn,
-    'เปิด = ส่ง LINE เมื่อตรวจพบ Alert',
-    'ปิด = ไม่ส่ง LINE (แต่ Buzzer/LED ยังทำงาน)');
-}
-
-function toggleBattAlert() {
-  battAlertOn = !battAlertOn;
-  localStorage.setItem('battAlertOn', battAlertOn.toString());
-  applyToggleUI('battAlertToggle','battAlertThumb','battAlertDesc', battAlertOn,
-    'เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %',
-    'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
-}
-
-function initAlertToggles() {
-  applyToggleUI('lineAlertToggle','lineAlertThumb','lineAlertDesc', lineAlertOn,
-    'เปิด = ส่ง LINE เมื่อตรวจพบ Alert',
-    'ปิด = ไม่ส่ง LINE (แต่ Buzzer/LED ยังทำงาน)');
-  applyToggleUI('battAlertToggle','battAlertThumb','battAlertDesc', battAlertOn,
-    'เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %',
-    'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
-}
-
 function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
 // ── Pending Users (Admin) ──────────────────────────────────
 async function loadPendingUsers() {
@@ -2018,7 +1950,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.10.4] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.10.3] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
@@ -2028,7 +1960,6 @@ document.querySelectorAll('.fs-btn').forEach(b => {
 });
 updateDataModeUI();
 loadThresh();
-initAlertToggles();
 
 updateLive();
 setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle

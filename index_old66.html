@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.3</title>
+<title>Smart HIP DVT System v4.10.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -278,7 +278,6 @@ body{
   .nav-overlay{
     display:none;position:fixed;inset:0;
     background:rgba(0,0,0,.55);z-index:299;
-    cursor:pointer;
   }
   .nav-overlay.show{display:block}
   .main{margin-left:0 !important;padding:10px}
@@ -289,12 +288,6 @@ body{
   .card{border-radius:12px;padding:14px}
   .stat-card{padding:12px 14px}
   .stat-number{font-size:1.8rem}
-}
-
-/* Desktop: nav-overlay always hidden */
-@media(min-width:769px){
-  .nav-overlay{display:none !important}
-  .hamburger{display:none !important}
 }
 
 @media(max-width:900px) and (min-width:769px){
@@ -674,7 +667,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.10.3</span>
+    <span id="verBadge">v4.10.2</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1313,14 +1306,11 @@ let chartHip, chartAnkle, chartFsr, chartBatt;
 // NAV
 // ═══════════════════════════════════════════
 function nav(page) {
-  // ปิด sidebar บนมือถือ
-  if (window.innerWidth <= 768) closeNav();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const pg = document.getElementById('page-'+page);
-  if (pg) pg.classList.add('active');
-  if (event && event.currentTarget) event.currentTarget.classList.add('active');
-  if (page==='graphs') initCharts();
+  document.getElementById('page-'+page).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(page==='graphs') initCharts();
 }
 
 // ═══════════════════════════════════════════
@@ -1352,7 +1342,19 @@ function closeNav() {
   document.getElementById('navOverlay').classList.remove('show');
 }
 
-// Mobile: ปิด nav เมื่อกด menu item
+// ปิด nav เมื่อกด nav item บนมือถือ
+const origNav = window.nav;
+function nav(page) {
+  if (window.innerWidth <= 768) closeNav();
+  if (typeof origNav === 'function') origNav(page);
+  else {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    const pg = document.getElementById('page-'+page);
+    if (pg) pg.classList.add('active');
+    event && event.currentTarget && event.currentTarget.classList.add('active');
+  }
+}
 
 function setFs(sz) {
   // ลบ class fs- เดิมออกจาก html ก่อน
@@ -1950,7 +1952,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.10.3] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.10.2] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');

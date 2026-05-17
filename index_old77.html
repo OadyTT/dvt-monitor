@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.2</title>
+<title>Smart HIP DVT System v4.10.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -66,11 +66,11 @@ body{
 .hamburger{
   display:none;
   align-items:center;justify-content:center;
-  width:40px;height:40px;border-radius:10px;
+  width:36px;height:36px;border-radius:8px;
   background:var(--surface2);border:1px solid var(--brd);
   cursor:pointer;flex-shrink:0;
-  font-size:1.3rem;color:var(--text);
-  margin-right:10px;touch-action:manipulation;
+  font-size:1.1rem;color:var(--text);
+  margin-right:8px;
 }
 
 .topbar{
@@ -263,31 +263,52 @@ body{
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 /* ══ MOBILE RESPONSIVE ══════════════════════ */
 @media(max-width:768px){
-  .grid-4{grid-template-columns:1fr 1fr}
+  .grid-4{grid-template-columns:repeat(2,1fr)}
   .grid-3{grid-template-columns:1fr}
   .grid-2{grid-template-columns:1fr}
+
+  /* Sidebar ซ่อนไว้ เปิดด้วย hamburger */
   .sidebar{
-    width:75vw;max-width:260px;
+    width:240px;
     transform:translateX(-100%);
     transition:transform .25s ease;
-    z-index:300;top:0;bottom:0;
-    padding-top:68px;
-    box-shadow:4px 0 20px rgba(0,0,0,.4);
+    z-index:200;top:0;padding-top:72px;
   }
   .sidebar.open{transform:translateX(0)}
+
+  /* Overlay เมื่อ menu เปิด */
   .nav-overlay{
-    display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,.55);z-index:299;
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:199;
   }
   .nav-overlay.show{display:block}
-  .main{margin-left:0 !important;padding:10px}
-  .hamburger{display:flex !important;width:40px;height:40px;font-size:1.3rem}
-  .topbar{padding:0 10px;gap:6px}
+
+  .main{margin-left:0 !important}
+
+  /* Hamburger button */
+  .hamburger{
+    display:flex !important;
+  }
+
+  /* Header compact */
+  .hamburger{
+  display:none;
+  align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--brd);
+  cursor:pointer;flex-shrink:0;
+  font-size:1.1rem;color:var(--text);
+  margin-right:8px;
+}
+
+.topbar{padding:0 12px}
   #verBadge{display:none}
-  .fs-group{display:none}
-  .card{border-radius:12px;padding:14px}
-  .stat-card{padding:12px 14px}
-  .stat-number{font-size:1.8rem}
+
+  /* Cards full width */
+  .card{border-radius:12px}
+  .stat-card{padding:14px}
 }
 
 @media(max-width:900px) and (min-width:769px){
@@ -667,7 +688,7 @@ body{
 <div class="topbar">
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.10.2</span>
+    <span id="verBadge">v4.10.1</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1758,7 +1779,7 @@ function updateLive() {
   // ── Mock Data (fallback) ──────────────────
   const t = new Date().toLocaleTimeString('th-TH');
   const el = document.getElementById('lastUpdate');
-  if (el) el.innerHTML = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+'&nbsp;<span style="color:var(--warn);font-size:.75rem">[MOCK — ใส่ GAS URL ใน Settings]</span>';
+  if (el) el.textContent = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+' [MOCK]';
 
   const bv = 3.95, bp = 78;
   const safe = id => document.getElementById(id);
@@ -1944,15 +1965,12 @@ renderAlerts();
 
 // Load saved GAS URL
 gasUrl = localStorage.getItem('gasUrl') || '';
-// ถ้ามี GAS URL บันทึกไว้ → ใช้ real data อัตโนมัติ
-if (gasUrl) useRealData = true;
-else useRealData = false;
-localStorage.setItem('useRealData', useRealData.toString());
+useRealData = localStorage.getItem('useRealData') === 'true';
 const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.10.2] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.10.1] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');

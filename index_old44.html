@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.9.9</title>
+<title>Smart HIP DVT System v4.10.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -63,6 +63,16 @@ body{
 /* ═══════════════════════════════════════════
    TOPBAR
 ═══════════════════════════════════════════ */
+.hamburger{
+  display:none;
+  align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:10px;
+  background:var(--surface2);border:1px solid var(--brd);
+  cursor:pointer;flex-shrink:0;
+  font-size:1.3rem;color:var(--text);
+  margin-right:10px;touch-action:manipulation;
+}
+
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:100;
   height:56px;
@@ -251,7 +261,43 @@ body{
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-@media(max-width:900px){
+/* ══ MOBILE RESPONSIVE ══════════════════════ */
+@media(max-width:768px){
+  .grid-4{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:1fr}
+  .sidebar{
+    width:75vw;max-width:260px;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    z-index:300;top:0;bottom:0;
+    padding-top:68px;
+    box-shadow:4px 0 20px rgba(0,0,0,.4);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .nav-overlay{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.55);z-index:299;
+    cursor:pointer;
+  }
+  .nav-overlay.show{display:block}
+  .main{margin-left:0 !important;padding:10px}
+  .hamburger{display:flex !important;width:40px;height:40px;font-size:1.3rem}
+  .topbar{padding:0 10px;gap:6px}
+  #verBadge{display:none}
+  .fs-group{display:none}
+  .card{border-radius:12px;padding:14px}
+  .stat-card{padding:12px 14px}
+  .stat-number{font-size:1.8rem}
+}
+
+/* Desktop: nav-overlay always hidden */
+@media(min-width:769px){
+  .nav-overlay{display:none !important}
+  .hamburger{display:none !important}
+}
+
+@media(max-width:900px) and (min-width:769px){
   .grid-4{grid-template-columns:repeat(2,1fr)}
   .grid-3{grid-template-columns:repeat(2,1fr)}
   .grid-2{grid-template-columns:1fr}
@@ -625,10 +671,14 @@ body{
 <!-- ══════════════════════════════════════════════════════
      TOPBAR
 ══════════════════════════════════════════════════════ -->
+<!-- Nav Overlay -->
+<div class="nav-overlay" id="navOverlay" onclick="closeNav()"></div>
+
 <div class="topbar">
+  <div class="hamburger" id="hamburgerBtn" onclick="toggleNav()">☰</div>
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.9.9</span>
+    <span id="verBadge">v4.10.4</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1062,6 +1112,25 @@ body{
             </div>
             <input class="input-field" placeholder="Bearer token..." id="inpToken" type="password">
           </div>
+          <!-- Toggle แจ้งเตือน LINE -->
+          <div class="setting-row" style="margin-top:8px">
+            <div class="setting-info">
+              <div class="setting-label">แจ้งเตือน LINE OA</div>
+              <div class="setting-desc" id="lineAlertDesc">เปิด = ส่ง LINE เมื่อตรวจพบ Alert</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:.8rem;color:var(--text2)">ปิด</span>
+              <div id="lineAlertToggle" onclick="toggleLineAlert()"
+                style="width:48px;height:26px;border-radius:13px;background:var(--ok);
+                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
+                <div id="lineAlertThumb"
+                  style="width:22px;height:22px;border-radius:50%;background:#fff;
+                         position:absolute;top:2px;left:24px;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
+              </div>
+              <span style="font-size:.8rem;color:var(--ok)">เปิด</span>
+            </label>
+          </div>
+
           <div style="padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn-primary" onclick="saveLine()" data-th="บันทึก LINE" data-en="Save LINE">บันทึก LINE</button>
             <a href="/liff.html" target="_blank"
@@ -1099,6 +1168,24 @@ body{
               <div class="setting-desc" data-th="% (default 15%)" data-en="% (default 15%)">% (default 15%)</div>
             </div>
             <input class="input-field" value="15" id="inpBattLow" style="width:80px" type="number">
+          </div>
+          <!-- Toggle แจ้งเตือนแบต -->
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">แจ้งเตือนแบตเตอรี่ต่ำ</div>
+              <div class="setting-desc" id="battAlertDesc">เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <span style="font-size:.8rem;color:var(--text2)">ปิด</span>
+              <div id="battAlertToggle" onclick="toggleBattAlert()"
+                style="width:48px;height:26px;border-radius:13px;background:var(--ok);
+                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
+                <div id="battAlertThumb"
+                  style="width:22px;height:22px;border-radius:50%;background:#fff;
+                         position:absolute;top:2px;left:24px;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
+              </div>
+              <span style="font-size:.8rem;color:var(--ok)">เปิด</span>
+            </label>
           </div>
           <div class="setting-row">
             <div class="setting-info">
@@ -1267,11 +1354,14 @@ let chartHip, chartAnkle, chartFsr, chartBatt;
 // NAV
 // ═══════════════════════════════════════════
 function nav(page) {
+  // ปิด sidebar บนมือถือ
+  if (window.innerWidth <= 768) closeNav();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if(page==='graphs') initCharts();
+  const pg = document.getElementById('page-'+page);
+  if (pg) pg.classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  if (page==='graphs') initCharts();
 }
 
 // ═══════════════════════════════════════════
@@ -1290,6 +1380,21 @@ function setLang(l) {
 // ═══════════════════════════════════════════
 // FONT SIZE
 // ═══════════════════════════════════════════
+// ── Mobile Navigation ──────────────────────────────────────
+function toggleNav() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('navOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+
+function closeNav() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('show');
+}
+
+// Mobile: ปิด nav เมื่อกด menu item
+
 function setFs(sz) {
   // ลบ class fs- เดิมออกจาก html ก่อน
   document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
@@ -1558,7 +1663,7 @@ async function testGASConn() {
   if (!url) { alert('กรุณาใส่ GAS URL ก่อน'); return; }
   if (res) { res.style.display='block'; res.textContent = '🔄 กำลังทดสอบ...'; res.style.color='var(--text2)'; }
   try {
-    const r = await fetch(url, { method:'GET', redirect:'follow' });
+    const r = await fetch(url + '?action=getData', { method:'GET', redirect:'follow' });
     const d = await r.json();
     if (d && d.status === 'ok') {
       if (res) { res.textContent = '✅ เชื่อมต่อสำเร็จ! boot#'+d.boot; res.style.color='var(--ok)'; }
@@ -1570,29 +1675,18 @@ async function testGASConn() {
   }
 }
 
-function saveSettings() {
-  const inp = document.getElementById('inpGas');
-  if (inp && inp.value.trim()) {
-    gasUrl = inp.value.trim();
-    localStorage.setItem('gasUrl', gasUrl);
-    useRealData = true;
-    localStorage.setItem('useRealData', 'true');
-    updateDataModeUI();
-    fetchGASData();
-    alert(lang==='th' ? 'บันทึกแล้ว! เชื่อมต่อ GAS สำเร็จ ✅' : 'Saved! GAS connected ✅');
-  } else {
-    alert(lang==='th' ? 'กรุณาใส่ GAS URL ก่อน' : 'Please enter GAS URL');
-  }
-}
+
 
 async function fetchGASData() {
   if (!gasUrl) return;
   try {
-    const res = await fetch(gasUrl, { method: 'GET', redirect: 'follow' });
+    const res = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
     const data = await res.json();
-    if (data && !data.error) {
+    if (data && data.status === 'ok') {
       lastGasData = data;
       updateDashboard(data);
+    } else {
+      console.warn('[GAS] response:', data);
     }
   } catch(err) {
     console.warn('[GAS] fetch error:', err.message);
@@ -1690,7 +1784,7 @@ function updateLive() {
   // ── Mock Data (fallback) ──────────────────
   const t = new Date().toLocaleTimeString('th-TH');
   const el = document.getElementById('lastUpdate');
-  if (el) el.textContent = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+' [MOCK]';
+  if (el) el.innerHTML = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+'&nbsp;<span style="color:var(--warn);font-size:.75rem">[MOCK — ใส่ GAS URL ใน Settings]</span>';
 
   const bv = 3.95, bp = 78;
   const safe = id => document.getElementById(id);
@@ -1739,6 +1833,46 @@ function toggleSet(id) {
   const el = document.getElementById(id);
   el.classList.toggle('on');
 }
+// ── Alert Toggles ────────────────────────────────────────
+let lineAlertOn = localStorage.getItem('lineAlertOn') !== 'false';
+let battAlertOn = localStorage.getItem('battAlertOn') !== 'false';
+
+function applyToggleUI(toggleId, thumbId, descId, isOn, onText, offText) {
+  const t = document.getElementById(toggleId);
+  const th = document.getElementById(thumbId);
+  const d  = document.getElementById(descId);
+  if (!t) return;
+  t.style.background  = isOn ? 'var(--ok)' : 'var(--surface2)';
+  th.style.left       = isOn ? '24px' : '2px';
+  th.style.background = isOn ? '#fff' : '#888';
+  if (d) d.textContent = isOn ? onText : offText;
+}
+
+function toggleLineAlert() {
+  lineAlertOn = !lineAlertOn;
+  localStorage.setItem('lineAlertOn', lineAlertOn.toString());
+  applyToggleUI('lineAlertToggle','lineAlertThumb','lineAlertDesc', lineAlertOn,
+    'เปิด = ส่ง LINE เมื่อตรวจพบ Alert',
+    'ปิด = ไม่ส่ง LINE (แต่ Buzzer/LED ยังทำงาน)');
+}
+
+function toggleBattAlert() {
+  battAlertOn = !battAlertOn;
+  localStorage.setItem('battAlertOn', battAlertOn.toString());
+  applyToggleUI('battAlertToggle','battAlertThumb','battAlertDesc', battAlertOn,
+    'เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %',
+    'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
+}
+
+function initAlertToggles() {
+  applyToggleUI('lineAlertToggle','lineAlertThumb','lineAlertDesc', lineAlertOn,
+    'เปิด = ส่ง LINE เมื่อตรวจพบ Alert',
+    'ปิด = ไม่ส่ง LINE (แต่ Buzzer/LED ยังทำงาน)');
+  applyToggleUI('battAlertToggle','battAlertThumb','battAlertDesc', battAlertOn,
+    'เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %',
+    'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
+}
+
 function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
 // ── Pending Users (Admin) ──────────────────────────────────
 async function loadPendingUsers() {
@@ -1876,12 +2010,15 @@ renderAlerts();
 
 // Load saved GAS URL
 gasUrl = localStorage.getItem('gasUrl') || '';
-useRealData = localStorage.getItem('useRealData') === 'true';
+// ถ้ามี GAS URL บันทึกไว้ → ใช้ real data อัตโนมัติ
+if (gasUrl) useRealData = true;
+else useRealData = false;
+localStorage.setItem('useRealData', useRealData.toString());
 const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.9.9] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.10.4] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
@@ -1891,6 +2028,7 @@ document.querySelectorAll('.fs-btn').forEach(b => {
 });
 updateDataModeUI();
 loadThresh();
+initAlertToggles();
 
 updateLive();
 setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle

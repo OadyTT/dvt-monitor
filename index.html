@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.4</title>
+<title>Smart HIP DVT System v4.10.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -678,7 +678,7 @@ body{
   <div class="hamburger" id="hamburgerBtn" onclick="toggleNav()">☰</div>
   <div class="topbar-logo">
     🛏️ DVT Monitor
-    <span id="verBadge">v4.10.4</span>
+    <span id="verBadge">v4.10.5</span>
   </div>
 
   <!-- Charging indicator -->
@@ -1238,8 +1238,11 @@ body{
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-title" data-th="จัดการบัญชี" data-en="Account Management">จัดการบัญชี</div>
+        <!-- Admin Only: จัดการบัญชี -->
+        <div class="card admin-only-card" id="adminAccountCard" style="display:none;border-color:var(--warn)">
+          <div class="card-title" style="color:var(--warn)">
+            👑 จัดการบัญชี (Admin เท่านั้น)
+          </div>
           <div class="setting-row">
             <div class="setting-info">
               <div class="setting-label" data-th="เปลี่ยน Admin PIN" data-en="Change Admin PIN">เปลี่ยน Admin PIN</div>
@@ -1424,6 +1427,10 @@ function updateRoleBadge() {
   const dot = document.getElementById('roleDot');
   lbl.textContent = lang==='th' ? (role==='admin'?'Admin':'Staff') : (role==='admin'?'Admin':'Staff');
   dot.style.background = role==='admin' ? 'var(--warn)' : 'var(--ok)';
+  // แสดง/ซ่อน admin-only cards
+  document.querySelectorAll('.admin-only-card').forEach(el => {
+    el.style.display = role === 'admin' ? 'block' : 'none';
+  });
 }
 function pinInput(d) {
   if(pinBuffer.length>=4) return;
@@ -2018,7 +2025,7 @@ const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
 // Show mode indicator
-console.log('[v4.10.4] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
+console.log('[v4.10.5] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
 // โหลด font size ที่บันทึกไว้
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');

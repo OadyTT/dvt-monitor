@@ -288,15 +288,15 @@ async function doRegister() {
   show('stRegistering');
 
   try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action:      'saveUser',
-        userId:      userProfile.userId,
-        displayName: userProfile.displayName,
-        pictureUrl:  userProfile.pictureUrl || '',
-      }),
+    // ใช้ GET แทน POST เพื่อหลีกเลี่ยง CORS
+    const params = new URLSearchParams({
+      action:      'saveUser',
+      userId:      userProfile.userId,
+      displayName: userProfile.displayName,
+      pictureUrl:  userProfile.pictureUrl || '',
+    });
+    const res = await fetch(GAS_URL + '?' + params.toString(), {
+      method: 'GET',
       redirect: 'follow',
     });
 

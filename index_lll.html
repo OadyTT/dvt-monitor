@@ -644,25 +644,10 @@ body{
 .conn-banner.conn-offline{background:#0d0404;border:1px solid #6b2222;color:var(--danger)}
 .conn-banner.conn-mock   {background:#0d0900;border:1px solid #664400;color:var(--warn)}
 .conn-banner.conn-live   {background:#030d06;border:1px solid #1a4a1a;color:var(--ok)}
-.conn-banner.conn-error  {background:#0d0404;border:1px solid var(--danger);color:var(--danger)}
 .conn-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
 .conn-dot.offline{background:var(--gnd)}
 .conn-dot.mock   {background:var(--warn);animation:live-pulse 2s ease-in-out infinite}
 .conn-dot.live   {background:var(--ok); animation:live-pulse 1.5s ease-in-out infinite}
-.conn-dot.fetching{background:var(--accent2);animation:live-pulse .6s ease-in-out infinite}
-.conn-dot.error  {background:var(--danger);animation:live-pulse .8s ease-in-out infinite}
-
-/* Fetch spinner */
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.fetch-spinner{
-  width:16px;height:16px;border-radius:50%;flex-shrink:0;
-  border:2px solid rgba(255,255,255,.15);
-  border-top-color:var(--ok);
-  animation:spin .7s linear infinite;
-  display:none;
-}
-.conn-banner.conn-error .fetch-spinner{border-top-color:var(--danger)}
-.conn-banner.conn-mock  .fetch-spinner{border-top-color:var(--warn)}
 .conn-title{font-weight:600;font-size:.85rem}
 .conn-sub  {font-size:.72rem;color:var(--text2);margin-top:1px}
 
@@ -854,16 +839,13 @@ body{
       <!-- Connection status banner -->
       <div id="connBanner" class="conn-banner conn-offline">
         <div class="conn-dot offline" id="connDot"></div>
-        <div style="flex:1;min-width:0">
+        <div>
           <div class="conn-title" id="connTitle">ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์</div>
           <div class="conn-sub"   id="connSub">ไปที่ Settings เพื่อใส่ GAS URL</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-          <div class="fetch-spinner" id="fetchSpinner"></div>
-          <div style="text-align:right">
-            <div id="lastUpdate" style="font-size:.72rem;color:var(--text2)">--:--:--</div>
-            <div id="connMode"   style="font-size:.62rem;color:var(--text2);margin-top:1px;font-family:'IBM Plex Mono',monospace">—</div>
-          </div>
+        <div class="ml-auto" style="text-align:right;flex-shrink:0">
+          <div id="lastUpdate" style="font-size:.72rem;color:var(--text2)">--:--:--</div>
+          <div id="connMode"   style="font-size:.62rem;color:var(--text2);margin-top:1px;font-family:'IBM Plex Mono',monospace">—</div>
         </div>
       </div>
 
@@ -1429,12 +1411,6 @@ let PIN  = '1234';
 let pinBuffer = '';
 let isCharging = false;
 
-// Fetch state
-let isFetching    = false;
-let lastFetchTime = null;
-let fetchError    = false;
-let nextFetchIn   = 0; // countdown seconds to next fetch
-
 // เตียงจริง 1 เตียง — อัปเดตจาก GAS
 const bedData = [
   {id:1, name:'เตียง B01', patient:'ผู้ป่วย',
@@ -1905,89 +1881,27 @@ async function testGASConn() {
 
 
 
-// ── Fetch UI helpers ──────────────────────────────────────
-function setFetchingUI(loading) {
-  const safe = id => document.getElementById(id);
-  const spinner = safe('fetchSpinner');
-  if (loading) {
-    if (spinner) spinner.style.display = 'block';
-    if (safe('connDot'))   safe('connDot').className   = 'conn-dot fetching';
-    if (safe('connSub'))   safe('connSub').textContent = 'กำลังดึงข้อมูลจาก GAS...';
-    if (safe('connMode'))  safe('connMode').textContent = '⟳ กำลังโหลด...';
-    if (safe('lastUpdate')) safe('lastUpdate').textContent = 'กำลังโหลด...';
-  } else {
-    if (spinner) spinner.style.display = 'none';
-    const t = lastFetchTime
-      ? lastFetchTime.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'})
-      : '--:--:--';
-    if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
-    if (safe('connSub'))    safe('connSub').textContent = 'อัปเดตล่าสุด: ' + t;
-    if (!fetchError) {
-      if (safe('connDot'))  safe('connDot').className   = 'conn-dot live';
-      if (safe('connMode')) safe('connMode').textContent = 'LIVE · อัปเดตใน ' + nextFetchIn + 's';
-    }
-  }
-}
-
-function setFetchErrorUI(msg) {
-  fetchError = true;
-  const safe = id => document.getElementById(id);
-  if (safe('connBanner'))   safe('connBanner').className      = 'conn-banner conn-error';
-  if (safe('connDot'))      safe('connDot').className         = 'conn-dot error';
-  if (safe('connTitle'))    safe('connTitle').textContent     = 'ดึงข้อมูลไม่ได้ — ตรวจสอบ GAS URL';
-  if (safe('connSub'))      safe('connSub').textContent       = msg || 'เครือข่าย / GAS offline';
-  if (safe('connMode'))     safe('connMode').textContent      = 'ERROR · ลองใน ' + nextFetchIn + 's';
-  if (safe('scConn'))       safe('scConn').className         = 'stat-card danger';
-  if (safe('svConnStatus')) {
-    safe('svConnStatus').textContent = 'Error';
-    safe('svConnStatus').style.color = 'var(--danger)';
-  }
-  if (safe('svConnSub'))    safe('svConnSub').textContent = 'ดึงข้อมูลไม่ได้';
-  const spinner = safe('fetchSpinner');
-  if (spinner) spinner.style.display = 'none';
-}
-
-function tickCountdown() {
-  if (!gasUrl || !useRealData) return;
-  const safe = id => document.getElementById(id);
-  nextFetchIn = Math.max(0, nextFetchIn - 1);
-  if (isFetching) {
-    if (safe('connMode')) safe('connMode').textContent = '⟳ กำลังโหลด...';
-    return;
-  }
-  const label = fetchError ? 'ERROR · ลองใน ' : 'LIVE · อัปเดตใน ';
-  if (safe('connMode')) safe('connMode').textContent = label + nextFetchIn + 's';
-}
-
 async function fetchGASData() {
   if (!gasUrl) return;
-  isFetching  = true;
-  fetchError  = false;
-  setFetchingUI(true);
   try {
-    const res  = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
+    const res = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
     const data = await res.json();
     if (data && data.status === 'ok') {
-      lastGasData   = data;
-      lastFetchTime = new Date();
+      lastGasData = data;
       updateDashboard(data);
     } else {
       console.warn('[GAS] response:', data);
-      setFetchErrorUI(data?.error || 'GAS ตอบกลับผิดปกติ');
     }
   } catch(err) {
     console.warn('[GAS] fetch error:', err.message);
-    setFetchErrorUI(err.message);
-  } finally {
-    isFetching  = false;
-    nextFetchIn = 30;
-    if (!fetchError) setFetchingUI(false);
   }
 }
 
 function updateDashboard(d) {
+  const t    = new Date().toLocaleTimeString('th-TH');
   const safe = id => document.getElementById(id);
-  updateConnBanner('live'); // ตั้ง banner เป็น live (spinner/timestamp จัดการโดย setFetchingUI)
+  updateConnBanner('live');
+  if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
 
   // ── Battery ──
   const bv = parseFloat(d.battVolt) || 0;
@@ -2064,29 +1978,24 @@ function updateDashboard(d) {
 
 function updateLive() {
   const safe = id => document.getElementById(id);
+  const t    = new Date().toLocaleTimeString('th-TH');
+  if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
 
   // ── Truly offline (no GAS URL) ──────────────
   if (!gasUrl) {
     updateConnBanner('offline');
     setOfflineUI();
-    const t = new Date().toLocaleTimeString('th-TH');
-    if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
     return;
   }
 
   // ── Real data from GAS ──────────────────────
   if (useRealData) {
-    nextFetchIn = 30;
-    fetchGASData(); // spinner/timestamp handled inside fetchGASData
+    fetchGASData();
     return;
   }
 
   // ── Mock Data (admin toggled) ───────────────
   updateConnBanner('mock');
-  const mockT = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-  if (safe('lastUpdate')) safe('lastUpdate').textContent = mockT;
-  if (safe('connSub'))    safe('connSub').textContent    = 'Mock อัปเดต: ' + mockT;
-  if (safe('connMode'))   safe('connMode').textContent   = 'MOCK · อัปเดตใน 30s';
 
   const bv = 3.95, bp = 78;
   const battColor = 'var(--ok)';
@@ -2357,8 +2266,7 @@ loadThresh();
 initAlertToggles();
 
 updateLive();
-setInterval(updateLive,    30000); // ทุก 30 วิ ตาม Firmware sleep cycle
-setInterval(tickCountdown,  1000); // countdown ทุก 1 วิ
+setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle
 </script>
 <!-- LINE FAB -->
 <div class="line-fab" id="lineFab">

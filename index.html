@@ -1370,6 +1370,81 @@ body{
           </div>
         </div>
 
+        <!-- Config Sync from Google Sheets (visible all) -->
+        <div class="card" style="grid-column:1/-1;border-color:var(--accent)">
+          <div class="card-title" style="color:var(--accent2)">
+            ☁️ Config จาก Google Sheets
+            <span class="ml-auto font-mono" id="cfgBadge" style="font-size:.65rem;color:var(--text2)">—</span>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:.82rem;margin-bottom:6px;line-height:1.5">
+                ดึงค่า <strong>Admin PIN</strong>, <strong>Threshold</strong>, <strong>LINE Token</strong>
+                จาก Sheet ชื่อ <code style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:.78rem">Config</code>
+                โดยอัตโนมัติ — ไม่ต้องกรอกใหม่ทุกครั้ง
+              </div>
+              <div style="font-size:.75rem;color:var(--text2)">Sync ล่าสุด: <span id="cfgLastSync" style="color:var(--text)">ยังไม่ได้ sync</span></div>
+              <div id="cfgStatus" style="font-size:.78rem;margin-top:5px;min-height:18px;color:var(--text2)">—</div>
+            </div>
+            <button class="btn-primary" onclick="loadConfigFromGAS(true)" style="white-space:nowrap;align-self:center">
+              🔄 โหลดตอนนี้
+            </button>
+          </div>
+
+          <!-- Config key reference table -->
+          <div style="margin-top:14px;padding:10px 12px;background:var(--surface2);border-radius:8px">
+            <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);font-family:'IBM Plex Mono',monospace;margin-bottom:8px">
+              📋 คีย์ใน Sheet "Config" (คอลัมน์ A = key, คอลัมน์ B = value)
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:5px;font-family:'IBM Plex Mono',monospace;font-size:.73rem">
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">adminPin</span>
+                <span id="cfgPinMask" style="color:var(--warn)">****</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">angleThresh</span>
+                <span id="cfgPreviewAngle" style="color:var(--ok)">30°</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">fsrThresh</span>
+                <span id="cfgPreviewFsr" style="color:var(--ok)">500</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">battLow</span>
+                <span id="cfgPreviewBatt" style="color:var(--ok)">15%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">pwmMotor</span>
+                <span id="cfgPreviewPwm" style="color:var(--ok)">200</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">pumpGoal</span>
+                <span id="cfgPreviewPump" style="color:var(--ok)">100</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">lineToken</span>
+                <span style="color:var(--sda)">••••</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">doctorId</span>
+                <span style="color:var(--sda)">Uxxxx</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">nurseId</span>
+                <span style="color:var(--sda)">Uxxxx</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">lineAlertOn</span>
+                <span id="cfgPreviewLine" style="color:var(--ok)">true</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">battAlertOn</span>
+                <span id="cfgPreviewBattA" style="color:var(--ok)">true</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Admin Only: จัดการบัญชี -->
         <div class="card admin-only-card" id="adminAccountCard" style="display:none;border-color:var(--warn)">
           <div class="card-title" style="color:var(--warn)">
@@ -1434,6 +1509,9 @@ let isFetching    = false;
 let lastFetchTime = null;
 let fetchError    = false;
 let nextFetchIn   = 0; // countdown seconds to next fetch
+
+// Config cache
+let cachedConfig  = {};
 
 // เตียงจริง 1 เตียง — อัปเดตจาก GAS
 const bedData = [
@@ -2142,6 +2220,144 @@ function updateLive() {
 }
 
 // ═══════════════════════════════════════════
+// CONFIG FROM GOOGLE SHEETS
+// ═══════════════════════════════════════════
+/*
+ * ใน GAS script เพิ่มใน doGet(e):
+ *
+ * if (e.parameter.action === 'getConfig') {
+ *   const sheet = SpreadsheetApp.getActive().getSheetByName('Config');
+ *   const rows  = sheet.getDataRange().getValues();
+ *   const cfg   = {};
+ *   rows.forEach(r => { if (r[0]) cfg[String(r[0]).trim()] = String(r[1]).trim(); });
+ *   return ContentService
+ *     .createTextOutput(JSON.stringify(cfg))
+ *     .setMimeType(ContentService.MimeType.JSON);
+ * }
+ *
+ * Sheet "Config" (A=key, B=value):
+ *   adminPin | 1234
+ *   angleThresh | 30
+ *   fsrThresh | 500
+ *   battLow | 15
+ *   pwmMotor | 200
+ *   pumpGoal | 100
+ *   pumpUpThresh | 20
+ *   lineToken | <token>
+ *   doctorId | U...
+ *   nurseId | U...
+ *   lineAlertOn | true
+ *   battAlertOn | true
+ */
+
+function applyConfig(cfg) {
+  if (!cfg || typeof cfg !== 'object') return;
+  // PIN
+  if (cfg.adminPin) PIN = String(cfg.adminPin);
+  // Thresholds → localStorage
+  if (cfg.angleThresh)  localStorage.setItem('thresh_angle',     cfg.angleThresh);
+  if (cfg.fsrThresh)    localStorage.setItem('thresh_fsr',       cfg.fsrThresh);
+  if (cfg.battLow)      localStorage.setItem('thresh_battLow',   cfg.battLow);
+  if (cfg.pwmMotor)     localStorage.setItem('thresh_pwm',       cfg.pwmMotor);
+  if (cfg.pumpGoal)     localStorage.setItem('thresh_pumpGoal',  cfg.pumpGoal);
+  if (cfg.pumpUpThresh) localStorage.setItem('thresh_pumpUp',    cfg.pumpUpThresh);
+  // LINE settings → localStorage
+  if (cfg.lineToken)    localStorage.setItem('line_token',       cfg.lineToken);
+  if (cfg.doctorId)     localStorage.setItem('line_doctor',      cfg.doctorId);
+  if (cfg.nurseId)      localStorage.setItem('line_nurse',       cfg.nurseId);
+  if (cfg.lineAlertOn !== undefined) {
+    lineAlertOn = cfg.lineAlertOn === 'true' || cfg.lineAlertOn === true;
+    localStorage.setItem('lineAlertOn', String(lineAlertOn));
+  }
+  if (cfg.battAlertOn !== undefined) {
+    battAlertOn = cfg.battAlertOn === 'true' || cfg.battAlertOn === true;
+    localStorage.setItem('battAlertOn', String(battAlertOn));
+  }
+  // Refresh UI
+  loadThresh();
+  loadLineSettings();
+  initAlertToggles();
+  updateConfigPreview(cfg);
+}
+
+function updateConfigPreview(cfg) {
+  const safe = id => document.getElementById(id);
+  const t    = localStorage.getItem('configFetchedAt');
+  const ts   = t ? new Date(parseInt(t)).toLocaleTimeString('th-TH') : '—';
+  if (safe('cfgLastSync'))     safe('cfgLastSync').textContent     = ts;
+  if (safe('cfgBadge'))        safe('cfgBadge').textContent        = '✅ ' + ts;
+  if (safe('cfgPinMask'))      safe('cfgPinMask').textContent      = cfg.adminPin ? '****' : '—';
+  if (safe('cfgPreviewAngle')) safe('cfgPreviewAngle').textContent = (cfg.angleThresh   || localStorage.getItem('thresh_angle')   || 30) + '°';
+  if (safe('cfgPreviewFsr'))   safe('cfgPreviewFsr').textContent   = cfg.fsrThresh      || localStorage.getItem('thresh_fsr')    || 500;
+  if (safe('cfgPreviewBatt'))  safe('cfgPreviewBatt').textContent  = (cfg.battLow       || localStorage.getItem('thresh_battLow')|| 15) + '%';
+  if (safe('cfgPreviewPwm'))   safe('cfgPreviewPwm').textContent   = cfg.pwmMotor       || localStorage.getItem('thresh_pwm')   || 200;
+  if (safe('cfgPreviewPump'))  safe('cfgPreviewPump').textContent  = cfg.pumpGoal       || localStorage.getItem('thresh_pumpGoal')|| 100;
+  const la = cfg.lineAlertOn !== undefined ? cfg.lineAlertOn : localStorage.getItem('lineAlertOn');
+  const ba = cfg.battAlertOn !== undefined ? cfg.battAlertOn : localStorage.getItem('battAlertOn');
+  if (safe('cfgPreviewLine'))  { safe('cfgPreviewLine').textContent  = String(la) === 'false' ? 'false' : 'true'; safe('cfgPreviewLine').style.color  = String(la) === 'false' ? 'var(--gnd)' : 'var(--ok)'; }
+  if (safe('cfgPreviewBattA')) { safe('cfgPreviewBattA').textContent = String(ba) === 'false' ? 'false' : 'true'; safe('cfgPreviewBattA').style.color = String(ba) === 'false' ? 'var(--gnd)' : 'var(--ok)'; }
+}
+
+function loadCachedConfig() {
+  const raw = localStorage.getItem('cachedConfig');
+  if (!raw) {
+    // ไม่มี cache → แสดงค่า default จาก localStorage เท่านั้น
+    updateConfigPreview({});
+    return;
+  }
+  try {
+    cachedConfig = JSON.parse(raw);
+    applyConfig(cachedConfig);
+  } catch(e) {
+    console.warn('[Config] parse error:', e);
+  }
+}
+
+function loadLineSettings() {
+  const safe = id => document.getElementById(id);
+  if (safe('inpToken'))  safe('inpToken').value  = localStorage.getItem('line_token')  || '';
+  if (safe('inpDoctor')) safe('inpDoctor').value = localStorage.getItem('line_doctor') || '';
+  if (safe('inpNurse'))  safe('inpNurse').value  = localStorage.getItem('line_nurse')  || '';
+}
+
+async function loadConfigFromGAS(showStatus = false) {
+  if (!gasUrl) {
+    const safe = id => document.getElementById(id);
+    if (showStatus && safe('cfgStatus')) {
+      safe('cfgStatus').textContent = '⚠ ยังไม่ได้ใส่ GAS URL — ไปที่ Admin Settings ก่อน';
+      safe('cfgStatus').style.color = 'var(--warn)';
+    }
+    return;
+  }
+  const safe = id => document.getElementById(id);
+  if (showStatus) {
+    if (safe('cfgStatus')) { safe('cfgStatus').textContent = '⟳ กำลังโหลด Config...'; safe('cfgStatus').style.color = 'var(--text2)'; }
+    if (safe('cfgBadge'))    safe('cfgBadge').textContent  = '⟳ ...';
+  }
+  try {
+    const res = await fetch(gasUrl + '?action=getConfig', { method: 'GET', redirect: 'follow' });
+    const cfg = await res.json();
+    if (cfg && !cfg.error && typeof cfg === 'object') {
+      cachedConfig = cfg;
+      localStorage.setItem('cachedConfig',    JSON.stringify(cfg));
+      localStorage.setItem('configFetchedAt', Date.now().toString());
+      applyConfig(cfg);
+      const t = new Date().toLocaleTimeString('th-TH');
+      if (safe('cfgStatus')) { safe('cfgStatus').textContent = '✅ โหลด Config สำเร็จ · ' + t; safe('cfgStatus').style.color = 'var(--ok)'; }
+    } else {
+      if (safe('cfgStatus')) {
+        safe('cfgStatus').textContent = '⚠ GAS ไม่มี getConfig — เพิ่ม action ใน GAS script ก่อน';
+        safe('cfgStatus').style.color = 'var(--warn)';
+      }
+      if (safe('cfgBadge')) safe('cfgBadge').textContent = '⚠ ไม่มี Config';
+    }
+  } catch(e) {
+    if (safe('cfgStatus')) { safe('cfgStatus').textContent = '❌ ' + e.message; safe('cfgStatus').style.color = 'var(--danger)'; }
+    if (safe('cfgBadge'))    safe('cfgBadge').textContent  = '❌ Error';
+  }
+}
+
+// ═══════════════════════════════════════════
 // SETTINGS
 // ═══════════════════════════════════════════
 function toggleSet(id) {
@@ -2188,7 +2404,16 @@ function initAlertToggles() {
     'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
 }
 
-function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
+function saveLine() {
+  const safe = id => document.getElementById(id);
+  const token  = safe('inpToken')?.value.trim()  || '';
+  const doctor = safe('inpDoctor')?.value.trim() || '';
+  const nurse  = safe('inpNurse')?.value.trim()  || '';
+  localStorage.setItem('line_token',  token);
+  localStorage.setItem('line_doctor', doctor);
+  localStorage.setItem('line_nurse',  nurse);
+  alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅');
+}
 // ── Pending Users (Admin) ──────────────────────────────────
 async function loadPendingUsers() {
   if (!gasUrl) { alert('กรุณาตั้งค่า GAS URL ก่อน'); return; }
@@ -2321,7 +2546,8 @@ function saveSettings() {
     updateDataModeUI();
   }
   alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅');
-  updateLive(); // เริ่มดึงข้อมูลทันที
+  updateLive();             // เริ่มดึงข้อมูล sensor ทันที
+  loadConfigFromGAS(true);  // โหลด config จาก Sheet ด้วย
 }
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
@@ -2334,18 +2560,15 @@ function clearData() {
 renderBeds();
 renderAlerts();
 
-// Load saved GAS URL
+// ── โหลด GAS URL ──────────────────────────
 gasUrl = localStorage.getItem('gasUrl') || '';
-// ถ้ามี GAS URL บันทึกไว้ → ใช้ real data อัตโนมัติ
 if (gasUrl) useRealData = true;
-else useRealData = false;
+else        useRealData = false;
 localStorage.setItem('useRealData', useRealData.toString());
 const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
-// Show mode indicator
-console.log('[v4.10.5] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
-// โหลด font size ที่บันทึกไว้
+// ── font size ──────────────────────────────
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
 document.documentElement.classList.add('fs-' + savedFs);
@@ -2353,8 +2576,15 @@ document.querySelectorAll('.fs-btn').forEach(b => {
   b.classList.toggle('active', b.getAttribute('onclick') === `setFs('${savedFs}')`);
 });
 updateDataModeUI();
-loadThresh();
+
+// ── โหลด Config: cache ก่อน (instant) แล้ว fetch ใหม่ใน background ──
+loadCachedConfig();                         // ① ใช้ค่าที่จำไว้ทันที (ไม่รอ network)
+if (gasUrl) loadConfigFromGAS(false);       // ② fetch config ใหม่เงียบๆ เบื้องหลัง
+
+loadLineSettings();
 initAlertToggles();
+
+console.log('[v4.10.5] GAS:', gasUrl ? 'set' : 'none', '| Config cache:', !!localStorage.getItem('cachedConfig'));
 
 updateLive();
 setInterval(updateLive,    30000); // ทุก 30 วิ ตาม Firmware sleep cycle

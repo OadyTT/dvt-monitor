@@ -633,7 +633,6 @@ body{
 .red{color:var(--danger)}
 .orange{color:var(--charging)}
 .blue{color:var(--sda)}
-.warn{color:var(--warn)}
 </style>
 </head>
 <body class="fs-md">
@@ -1335,8 +1334,9 @@ function updateBedFromGAS(d) {
   renderBeds();
   // อัปเดต stat cards
   const safe = id => document.getElementById(id);
-  if(safe('svAlert')) safe('svAlert').textContent = isAlert?'1':'0';
-  if(safe('svOk'))    safe('svOk').textContent    = isAlert?'0':'1';
+  if(safe('svBeds'))   safe('svBeds').textContent   = '1';
+  if(safe('svAlert'))  safe('svAlert').textContent  = isAlert?'1':'0';
+  if(safe('svNormal')) safe('svNormal').textContent = isAlert?'0':'1';
 }
 
 const alertLog = [
@@ -1831,18 +1831,6 @@ function updateLive() {
   if (safe('vMotAnk')) safe('vMotAnk').textContent=ma+'/255';
   if (safe('pMotHip')) safe('pMotHip').style.width=(mh/255*100)+'%';
   if (safe('pMotAnk')) safe('pMotAnk').style.width=(ma/255*100)+'%';
-
-  // อัปเดต bed card + stat cards + charts ใน mock mode
-  const mockThresh = parseFloat(localStorage.getItem('thresh_angle')||30);
-  const mockFsrT   = parseInt(localStorage.getItem('thresh_fsr')||500);
-  const mockIsAlert = hx > mockThresh || hy > mockThresh || al > mockThresh;
-  const mockSt = mockIsAlert ? 'danger' : ((fh < mockFsrT || fa < mockFsrT) && (fh+fa)>0 ? 'warn' : 'ok');
-  bedData[0] = {...bedData[0], hipX:hx, hipY:hy, ankL:al, ankR:ar, fsrH:fh, fsrA:fa, batt:bp, status:mockSt};
-  renderBeds();
-  if (safe('svAlert')) safe('svAlert').textContent = mockIsAlert ? '1' : '0';
-  if (safe('svOk'))    safe('svOk').textContent    = mockIsAlert ? '0' : '1';
-  if (safe('svBatt'))  { safe('svBatt').textContent = bp+'%'; safe('svBatt').style.color = 'var(--ok)'; }
-  pushChartData({hipAngleX:hx, hipAngleY:hy, ankLAngleX:al, ankRAngleX:ar, fsrL:fh, fsrR:fa, battVolt:String(bv)});
 }
 
 // ═══════════════════════════════════════════
@@ -2015,17 +2003,7 @@ function loadThresh() {
   const vg = document.getElementById('vPumpGoal');
   if (vg) vg.textContent = pumpGoal;
 }
-function saveSettings() {
-  const inp = document.getElementById('inpGas');
-  if (inp && inp.value.trim()) {
-    gasUrl = inp.value.trim();
-    localStorage.setItem('gasUrl', gasUrl);
-    useRealData = true;
-    localStorage.setItem('useRealData', 'true');
-    updateDataModeUI();
-  }
-  alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅');
-}
+function saveSettings() { alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅'); }
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
     alert(lang==='th'?'ล้างข้อมูลแล้ว':'Data cleared');

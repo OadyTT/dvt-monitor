@@ -634,67 +634,6 @@ body{
 .orange{color:var(--charging)}
 .blue{color:var(--sda)}
 .warn{color:var(--warn)}
-
-/* ── Connection Banner ── */
-.conn-banner{
-  display:flex;align-items:center;gap:12px;
-  padding:11px 16px;border-radius:12px;margin-bottom:16px;
-  transition:all .3s;
-}
-.conn-banner.conn-offline{background:#0d0404;border:1px solid #6b2222;color:var(--danger)}
-.conn-banner.conn-mock   {background:#0d0900;border:1px solid #664400;color:var(--warn)}
-.conn-banner.conn-live   {background:#030d06;border:1px solid #1a4a1a;color:var(--ok)}
-.conn-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
-.conn-dot.offline{background:var(--gnd)}
-.conn-dot.mock   {background:var(--warn);animation:live-pulse 2s ease-in-out infinite}
-.conn-dot.live   {background:var(--ok); animation:live-pulse 1.5s ease-in-out infinite}
-.conn-title{font-weight:600;font-size:.85rem}
-.conn-sub  {font-size:.72rem;color:var(--text2);margin-top:1px}
-
-/* ── Sensor Section ── */
-.sensor-section{background:var(--surface2);border-radius:10px;padding:10px 12px;margin-top:0}
-.sensor-section+.sensor-section{margin-top:10px}
-.sensor-section-title{
-  font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--text2);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;
-}
-.sensor-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sensor-item{display:flex;align-items:center;gap:10px}
-.sensor-item-info{flex:1;min-width:0}
-.sensor-item-name{font-size:.68rem;color:var(--text2)}
-.sensor-item-badge{
-  font-size:.66rem;font-weight:600;margin-top:3px;
-  padding:2px 7px;border-radius:5px;display:inline-block;
-  transition:all .3s;
-}
-.sensor-item-badge.s-ok     {background:#052010;color:var(--ok);  border:1px solid #0a3020}
-.sensor-item-badge.s-warn   {background:#1a1000;color:var(--warn);border:1px solid #553300}
-.sensor-item-badge.s-danger {background:#1a0505;color:var(--danger);border:1px solid #500}
-.sensor-item-badge.s-offline{background:var(--surface);color:var(--gnd);border:1px solid var(--brd)}
-
-/* ── Small gauge (70px) ── */
-.gauge-sm{position:relative;width:70px;height:70px;flex-shrink:0}
-.gauge-sm svg{transform:rotate(-90deg)}
-.gauge-sm .gauge-val{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:'IBM Plex Mono',monospace;
-}
-.gauge-sm .gauge-num{font-size:.88rem;font-weight:700}
-.gauge-sm .gauge-u{font-size:.52rem;color:var(--text2)}
-
-/* ── Pump display ── */
-.pump-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;text-align:center;padding:6px 0}
-.pump-num{font-family:'IBM Plex Mono',monospace;font-size:1.7rem;font-weight:800;color:var(--ok);line-height:1}
-.pump-total-num{font-family:'IBM Plex Mono',monospace;font-size:2rem;font-weight:900;color:var(--ok);line-height:1}
-.pump-total{border-left:1px solid var(--brd);border-right:1px solid var(--brd)}
-.pump-side-lbl{font-size:.68rem;color:var(--text2);margin-top:3px}
-
-/* ── FSR two-column ── */
-.fsr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fsr-col{padding:8px 10px;background:var(--surface2);border-radius:8px}
-.fsr-lbl{font-size:.68rem;color:var(--text2);margin-bottom:3px}
-.fsr-num{font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:700;margin-bottom:5px}
 </style>
 </head>
 <body class="fs-md">
@@ -827,26 +766,12 @@ body{
 
     <!-- ─────── DASHBOARD ─────── -->
     <div class="page active" id="page-dashboard">
-
-      <!-- Page header -->
       <div class="inline-flex mb12">
         <div>
           <div class="page-title" data-th="แดชบอร์ด" data-en="Dashboard">แดชบอร์ด</div>
-          <div class="page-subtitle" data-th="ภาพรวมระบบ Smart HIP DVT" data-en="Smart HIP DVT Overview">ภาพรวมระบบ Smart HIP DVT</div>
+          <div class="page-subtitle" data-th="ภาพรวมระบบ DVT realtime" data-en="DVT System realtime overview">ภาพรวมระบบ DVT realtime</div>
         </div>
-      </div>
-
-      <!-- Connection status banner -->
-      <div id="connBanner" class="conn-banner conn-offline">
-        <div class="conn-dot offline" id="connDot"></div>
-        <div>
-          <div class="conn-title" id="connTitle">ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์</div>
-          <div class="conn-sub"   id="connSub">ไปที่ Settings เพื่อใส่ GAS URL</div>
-        </div>
-        <div class="ml-auto" style="text-align:right;flex-shrink:0">
-          <div id="lastUpdate" style="font-size:.72rem;color:var(--text2)">--:--:--</div>
-          <div id="connMode"   style="font-size:.62rem;color:var(--text2);margin-top:1px;font-family:'IBM Plex Mono',monospace">—</div>
-        </div>
+        <div class="ml-auto text-sm" id="lastUpdate">อัปเดตล่าสุด: --:--:--</div>
       </div>
 
       <!-- Charging banner -->
@@ -856,213 +781,175 @@ body{
           <div class="fw600" style="color:var(--charging)" data-th="กำลังชาร์จ USB Type-C" data-en="Charging via USB Type-C">กำลังชาร์จ USB Type-C</div>
           <div class="text-sm" data-th="ระบบ Light Sleep ถูกปิดชั่วคราว" data-en="Light Sleep paused during charging">ระบบ Light Sleep ถูกปิดชั่วคราว</div>
         </div>
-        <div class="ml-auto font-mono fw600" style="color:var(--charging)" id="chrgPct">--%</div>
+        <div class="ml-auto font-mono fw600" style="color:var(--charging)" id="chrgPct">78%</div>
       </div>
 
-      <!-- Stat cards row -->
+      <!-- Stat row -->
       <div class="grid-4 mb18">
-        <!-- Connection -->
-        <div class="stat-card" id="scConn">
-          <div class="stat-label">สถานะระบบ</div>
-          <div class="stat-value" id="svConnStatus" style="font-size:1.15rem;color:var(--gnd)">Offline</div>
-          <div class="stat-sub"   id="svConnSub"    style="font-size:.72rem">ไม่มีข้อมูล</div>
+        <div class="stat-card info">
+          <div class="stat-label" data-th="เตียงทั้งหมด" data-en="Total Beds">เตียงทั้งหมด</div>
+          <div class="stat-value">4</div>
+          <div class="stat-unit" data-th="เตียง" data-en="beds">เตียง</div>
         </div>
-        <!-- Alerts -->
-        <div class="stat-card" id="scAlert">
+        <div class="stat-card danger" id="scAlert">
           <div class="stat-label" data-th="แจ้งเตือนตอนนี้" data-en="Active Alerts">แจ้งเตือนตอนนี้</div>
-          <div class="stat-value" id="svAlert" style="color:var(--gnd)">--</div>
-          <div class="stat-unit" data-th="แจ้งเตือน" data-en="alerts">แจ้งเตือน</div>
+          <div class="stat-value red" id="svAlert">2</div>
+          <div class="stat-unit" data-th="เตียง" data-en="beds">เตียง</div>
         </div>
-        <!-- Battery -->
-        <div class="stat-card" id="scBatt">
+        <div class="stat-card charging" id="scBatt">
           <div class="stat-label" data-th="แบตเตอรี่" data-en="Battery">แบตเตอรี่</div>
-          <div class="stat-value" id="svBatt" style="color:var(--gnd)">--%</div>
-          <div class="stat-sub font-mono" id="svBattV">--V</div>
+          <div class="stat-value" id="svBatt" style="color:var(--ok)">78%</div>
+          <div class="stat-sub font-mono" id="svBattV">3.95V</div>
         </div>
-        <!-- Pump progress -->
-        <div class="stat-card" id="scPump">
-          <div class="stat-label">กระดกข้อเท้าวันนี้</div>
-          <div class="stat-value" id="svPumpStat" style="font-size:1.35rem;color:var(--gnd)">--</div>
-          <div class="stat-sub"   id="svPumpGoalStat" style="font-size:.72rem">เป้า -- ครั้ง</div>
+        <div class="stat-card ok">
+          <div class="stat-label" data-th="เตียงปกติ" data-en="Normal Beds">เตียงปกติ</div>
+          <div class="stat-value green" id="svOk">2</div>
+          <div class="stat-unit" data-th="เตียง" data-en="beds">เตียง</div>
         </div>
       </div>
-      <!-- hidden compat -->
-      <span id="svOk" style="display:none">1</span>
 
-      <!-- Row 1: Posture sensors | Pump + FSR -->
+      <!-- Sensor gauges -->
       <div class="grid-2 mb18">
-
-        <!-- Posture sensor card -->
         <div class="card">
           <div class="card-title">
-            🎯 <span data-th="ท่านอน MPU6050" data-en="Posture MPU6050">ท่านอน MPU6050</span>
-            <span class="ml-auto" id="postureLiveBadge" style="font-size:.68rem;color:var(--gnd);font-family:'IBM Plex Mono',monospace">● OFFLINE</span>
+            🎯 <span data-th="เซ็นเซอร์ท่านอน MPU6050" data-en="Posture Sensor MPU6050">เซ็นเซอร์ท่านอน MPU6050</span>
+            <span class="ml-auto"><span class="live-dot" data-th="สด" data-en="Live">สด</span></span>
           </div>
-
-          <!-- Hip -->
-          <div class="sensor-section">
-            <div class="sensor-section-title">🦴 สะโพก (Hip)</div>
-            <div class="sensor-pair">
-              <div class="sensor-item">
-                <div class="gauge-sm">
-                  <svg width="70" height="70" viewBox="0 0 70 70">
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surface)" stroke-width="6"/>
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--sda)" stroke-width="6"
-                      stroke-dasharray="176" id="gaugeHipX" stroke-dashoffset="176" stroke-linecap="round"/>
-                  </svg>
-                  <div class="gauge-val">
-                    <div class="gauge-num blue" id="vHipX">--</div>
-                    <div class="gauge-u">°</div>
-                  </div>
-                </div>
-                <div class="sensor-item-info">
-                  <div class="sensor-item-name">Flexion (X)</div>
-                  <div class="sensor-item-badge s-offline" id="badgeHipX">—</div>
-                </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center">
+            <div class="gauge-wrap">
+              <div class="gauge-ring">
+                <svg width="90" height="90" viewBox="0 0 90 90">
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--sda)" stroke-width="7"
+                    stroke-dasharray="226" id="gaugeHipX" stroke-dashoffset="170" stroke-linecap="round"/>
+                </svg>
+                <div class="gauge-val"><div class="gauge-num blue" id="vHipX">18°</div><div class="gauge-u">Flexion</div></div>
               </div>
-              <div class="sensor-item">
-                <div class="gauge-sm">
-                  <svg width="70" height="70" viewBox="0 0 70 70">
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surface)" stroke-width="6"/>
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--scl)" stroke-width="6"
-                      stroke-dasharray="176" id="gaugeHipY" stroke-dashoffset="176" stroke-linecap="round"/>
-                  </svg>
-                  <div class="gauge-val">
-                    <div class="gauge-num" style="color:var(--scl)" id="vHipY">--</div>
-                    <div class="gauge-u">°</div>
-                  </div>
-                </div>
-                <div class="sensor-item-info">
-                  <div class="sensor-item-name">Abduction (Y)</div>
-                  <div class="sensor-item-badge s-offline" id="badgeHipY">—</div>
-                </div>
-              </div>
+              <div class="text-sm text-muted">สะโพก (Flexion)</div>
             </div>
-          </div>
-
-          <!-- Ankle -->
-          <div class="sensor-section">
-            <div class="sensor-section-title">🦶 ข้อเท้า (Ankle)</div>
-            <div class="sensor-pair">
-              <div class="sensor-item">
-                <div class="gauge-sm">
-                  <svg width="70" height="70" viewBox="0 0 70 70">
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surface)" stroke-width="6"/>
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--danger)" stroke-width="6"
-                      stroke-dasharray="176" id="gaugeAnkL" stroke-dashoffset="176" stroke-linecap="round"/>
-                  </svg>
-                  <div class="gauge-val">
-                    <div class="gauge-num red" id="vAnkL">--</div>
-                    <div class="gauge-u">°</div>
-                  </div>
-                </div>
-                <div class="sensor-item-info">
-                  <div class="sensor-item-name">ซ้าย (Ankle L)</div>
-                  <div class="sensor-item-badge s-offline" id="badgeAnkL">—</div>
-                </div>
+            <div class="gauge-wrap">
+              <div class="gauge-ring">
+                <svg width="90" height="90" viewBox="0 0 90 90">
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--scl)" stroke-width="7"
+                    stroke-dasharray="226" id="gaugeHipY" stroke-dashoffset="195" stroke-linecap="round"/>
+                </svg>
+                <div class="gauge-val"><div class="gauge-num" style="color:var(--scl)" id="vHipY">11°</div><div class="gauge-u">Abduction</div></div>
               </div>
-              <div class="sensor-item">
-                <div class="gauge-sm">
-                  <svg width="70" height="70" viewBox="0 0 70 70">
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surface)" stroke-width="6"/>
-                    <circle cx="35" cy="35" r="28" fill="none" stroke="var(--ok)" stroke-width="6"
-                      stroke-dasharray="176" id="gaugeAnkR" stroke-dashoffset="176" stroke-linecap="round"/>
-                  </svg>
-                  <div class="gauge-val">
-                    <div class="gauge-num green" id="vAnkR">--</div>
-                    <div class="gauge-u">°</div>
-                  </div>
-                </div>
-                <div class="sensor-item-info">
-                  <div class="sensor-item-name">ขวา (Ankle R)</div>
-                  <div class="sensor-item-badge s-offline" id="badgeAnkR">—</div>
-                </div>
+              <div class="text-sm text-muted">สะโพก (Abduction)</div>
+            </div>
+            <div class="gauge-wrap">
+              <div class="gauge-ring">
+                <svg width="90" height="90" viewBox="0 0 90 90">
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--danger)" stroke-width="7"
+                    stroke-dasharray="226" id="gaugeAnkL" stroke-dashoffset="80" stroke-linecap="round"/>
+                </svg>
+                <div class="gauge-val"><div class="gauge-num red" id="vAnkL">35°</div><div class="gauge-u">ข้อเท้าซ้าย</div></div>
               </div>
+              <div class="text-sm text-muted" style="color:var(--danger)">⚠️ ข้อเท้าซ้าย</div>
+            </div>
+            <div class="gauge-wrap">
+              <div class="gauge-ring">
+                <svg width="90" height="90" viewBox="0 0 90 90">
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
+                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--ok)" stroke-width="7"
+                    stroke-dasharray="226" id="gaugeAnkR" stroke-dashoffset="200" stroke-linecap="round"/>
+                </svg>
+                <div class="gauge-val"><div class="gauge-num green" id="vAnkR">9°</div><div class="gauge-u">ข้อเท้าขวา</div></div>
+              </div>
+              <div class="text-sm text-muted">ข้อเท้าขวา</div>
             </div>
           </div>
         </div>
 
-        <!-- Right column: Pump + FSR -->
-        <div style="display:flex;flex-direction:column;gap:14px">
-
-          <!-- Ankle pump -->
-          <div class="card" style="border-color:var(--ok)">
-            <div class="card-title" style="color:var(--ok)">
-              🦶 <span data-th="กระดกข้อเท้า (Ankle Pump)" data-en="Ankle Pump Count">กระดกข้อเท้า (Ankle Pump)</span>
+        <!-- ── Pump Count Card ── -->
+        <div class="card" style="border-color:var(--ok)">
+          <div class="card-title" style="color:var(--ok)">
+            🦶 <span data-th="นับกระดกข้อเท้า (Ankle Pump)" data-en="Ankle Pump Count">นับกระดกข้อเท้า (Ankle Pump)</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;padding:8px 0">
+            <div>
+              <div style="font-size:2rem;font-weight:800;color:var(--ok)" id="vPumpL">0</div>
+              <div style="font-size:0.75rem;color:var(--text2)">ซ้าย (L)</div>
             </div>
-            <div class="pump-row">
-              <div>
-                <div class="pump-num" id="vPumpL">--</div>
-                <div class="pump-side-lbl">ซ้าย (L)</div>
-              </div>
-              <div class="pump-total">
-                <div class="pump-total-num" id="vPumpTotal">--</div>
-                <div class="pump-side-lbl">รวม</div>
-              </div>
-              <div>
-                <div class="pump-num" id="vPumpR">--</div>
-                <div class="pump-side-lbl">ขวา (R)</div>
-              </div>
+            <div style="border-left:1px solid var(--brd);border-right:1px solid var(--brd)">
+              <div style="font-size:2.5rem;font-weight:900;color:var(--ok)" id="vPumpTotal">0</div>
+              <div style="font-size:0.75rem;color:var(--text2)">รวมทั้งหมด</div>
             </div>
-            <div class="prog-track" style="margin:8px 0 4px">
-              <div class="prog-fill" id="pPumpTotal" style="width:0%;background:var(--ok);transition:.5s"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text2)">
-              <span>0 ครั้ง</span>
-              <span>เป้า <span id="vPumpGoal">100</span> ครั้ง/วัน</span>
+            <div>
+              <div style="font-size:2rem;font-weight:800;color:var(--ok)" id="vPumpR">0</div>
+              <div style="font-size:0.75rem;color:var(--text2)">ขวา (R)</div>
             </div>
           </div>
-
-          <!-- FSR pillows -->
-          <div class="card">
-            <div class="card-title">👟 <span data-th="แรงกด FSR หมอน" data-en="Pillow FSR Pressure">แรงกด FSR หมอน</span></div>
-            <div class="fsr-grid">
-              <div class="fsr-col">
-                <div class="fsr-lbl">หมอนซ้าย (FSR L)</div>
-                <div class="fsr-num" id="vFsrHip">--</div>
-                <div class="prog-track">
-                  <div class="prog-fill" id="pFsrHip" style="width:0%;background:var(--ok)"></div>
-                </div>
-              </div>
-              <div class="fsr-col">
-                <div class="fsr-lbl">หมอนขวา (FSR R)</div>
-                <div class="fsr-num" id="vFsrAnk">--</div>
-                <div class="prog-track">
-                  <div class="prog-fill" id="pFsrAnk" style="width:0%;background:var(--ok)"></div>
-                </div>
-              </div>
-            </div>
+          <div class="prog-track" style="margin-top:4px">
+            <div class="prog-fill" id="pPumpTotal" style="width:0%;background:var(--ok);transition:.5s"></div>
           </div>
-
+          <div style="font-size:0.7rem;color:var(--text2);text-align:center;margin-top:4px">
+            เป้าหมาย: <span id="vPumpGoal">100</span> ครั้ง/วัน
+          </div>
         </div>
-      </div>
 
-      <!-- Row 2: Motors | Battery -->
-      <div class="grid-2">
         <div class="card">
-          <div class="card-title">⚙️ <span data-th="มอเตอร์ AH024 PWM" data-en="AH024 PWM Motor">มอเตอร์ AH024 PWM</span></div>
-          <div class="prog-row">
-            <div class="prog-label"><span>Hip Motor</span><span class="font-mono" id="vMotHip">--/255</span></div>
-            <div class="prog-track"><div class="prog-fill" id="pMotHip" style="width:0%;background:var(--motor)"></div></div>
+          <div class="card-title">
+            👟 <span data-th="แรงกด FSR หมอน" data-en="Pillow FSR Pressure">แรงกด FSR หมอน</span>
           </div>
           <div class="prog-row">
-            <div class="prog-label"><span>Ankle Motor</span><span class="font-mono" id="vMotAnk">--/255</span></div>
-            <div class="prog-track"><div class="prog-fill" id="pMotAnk" style="width:0%;background:var(--motor)"></div></div>
+            <div class="prog-label">
+              <span data-th="หมอนซ้าย (FSR L)" data-en="Pillow L">หมอนซ้าย (FSR L)</span>
+              <span class="font-mono" id="vFsrHip">1840</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" id="pFsrHip" style="width:45%;background:var(--ok)"></div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-title">🔋 <span data-th="แบตเตอรี่ INA219" data-en="Battery INA219">แบตเตอรี่ INA219</span></div>
+          <div class="prog-row">
+            <div class="prog-label">
+              <span data-th="หมอนขวา (FSR R)" data-en="Pillow R">หมอนขวา (FSR R)</span>
+              <span class="font-mono" id="vFsrAnk">320</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" id="pFsrAnk" style="width:8%;background:var(--danger)"></div>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="card-title" style="margin-top:8px">
+            ⚙️ <span data-th="มอเตอร์ AH024 PWM" data-en="AH024 PWM Motor">มอเตอร์ AH024 PWM</span>
+          </div>
+          <div class="prog-row">
+            <div class="prog-label">
+              <span>Hip Motor</span>
+              <span class="font-mono" id="vMotHip">0/255</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" id="pMotHip" style="width:0%;background:var(--motor)"></div>
+            </div>
+          </div>
+          <div class="prog-row">
+            <div class="prog-label">
+              <span>Ankle Motor</span>
+              <span class="font-mono" id="vMotAnk">0/255</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" id="pMotAnk" style="width:0%;background:var(--motor)"></div>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="card-title" style="margin-top:4px">
+            🔋 <span data-th="แบตเตอรี่ INA219" data-en="Battery INA219">แบตเตอรี่ INA219</span>
+          </div>
           <div class="prog-row">
             <div class="prog-label">
               <span id="battLabel">LiPo 2000mAh</span>
-              <span class="font-mono" id="vBattPct">--%</span>
+              <span class="font-mono green" id="vBattPct">78%</span>
             </div>
-            <div class="prog-track"><div class="prog-fill" id="pBatt" style="width:0%;background:var(--ok)"></div></div>
+            <div class="prog-track">
+              <div class="prog-fill" id="pBatt" style="width:78%;background:var(--ok)"></div>
+            </div>
           </div>
-          <div class="text-sm" id="battInfo" style="margin-top:4px">--V · --mA</div>
+          <div class="text-sm" id="battInfo">3.95V · -42mA · <span class="green" data-th="ปกติ" data-en="Normal">ปกติ</span></div>
         </div>
       </div>
-
     </div>
 
     <!-- ─────── BEDS ─────── -->
@@ -1464,90 +1351,6 @@ const alertLog = [
 const labels30 = Array.from({length:30},(_,i)=>`${i+1}`);
 const randArr  = (mn,mx,n=30)=>Array.from({length:n},()=>+(Math.random()*(mx-mn)+mn).toFixed(1));
 
-// ═══════════════════════════════════════════
-// SHARED HELPERS
-// ═══════════════════════════════════════════
-function gaugeSetVal(id, val, mx) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const circ = parseFloat(el.getAttribute('stroke-dasharray')) || 176;
-  const off  = circ - (Math.min(Math.abs(val), mx) / mx * circ);
-  el.setAttribute('stroke-dashoffset', off);
-}
-
-function updateAngleBadge(id, val, thresh) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (val > thresh)            { el.textContent = `⚠ ${val.toFixed(1)}°`; el.className = 'sensor-item-badge s-danger'; }
-  else if (val > thresh * 0.8) { el.textContent = `${val.toFixed(1)}°`;   el.className = 'sensor-item-badge s-warn'; }
-  else                         { el.textContent = `${val.toFixed(1)}°`;   el.className = 'sensor-item-badge s-ok'; }
-}
-
-function updateConnBanner(mode) {
-  const safe = id => document.getElementById(id);
-  const banner = safe('connBanner');
-  if (!banner) return;
-  banner.className = 'conn-banner conn-' + mode;
-  const dot = safe('connDot');
-  if (mode === 'offline') {
-    if (dot) dot.className = 'conn-dot offline';
-    if (safe('connTitle')) safe('connTitle').textContent = 'ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์';
-    if (safe('connSub'))   safe('connSub').textContent   = 'ไปที่ Settings เพื่อใส่ GAS URL';
-    if (safe('connMode'))  safe('connMode').textContent  = 'OFFLINE';
-    if (safe('scConn'))    safe('scConn').className      = 'stat-card';
-    if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Offline'; safe('svConnStatus').style.color = 'var(--gnd)'; }
-    if (safe('svConnSub'))    safe('svConnSub').textContent = 'ไม่มีข้อมูล';
-    if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '● OFFLINE'; safe('postureLiveBadge').style.color = 'var(--gnd)'; }
-  } else if (mode === 'mock') {
-    if (dot) dot.className = 'conn-dot mock';
-    if (safe('connTitle')) safe('connTitle').textContent = 'Mock Data — ข้อมูลจำลอง (Demo)';
-    if (safe('connSub'))   safe('connSub').textContent   = 'แสดงข้อมูลสุ่ม ยังไม่ได้เชื่อมอุปกรณ์จริง';
-    if (safe('connMode'))  safe('connMode').textContent  = 'MOCK';
-    if (safe('scConn'))    safe('scConn').className      = 'stat-card warn';
-    if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Mock'; safe('svConnStatus').style.color = 'var(--warn)'; }
-    if (safe('svConnSub'))    safe('svConnSub').textContent = 'Demo Mode';
-    if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '◌ MOCK'; safe('postureLiveBadge').style.color = 'var(--warn)'; }
-  } else {
-    if (dot) dot.className = 'conn-dot live';
-    if (safe('connTitle')) safe('connTitle').textContent = 'เชื่อมต่อแล้ว — รับข้อมูล Live จาก ESP32';
-    if (safe('connSub'))   safe('connSub').textContent   = 'อัปเดตทุก 30 วินาที ตาม Firmware sleep cycle';
-    if (safe('connMode'))  safe('connMode').textContent  = 'LIVE';
-    if (safe('scConn'))    safe('scConn').className      = 'stat-card ok';
-    if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Online'; safe('svConnStatus').style.color = 'var(--ok)'; }
-    if (safe('svConnSub'))    safe('svConnSub').textContent = 'Live Data';
-    if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '● LIVE'; safe('postureLiveBadge').style.color = 'var(--ok)'; }
-  }
-}
-
-function setOfflineUI() {
-  const safe = id => document.getElementById(id);
-  ['vHipX','vHipY','vAnkL','vAnkR'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
-  ['vFsrHip','vFsrAnk'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
-  ['vPumpL','vPumpR','vPumpTotal'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
-  ['vMotHip','vMotAnk'].forEach(id => { if(safe(id)) safe(id).textContent = '--/255'; });
-  if (safe('svBatt'))  { safe('svBatt').textContent = '--%'; safe('svBatt').style.color = 'var(--gnd)'; }
-  if (safe('svBattV')) safe('svBattV').textContent = '--V';
-  if (safe('vBattPct')) safe('vBattPct').textContent = '--%';
-  if (safe('battInfo')) safe('battInfo').textContent = '--V · --mA';
-  if (safe('svAlert'))  { safe('svAlert').textContent = '--'; safe('svAlert').style.color = 'var(--gnd)'; }
-  if (safe('scAlert'))  safe('scAlert').className = 'stat-card';
-  if (safe('scBatt'))   safe('scBatt').className  = 'stat-card';
-  if (safe('svPumpStat'))     { safe('svPumpStat').textContent = '--'; safe('svPumpStat').style.color = 'var(--gnd)'; }
-  if (safe('svPumpGoalStat'))   safe('svPumpGoalStat').textContent = 'เป้า -- ครั้ง';
-  ['pFsrHip','pFsrAnk','pBatt','pPumpTotal','pMotHip','pMotAnk'].forEach(id => {
-    if(safe(id)) safe(id).style.width = '0%';
-  });
-  ['gaugeHipX','gaugeHipY','gaugeAnkL','gaugeAnkR'].forEach(id => {
-    const el = safe(id); if (!el) return;
-    const c = parseFloat(el.getAttribute('stroke-dasharray')) || 176;
-    el.setAttribute('stroke-dashoffset', c);
-  });
-  ['badgeHipX','badgeHipY','badgeAnkL','badgeAnkR'].forEach(id => {
-    const el = safe(id); if (!el) return;
-    el.textContent = '—'; el.className = 'sensor-item-badge s-offline';
-  });
-}
-
 let chartHip, chartAnkle, chartFsr, chartBatt;
 
 // ═══════════════════════════════════════════
@@ -1898,155 +1701,147 @@ async function fetchGASData() {
 }
 
 function updateDashboard(d) {
-  const t    = new Date().toLocaleTimeString('th-TH');
-  const safe = id => document.getElementById(id);
-  updateConnBanner('live');
-  if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
+  const t = new Date().toLocaleTimeString('th-TH');
+  const el = document.getElementById('lastUpdate');
+  if (el) el.textContent = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+' [LIVE]';
 
-  // ── Battery ──
+  // Battery
   const bv = parseFloat(d.battVolt) || 0;
   const bp = parseFloat(d.battPct)  || 0;
-  const battColor = bp>50?'var(--ok)':bp>20?'var(--warn)':'var(--danger)';
-  if (safe('svBatt'))   { safe('svBatt').textContent = bp.toFixed(0)+'%'; safe('svBatt').style.color = battColor; }
-  if (safe('svBattV'))  safe('svBattV').textContent  = bv.toFixed(2)+'V';
-  if (safe('vBattPct')) safe('vBattPct').textContent = bp.toFixed(0)+'%';
-  if (safe('pBatt'))    { safe('pBatt').style.width = bp+'%'; safe('pBatt').style.background = battColor; }
-  if (safe('battInfo')) safe('battInfo').innerHTML = `${bv.toFixed(2)}V · <span style="color:${battColor}">${bp.toFixed(0)}%</span>`;
-  if (safe('chrgPct'))  safe('chrgPct').textContent = bp.toFixed(0)+'%';
-  const battClass = bp>50?'stat-card ok':bp>20?'stat-card warn':'stat-card danger';
-  if (safe('scBatt')) safe('scBatt').className = battClass;
-  // topbar battery widget
+  const safe = id => document.getElementById(id);
   if (safe('battPct'))  safe('battPct').textContent  = bp.toFixed(0)+'%';
   if (safe('battVolt')) safe('battVolt').textContent = bv.toFixed(2)+'V';
-  if (safe('battFill')) { safe('battFill').style.width = bp+'%'; safe('battFill').style.background = battColor; }
-  if (safe('chrgPill')) safe('chrgPill').classList.toggle('hidden', !charging);
+  if (safe('battFill')) {
+    safe('battFill').style.width = bp+'%';
+    safe('battFill').style.background = bp>50?'var(--ok)':bp>20?'var(--warn)':'var(--danger)';
+  }
+  if (safe('svBatt'))  { safe('svBatt').textContent = bp.toFixed(0)+'%'; safe('svBatt').style.color = bp>50?'var(--ok)':bp>20?'var(--warn)':'var(--danger)'; }
+  if (safe('svBattV')) safe('svBattV').textContent = bv.toFixed(2)+'V';
+  if (safe('vBattPct'))safe('vBattPct').textContent = bp.toFixed(0)+'%';
+  if (safe('pBatt'))   safe('pBatt').style.width = bp+'%';
+  if (safe('battInfo'))safe('battInfo').innerHTML = `${bv.toFixed(2)}V · <span class="${bp>50?'green':bp>20?'warn':'red'}">${bp.toFixed(0)}%</span>`;
+  if (safe('chrgPct')) safe('chrgPct').textContent = bp.toFixed(0)+'%';
 
   const charging = d.charging === true || d.charging === 'TRUE';
   if (safe('chrgPill'))   safe('chrgPill').classList.toggle('hidden', !charging);
   if (safe('chrgBanner')) safe('chrgBanner').classList.toggle('hidden', !charging);
 
-  // ── Hip Sensor ──
+  // Hip Sensor
   const hx = parseFloat(d.hipAngleX) || 0;
   const hy = parseFloat(d.hipAngleY) || 0;
-  const thresh = parseFloat(localStorage.getItem('thresh_angle')||30);
   if (safe('vHipX')) safe('vHipX').textContent = hx.toFixed(1)+'°';
   if (safe('vHipY')) safe('vHipY').textContent = hy.toFixed(1)+'°';
-  gaugeSetVal('gaugeHipX', Math.abs(hx), 60);
-  gaugeSetVal('gaugeHipY', Math.abs(hy), 60);
-  updateAngleBadge('badgeHipX', Math.abs(hx), thresh);
-  updateAngleBadge('badgeHipY', Math.abs(hy), thresh);
 
-  // ── Ankle Sensor ──
+  // Ankle Sensor
   const al = Math.abs(parseFloat(d.ankLAngleX) || 0);
   const ar = Math.abs(parseFloat(d.ankRAngleX) || 0);
   if (safe('vAnkL')) safe('vAnkL').textContent = al.toFixed(1)+'°';
   if (safe('vAnkR')) safe('vAnkR').textContent = ar.toFixed(1)+'°';
-  gaugeSetVal('gaugeAnkL', al, 60);
-  gaugeSetVal('gaugeAnkR', ar, 60);
-  updateAngleBadge('badgeAnkL', al, thresh);
-  updateAngleBadge('badgeAnkR', ar, thresh);
 
-  // ── FSR ──
-  const fh = parseInt(d.fsrL) || parseInt(d.fsrHip) || 0;
-  const fa = parseInt(d.fsrR) || parseInt(d.fsrAnkle) || 0;
+  // Gauges
+  const gaugeSet = (id,val,mx) => {
+    const el2 = document.getElementById(id);
+    if (!el2) return;
+    const circ=226, off=circ-(Math.min(val,mx)/mx*circ);
+    el2.setAttribute('stroke-dashoffset', off);
+  };
+  gaugeSet('gaugeHipX',Math.abs(hx),60);
+  gaugeSet('gaugeHipY',Math.abs(hy),60);
+  gaugeSet('gaugeAnkL',al,60);
+  gaugeSet('gaugeAnkR',ar,60);
+
+  // FSR — หมอนซ้าย (FSR_L=GPIO34), หมอนขวา (FSR_R=GPIO35)
+  const fh = parseInt(d.fsrL) || parseInt(d.fsrHip) || 0;  // FSR ซ้าย
+  const fa = parseInt(d.fsrR) || parseInt(d.fsrAnkle) || 0; // FSR ขวา
   if (safe('vFsrHip')) safe('vFsrHip').textContent = fh;
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
 
-  // ── Pump Count ──
-  const pL   = parseInt(d.pumpCountL) || 0;
-  const pR   = parseInt(d.pumpCountR) || 0;
-  const pT   = parseInt(d.pumpTotal)  || (pL + pR);
-  const goal = parseInt(localStorage.getItem('thresh_pumpGoal')||100);
-  if (safe('vPumpL'))         safe('vPumpL').textContent         = pL;
-  if (safe('vPumpR'))         safe('vPumpR').textContent         = pR;
-  if (safe('vPumpTotal'))     safe('vPumpTotal').textContent     = pT;
-  if (safe('pPumpTotal'))     safe('pPumpTotal').style.width     = Math.min(pT/goal*100, 100)+'%';
-  if (safe('svPumpStat'))     { safe('svPumpStat').textContent = pT; safe('svPumpStat').style.color = pT>=goal?'var(--ok)':'var(--text)'; }
-  if (safe('svPumpGoalStat')) safe('svPumpGoalStat').textContent = `เป้า ${goal} ครั้ง`;
-
-  // ── Alert status → stat cards ──
-  const isAlert = d.alert === true || d.alert === 'TRUE';
-  if (safe('svAlert'))  { safe('svAlert').textContent = isAlert?'1':'0'; safe('svAlert').style.color = isAlert?'var(--danger)':'var(--ok)'; }
-  if (safe('scAlert'))  safe('scAlert').className = isAlert?'stat-card danger':'stat-card ok';
-
-  // ── Push to chart buffer + bed card ──
+  // Push data to charts (real-time buffer)
   pushChartData(d);
+
+  // Pump Count
+  const pL = parseInt(d.pumpCountL) || 0;
+  const pR = parseInt(d.pumpCountR) || 0;
+  const pT = parseInt(d.pumpTotal)  || (pL + pR);
+  const goal = 100;
+  if (safe('vPumpL'))     safe('vPumpL').textContent     = pL;
+  if (safe('vPumpR'))     safe('vPumpR').textContent     = pR;
+  if (safe('vPumpTotal')) safe('vPumpTotal').textContent = pT;
+  if (safe('pPumpTotal')) safe('pPumpTotal').style.width = Math.min(pT/goal*100, 100)+'%';
+
+  // อัปเดต bed card จาก real data
   updateBedFromGAS(d);
+
+  // Alert status
+  const isAlert = d.alert === true || d.alert === 'TRUE';
+  const alertLv = parseInt(d.alertLevel) || 0;
+  if (safe('svStatus')) {
+    safe('svStatus').textContent = isAlert ? `⚠ Alert L${alertLv}` : '✅ ปกติ';
+    safe('svStatus').style.color = isAlert ? 'var(--danger)' : 'var(--ok)';
+  }
 }
 
 function updateLive() {
-  const safe = id => document.getElementById(id);
-  const t    = new Date().toLocaleTimeString('th-TH');
-  if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
-
-  // ── Truly offline (no GAS URL) ──────────────
-  if (!gasUrl) {
-    updateConnBanner('offline');
-    setOfflineUI();
-    return;
-  }
-
-  // ── Real data from GAS ──────────────────────
-  if (useRealData) {
+  if (useRealData && gasUrl) {
     fetchGASData();
     return;
   }
-
-  // ── Mock Data (admin toggled) ───────────────
-  updateConnBanner('mock');
+  // ── Mock Data (fallback) ──────────────────
+  const t = new Date().toLocaleTimeString('th-TH');
+  const el = document.getElementById('lastUpdate');
+  if (el) el.innerHTML = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+'&nbsp;<span style="color:var(--warn);font-size:.75rem">[MOCK — ใส่ GAS URL ใน Settings]</span>';
 
   const bv = 3.95, bp = 78;
-  const battColor = 'var(--ok)';
-  if (safe('svBatt'))   { safe('svBatt').textContent = bp+'%'; safe('svBatt').style.color = battColor; }
+  const safe = id => document.getElementById(id);
+  if (safe('battPct'))  safe('battPct').textContent  = bp+'%';
+  if (safe('battVolt')) safe('battVolt').textContent = bv+'V';
+  if (safe('battFill')) { safe('battFill').style.width = bp+'%'; safe('battFill').style.background = 'var(--ok)'; }
+  if (safe('svBatt'))   safe('svBatt').textContent   = bp+'%';
   if (safe('svBattV'))  safe('svBattV').textContent  = bv+'V';
   if (safe('vBattPct')) safe('vBattPct').textContent = bp+'%';
-  if (safe('pBatt'))    { safe('pBatt').style.width = bp+'%'; safe('pBatt').style.background = battColor; }
-  if (safe('battInfo')) safe('battInfo').innerHTML   = `${bv}V · -42mA · <span style="color:var(--ok)">Mock</span>`;
+  if (safe('pBatt'))    safe('pBatt').style.width     = bp+'%';
+  if (safe('battInfo')) safe('battInfo').innerHTML    = `${bv}V · -42mA · <span class="green">Mock</span>`;
   if (safe('chrgPct'))  safe('chrgPct').textContent  = bp+'%';
-  if (safe('scBatt'))   safe('scBatt').className = 'stat-card ok';
 
-  const hx = +(15+Math.random()*20).toFixed(1);
-  const hy = +(5 +Math.random()*12).toFixed(1);
-  const al = +(25+Math.random()*15).toFixed(1);
-  const ar = +(4 +Math.random()*8 ).toFixed(1);
+  const hx=+(15+Math.random()*20).toFixed(1), hy=+(5+Math.random()*12).toFixed(1);
+  const al=+(25+Math.random()*15).toFixed(1), ar=+(4+Math.random()*8).toFixed(1);
   if (safe('vHipX')) safe('vHipX').textContent = hx+'°';
   if (safe('vHipY')) safe('vHipY').textContent = hy+'°';
   if (safe('vAnkL')) safe('vAnkL').textContent = al+'°';
   if (safe('vAnkR')) safe('vAnkR').textContent = ar+'°';
 
-  const thresh = parseFloat(localStorage.getItem('thresh_angle')||30);
-  gaugeSetVal('gaugeHipX',hx,60); gaugeSetVal('gaugeHipY',hy,60);
-  gaugeSetVal('gaugeAnkL',al,60); gaugeSetVal('gaugeAnkR',ar,60);
-  updateAngleBadge('badgeHipX',hx,thresh); updateAngleBadge('badgeHipY',hy,thresh);
-  updateAngleBadge('badgeAnkL',al,thresh); updateAngleBadge('badgeAnkR',ar,thresh);
+  const gaugeSet = (id,val,mx) => {
+    const el2=document.getElementById(id); if(!el2) return;
+    const circ=226, off=circ-(val/mx*circ);
+    el2.setAttribute('stroke-dashoffset',off);
+  };
+  gaugeSet('gaugeHipX',hx,60); gaugeSet('gaugeHipY',hy,60);
+  gaugeSet('gaugeAnkL',al,60); gaugeSet('gaugeAnkR',ar,60);
 
-  const fh = Math.floor(800+Math.random()*1200);
-  const fa = Math.floor(200+Math.random()*800);
+  const fh=Math.floor(800+Math.random()*1200), fa=Math.floor(200+Math.random()*800);
   if (safe('vFsrHip')) safe('vFsrHip').textContent = fh;
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
 
-  const mh = Math.random()>.8?200:0, ma = Math.random()>.8?150:0;
-  if (safe('vMotHip')) safe('vMotHip').textContent = mh+'/255';
-  if (safe('vMotAnk')) safe('vMotAnk').textContent = ma+'/255';
-  if (safe('pMotHip')) safe('pMotHip').style.width = (mh/255*100)+'%';
-  if (safe('pMotAnk')) safe('pMotAnk').style.width = (ma/255*100)+'%';
+  const mh=Math.random()>.8?200:0, ma=Math.random()>.8?150:0;
+  if (safe('vMotHip')) safe('vMotHip').textContent=mh+'/255';
+  if (safe('vMotAnk')) safe('vMotAnk').textContent=ma+'/255';
+  if (safe('pMotHip')) safe('pMotHip').style.width=(mh/255*100)+'%';
+  if (safe('pMotAnk')) safe('pMotAnk').style.width=(ma/255*100)+'%';
 
-  // ── Update beds + stat cards + charts ──
-  const fsrT       = parseInt(localStorage.getItem('thresh_fsr')||500);
-  const goal       = parseInt(localStorage.getItem('thresh_pumpGoal')||100);
-  const mockIsAlert = hx > thresh || hy > thresh || al > thresh;
-  const mockSt     = mockIsAlert ? 'danger' : ((fh<fsrT || fa<fsrT) && (fh+fa)>0 ? 'warn' : 'ok');
+  // อัปเดต bed card + stat cards + charts ใน mock mode
+  const mockThresh = parseFloat(localStorage.getItem('thresh_angle')||30);
+  const mockFsrT   = parseInt(localStorage.getItem('thresh_fsr')||500);
+  const mockIsAlert = hx > mockThresh || hy > mockThresh || al > mockThresh;
+  const mockSt = mockIsAlert ? 'danger' : ((fh < mockFsrT || fa < mockFsrT) && (fh+fa)>0 ? 'warn' : 'ok');
   bedData[0] = {...bedData[0], hipX:hx, hipY:hy, ankL:al, ankR:ar, fsrH:fh, fsrA:fa, batt:bp, status:mockSt};
   renderBeds();
-  if (safe('svAlert'))  { safe('svAlert').textContent = mockIsAlert?'1':'0'; safe('svAlert').style.color = mockIsAlert?'var(--danger)':'var(--ok)'; }
-  if (safe('scAlert'))  safe('scAlert').className = mockIsAlert?'stat-card danger':'stat-card ok';
-  if (safe('svOk'))     safe('svOk').textContent  = mockIsAlert?'0':'1';
-  if (safe('svPumpStat'))     { safe('svPumpStat').textContent = '0'; safe('svPumpStat').style.color = 'var(--gnd)'; }
-  if (safe('svPumpGoalStat')) safe('svPumpGoalStat').textContent = `เป้า ${goal} ครั้ง`;
+  if (safe('svAlert')) safe('svAlert').textContent = mockIsAlert ? '1' : '0';
+  if (safe('svOk'))    safe('svOk').textContent    = mockIsAlert ? '0' : '1';
+  if (safe('svBatt'))  { safe('svBatt').textContent = bp+'%'; safe('svBatt').style.color = 'var(--ok)'; }
   pushChartData({hipAngleX:hx, hipAngleY:hy, ankLAngleX:al, ankRAngleX:ar, fsrL:fh, fsrR:fa, battVolt:String(bv)});
 }
 
@@ -2230,7 +2025,6 @@ function saveSettings() {
     updateDataModeUI();
   }
   alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅');
-  updateLive(); // เริ่มดึงข้อมูลทันที
 }
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))

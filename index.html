@@ -705,6 +705,11 @@ body{
 .pump-total{border-left:1px solid var(--brd);border-right:1px solid var(--brd)}
 .pump-side-lbl{font-size:.68rem;color:var(--text2);margin-top:3px}
 
+/* ── Admin grid responsive ── */
+@media(max-width:600px){
+  .admin-grid-2{grid-template-columns:1fr !important}
+}
+
 /* ── FSR two-column ── */
 .fsr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fsr-col{padding:8px 10px;background:var(--surface2);border-radius:8px}
@@ -1446,47 +1451,131 @@ body{
         </div>
 
         <!-- Admin Only: จัดการบัญชี -->
-        <div class="card admin-only-card" id="adminAccountCard" style="display:none;border-color:var(--warn)">
+        <div class="card admin-only-card" id="adminAccountCard" style="display:none;border-color:var(--warn);grid-column:1/-1">
           <div class="card-title" style="color:var(--warn)">
-            👑 จัดการบัญชี (Admin เท่านั้น)
+            👑 Admin Settings — จัดการบัญชีและระบบ
           </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="เปลี่ยน Admin PIN" data-en="Change Admin PIN">เปลี่ยน Admin PIN</div>
-              <div class="setting-desc" data-th="PIN ปัจจุบัน: 4 หลัก" data-en="Current PIN: 4 digits">PIN ปัจจุบัน: 4 หลัก</div>
+
+          <!-- ── GAS URL + Mode ─────────────────── -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" class="admin-grid-2">
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">GAS URL</div>
+              <input class="input-field" placeholder="https://script.google.com/macros/s/..." id="inpGas" style="width:100%">
+              <div style="font-size:.7rem;color:var(--text2);margin-top:4px">Google Apps Script Web App endpoint</div>
             </div>
-            <button class="btn-primary" onclick="alert('ฟีเจอร์นี้ต้องการสิทธิ์ Admin')" data-th="เปลี่ยน PIN" data-en="Change PIN">เปลี่ยน PIN</button>
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">โหมดข้อมูล</div>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;height:36px">
+                <span style="font-size:.82rem;color:var(--text2)">MOCK</span>
+                <div id="dataModeToggle" onclick="toggleDataMode()"
+                  style="width:44px;height:24px;border-radius:12px;background:var(--surface2);
+                         border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s;flex-shrink:0">
+                  <div id="dataModeThumb"
+                    style="width:20px;height:20px;border-radius:50%;background:#666;
+                           position:absolute;top:2px;left:2px;transition:.3s"></div>
+                </div>
+                <span style="font-size:.82rem;color:var(--ok)">LIVE</span>
+              </label>
+              <div style="font-size:.7rem;color:var(--text2);margin-top:2px" id="dataModeDesc">Mock Data (ยังไม่ได้เชื่อม GAS)</div>
+            </div>
           </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label">Google Sheets URL</div>
-              <div class="setting-desc">GAS Backend endpoint</div>
-            </div>
-            <input class="input-field" placeholder="https://script.google.com/..." id="inpGas">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn-primary" onclick="saveSettings()">💾 บันทึก GAS URL</button>
+            <button class="btn-primary" onclick="testGASConn()" style="background:var(--surface2)">🔌 ทดสอบเชื่อมต่อ</button>
           </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="โหมดข้อมูล" data-en="Data Mode">โหมดข้อมูล</div>
-              <div class="setting-desc" id="dataModeDesc">Mock Data (ยังไม่ได้เชื่อม GAS)</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <span id="dataModeLabel" style="font-size:0.8rem;color:var(--text2)">MOCK</span>
-              <div id="dataModeToggle" onclick="toggleDataMode()"
-                style="width:44px;height:24px;border-radius:12px;background:var(--surface2);
-                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
-                <div id="dataModeThumb"
-                  style="width:20px;height:20px;border-radius:50%;background:#666;
-                         position:absolute;top:2px;left:2px;transition:.3s"></div>
+          <div id="gasTestResult" style="font-size:.8rem;color:var(--ok);min-height:18px;margin-bottom:12px"></div>
+
+          <div style="border-top:1px solid var(--brd);margin:4px 0 14px"></div>
+
+          <!-- ── PIN + Config fields ────────────── -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="admin-grid-2">
+
+            <!-- Admin PIN -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Admin PIN</div>
+              <div style="display:flex;gap:8px">
+                <input class="input-field" id="inpNewPin" placeholder="PIN ใหม่ 4 หลัก"
+                  maxlength="4" type="password" pattern="[0-9]{4}" style="width:130px"
+                  oninput="this.value=this.value.replace(/\D/g,'')">
+                <button class="btn-primary" onclick="changePIN()" style="white-space:nowrap">บันทึก</button>
               </div>
-              <span id="dataModeLabelR" style="font-size:0.8rem;color:var(--ok)">LIVE</span>
-            </label>
+              <div id="pinChangeMsg" style="font-size:.75rem;margin-top:5px;min-height:16px;color:var(--text2)">
+                PIN ปัจจุบัน: <span id="pinDisplay">****</span>
+              </div>
+            </div>
+
+            <!-- ชื่อผู้ป่วย -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">ชื่อผู้ป่วย (แสดงใน Bed Card)</div>
+              <div style="display:flex;gap:8px">
+                <input class="input-field" id="inpPatient" placeholder="ชื่อผู้ป่วย..." style="flex:1">
+                <button class="btn-primary" onclick="savePatientName()" style="white-space:nowrap">บันทึก</button>
+              </div>
+            </div>
+
+            <!-- LINE Token -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">LINE Channel Token</div>
+              <input class="input-field" placeholder="Bearer token..." id="inpToken" type="password" style="width:100%">
+            </div>
+
+            <!-- Doctor / Nurse IDs -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">LINE User IDs</div>
+              <input class="input-field" placeholder="Doctor — Uxxxxxxxxxx" id="inpDoctor" style="width:100%;margin-bottom:6px">
+              <input class="input-field" placeholder="Nurse  — Uxxxxxxxxxx" id="inpNurse"  style="width:100%">
+            </div>
+
+            <!-- Thresholds -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Alert Thresholds</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">มุมสะโพก (°)</div>
+                  <input class="input-field" id="inpAngle" type="number" value="30" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">FSR ต่ำสุด</div>
+                  <input class="input-field" id="inpFsr" type="number" value="500" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">แบตต่ำ (%)</div>
+                  <input class="input-field" id="inpBattLow" type="number" value="15" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">PWM มอเตอร์</div>
+                  <input class="input-field" id="inpPwm" type="number" value="200" style="width:100%">
+                </div>
+              </div>
+            </div>
+
+            <!-- Pump goal -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">เป้ากระดกข้อเท้า</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">เป้า/วัน (ครั้ง)</div>
+                  <input class="input-field" id="inpPumpGoal" type="number" value="100" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">มุม Pump (°)</div>
+                  <input class="input-field" id="inpPumpThresh" type="number" value="20" style="width:100%">
+                </div>
+              </div>
+            </div>
+
           </div>
-          <div style="padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary" onclick="saveSettings()" data-th="บันทึกและเชื่อมต่อ GAS" data-en="Save & Connect GAS">บันทึกและเชื่อมต่อ GAS</button>
-            <button class="btn-primary" onclick="testGASConn()" style="background:var(--surface2)">ทดสอบการเชื่อมต่อ</button>
-            <button class="btn-primary btn-danger" onclick="clearData()" data-th="ล้างข้อมูล" data-en="Clear Data">ล้างข้อมูล</button>
+
+          <!-- ── Action buttons ─────────────────── -->
+          <div style="border-top:1px solid var(--brd);margin:14px 0 12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn-primary" onclick="saveAllAdminConfig()">💾 บันทึกทั้งหมด (Local)</button>
+            <button class="btn-primary" onclick="pushConfigToGAS()" style="background:var(--accent2);color:#000">
+              ☁️ Push Config → GAS Sheet
+            </button>
+            <button class="btn-primary btn-danger" onclick="clearData()" style="margin-left:auto">🗑 ล้างข้อมูล</button>
           </div>
-          <div id="gasTestResult" style="margin-top:8px;font-size:0.8rem;color:var(--ok);display:none"></div>
+          <div id="adminSaveMsg" style="font-size:.78rem;margin-top:8px;min-height:18px;color:var(--text2)"></div>
         </div>
       </div>
     </div>
@@ -1726,10 +1815,29 @@ function updateRoleBadge() {
   const dot = document.getElementById('roleDot');
   lbl.textContent = lang==='th' ? (role==='admin'?'Admin':'Staff') : (role==='admin'?'Admin':'Staff');
   dot.style.background = role==='admin' ? 'var(--warn)' : 'var(--ok)';
-  // แสดง/ซ่อน admin-only cards
   document.querySelectorAll('.admin-only-card').forEach(el => {
     el.style.display = role === 'admin' ? 'block' : 'none';
   });
+  if (role === 'admin') loadAdminFields(); // โหลดค่าเข้า fields ทุกครั้งที่เปิด admin
+}
+
+function loadAdminFields() {
+  const safe = id => document.getElementById(id);
+  // GAS URL
+  if (safe('inpGas') && gasUrl) safe('inpGas').value = gasUrl;
+  // LINE
+  if (safe('inpToken'))  safe('inpToken').value  = localStorage.getItem('line_token')  || '';
+  if (safe('inpDoctor')) safe('inpDoctor').value = localStorage.getItem('line_doctor') || '';
+  if (safe('inpNurse'))  safe('inpNurse').value  = localStorage.getItem('line_nurse')  || '';
+  // Thresholds
+  if (safe('inpAngle'))      safe('inpAngle').value      = localStorage.getItem('thresh_angle')    || '30';
+  if (safe('inpFsr'))        safe('inpFsr').value        = localStorage.getItem('thresh_fsr')      || '500';
+  if (safe('inpBattLow'))    safe('inpBattLow').value    = localStorage.getItem('thresh_battLow')  || '15';
+  if (safe('inpPwm'))        safe('inpPwm').value        = localStorage.getItem('thresh_pwm')      || '200';
+  if (safe('inpPumpGoal'))   safe('inpPumpGoal').value   = localStorage.getItem('thresh_pumpGoal') || '100';
+  if (safe('inpPumpThresh')) safe('inpPumpThresh').value = localStorage.getItem('thresh_pumpUp')   || '20';
+  // Patient name
+  if (safe('inpPatient')) safe('inpPatient').value = localStorage.getItem('patientName') || '';
 }
 function pinInput(d) {
   if(pinBuffer.length>=4) return;
@@ -2364,6 +2472,134 @@ function toggleSet(id) {
   const el = document.getElementById(id);
   el.classList.toggle('on');
 }
+// ── Admin: Change PIN ──────────────────────────────────────
+function changePIN() {
+  const safe = id => document.getElementById(id);
+  const inp  = safe('inpNewPin');
+  const msg  = safe('pinChangeMsg');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!/^\d{4}$/.test(val)) {
+    if (msg) { msg.textContent = '❌ PIN ต้องเป็นตัวเลข 4 หลักเท่านั้น'; msg.style.color = 'var(--danger)'; }
+    return;
+  }
+  PIN = val;
+  localStorage.setItem('adminPin', val);
+  inp.value = '';
+  if (msg) { msg.innerHTML = `✅ เปลี่ยน PIN สำเร็จ &nbsp;·&nbsp; PIN ปัจจุบัน: <span id="pinDisplay">****</span>`; msg.style.color = 'var(--ok)'; }
+  setTimeout(() => {
+    if (msg) { msg.innerHTML = `PIN ปัจจุบัน: <span id="pinDisplay">****</span>`; msg.style.color = 'var(--text2)'; }
+  }, 3000);
+}
+
+// ── Admin: Save patient name ───────────────────────────────
+function savePatientName() {
+  const safe = id => document.getElementById(id);
+  const val  = safe('inpPatient')?.value.trim() || 'ผู้ป่วย';
+  localStorage.setItem('patientName', val);
+  if (bedData[0]) { bedData[0].patient = val; renderBeds(); }
+  const msg = safe('adminSaveMsg');
+  if (msg) { msg.textContent = '✅ บันทึกชื่อผู้ป่วยแล้ว: ' + val; msg.style.color = 'var(--ok)'; }
+}
+
+// ── Admin: Save all config to localStorage ─────────────────
+function saveAllAdminConfig() {
+  const safe = id => document.getElementById(id);
+  const msg  = safe('adminSaveMsg');
+
+  // LINE
+  const token  = safe('inpToken')?.value.trim()  || '';
+  const doctor = safe('inpDoctor')?.value.trim() || '';
+  const nurse  = safe('inpNurse')?.value.trim()  || '';
+  localStorage.setItem('line_token',  token);
+  localStorage.setItem('line_doctor', doctor);
+  localStorage.setItem('line_nurse',  nurse);
+
+  // Thresholds
+  const angle    = parseFloat(safe('inpAngle')?.value)     || 30;
+  const fsr      = parseInt(safe('inpFsr')?.value)          || 500;
+  const battLow  = parseFloat(safe('inpBattLow')?.value)   || 15;
+  const pwm      = parseInt(safe('inpPwm')?.value)          || 200;
+  const pumpGoal = parseInt(safe('inpPumpGoal')?.value)     || 100;
+  const pumpUp   = parseFloat(safe('inpPumpThresh')?.value) || 20;
+  localStorage.setItem('thresh_angle',    angle);
+  localStorage.setItem('thresh_fsr',      fsr);
+  localStorage.setItem('thresh_battLow',  battLow);
+  localStorage.setItem('thresh_pwm',      pwm);
+  localStorage.setItem('thresh_pumpGoal', pumpGoal);
+  localStorage.setItem('thresh_pumpUp',   pumpUp);
+
+  loadThresh();
+  updateConfigPreview({adminPin:PIN, angleThresh:angle, fsrThresh:fsr, battLow, pwmMotor:pwm, pumpGoal});
+  if (msg) { msg.textContent = '✅ บันทึกทั้งหมดใน Local แล้ว'; msg.style.color = 'var(--ok)'; }
+  setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+}
+
+// ── Admin: Push config to GAS Config Sheet ─────────────────
+/*
+ * GAS doPost handler ที่ต้องเพิ่ม:
+ *
+ * function doPost(e) {
+ *   const body = JSON.parse(e.postData.contents);
+ *   if (body.action === 'pushConfig') {
+ *     const sheet = SpreadsheetApp.getActive().getSheetByName('Config');
+ *     const cfg   = body.config;   // object { adminPin, angleThresh, ... }
+ *     const data  = sheet.getDataRange().getValues();
+ *     // update existing rows
+ *     data.forEach((row, i) => {
+ *       if (cfg[row[0]] !== undefined) sheet.getRange(i+1, 2).setValue(cfg[row[0]]);
+ *     });
+ *     // add new keys that don't exist yet
+ *     const existingKeys = data.map(r => r[0]);
+ *     Object.entries(cfg).forEach(([k, v]) => {
+ *       if (!existingKeys.includes(k)) sheet.appendRow([k, v]);
+ *     });
+ *     return ContentService.createTextOutput(JSON.stringify({status:'ok'}))
+ *       .setMimeType(ContentService.MimeType.JSON);
+ *   }
+ * }
+ */
+async function pushConfigToGAS() {
+  const safe = id => document.getElementById(id);
+  const msg  = safe('adminSaveMsg');
+  if (!gasUrl) {
+    if (msg) { msg.textContent = '⚠ กรุณาบันทึก GAS URL ก่อน'; msg.style.color = 'var(--warn)'; }
+    return;
+  }
+  // รวบรวมค่าทั้งหมด
+  const cfg = {
+    adminPin:     localStorage.getItem('adminPin')         || PIN,
+    angleThresh:  localStorage.getItem('thresh_angle')     || '30',
+    fsrThresh:    localStorage.getItem('thresh_fsr')       || '500',
+    battLow:      localStorage.getItem('thresh_battLow')   || '15',
+    pwmMotor:     localStorage.getItem('thresh_pwm')       || '200',
+    pumpGoal:     localStorage.getItem('thresh_pumpGoal')  || '100',
+    pumpUpThresh: localStorage.getItem('thresh_pumpUp')    || '20',
+    lineToken:    localStorage.getItem('line_token')       || '',
+    doctorId:     localStorage.getItem('line_doctor')      || '',
+    nurseId:      localStorage.getItem('line_nurse')       || '',
+    lineAlertOn:  String(lineAlertOn),
+    battAlertOn:  String(battAlertOn),
+  };
+  if (msg) { msg.textContent = '⟳ กำลัง Push ไป GAS...'; msg.style.color = 'var(--text2)'; }
+  try {
+    const res  = await fetch(gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pushConfig', config: cfg }),
+      redirect: 'follow',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.status === 'ok') {
+      if (msg) { msg.textContent = '✅ Push Config ไป GAS Sheet สำเร็จ!'; msg.style.color = 'var(--ok)'; }
+    } else {
+      if (msg) { msg.textContent = '⚠ GAS ตอบ: ' + (data.error || 'ไม่มี pushConfig handler'); msg.style.color = 'var(--warn)'; }
+    }
+  } catch(e) {
+    if (msg) { msg.textContent = '❌ ' + e.message; msg.style.color = 'var(--danger)'; }
+  }
+}
+
 // ── Alert Toggles ────────────────────────────────────────
 let lineAlertOn = localStorage.getItem('lineAlertOn') !== 'false';
 let battAlertOn = localStorage.getItem('battAlertOn') !== 'false';
@@ -2576,6 +2812,13 @@ document.querySelectorAll('.fs-btn').forEach(b => {
   b.classList.toggle('active', b.getAttribute('onclick') === `setFs('${savedFs}')`);
 });
 updateDataModeUI();
+
+// ── โหลด PIN จาก localStorage (ถ้ามี) ────
+const savedPin = localStorage.getItem('adminPin');
+if (savedPin) PIN = savedPin;
+
+// ── โหลด patient name ────────────────────
+if (bedData[0]) bedData[0].patient = localStorage.getItem('patientName') || 'ผู้ป่วย';
 
 // ── โหลด Config: cache ก่อน (instant) แล้ว fetch ใหม่ใน background ──
 loadCachedConfig();                         // ① ใช้ค่าที่จำไว้ทันที (ไม่รอ network)

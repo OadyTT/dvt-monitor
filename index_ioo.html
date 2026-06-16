@@ -840,10 +840,6 @@ body{
       <span class="nav-icon">⚙️</span>
       <span data-th="ตั้งค่า" data-en="Settings">ตั้งค่า</span>
     </div>
-    <div class="nav-item" onclick="nav('report')">
-      <span class="nav-icon">📋</span>
-      <span data-th="รายงานรายวัน" data-en="Daily Report">รายงานรายวัน</span>
-    </div>
   </nav>
 
   <!-- MAIN -->
@@ -1584,75 +1580,6 @@ body{
       </div>
     </div>
 
-    <!-- ─────── REPORT ─────── -->
-    <div class="page" id="page-report">
-      <div class="inline-flex mb12" style="flex-wrap:wrap;gap:10px">
-        <div>
-          <div class="page-title" data-th="รายงานรายวัน" data-en="Daily Report">รายงานรายวัน</div>
-          <div class="page-subtitle" data-th="สรุปการกระดกข้อเท้าและการแจ้งเตือนย้อนหลัง" data-en="Daily ankle pump and alert summary">สรุปการกระดกข้อเท้าและการแจ้งเตือนย้อนหลัง</div>
-        </div>
-        <div class="ml-auto" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;border:1px solid var(--brd);border-radius:8px;overflow:hidden">
-            <button class="fs-btn active" id="rpt7"  onclick="setReportDays(7)">7 วัน</button>
-            <button class="fs-btn"        id="rpt14" onclick="setReportDays(14)">14 วัน</button>
-            <button class="fs-btn"        id="rpt30" onclick="setReportDays(30)">30 วัน</button>
-          </div>
-          <button class="btn-primary" onclick="loadReport()">🔄 โหลด</button>
-        </div>
-      </div>
-
-      <!-- Summary cards -->
-      <div class="grid-4 mb18">
-        <div class="stat-card info">
-          <div class="stat-label" data-th="รวมกระดกช่วงนี้" data-en="Total Pumps">รวมกระดกช่วงนี้</div>
-          <div class="stat-value" id="rptTotalPump" style="color:var(--ok)">--</div>
-          <div class="stat-unit" data-th="ครั้ง" data-en="times">ครั้ง</div>
-        </div>
-        <div class="stat-card info">
-          <div class="stat-label" data-th="เฉลี่ยต่อวัน" data-en="Daily Average">เฉลี่ยต่อวัน</div>
-          <div class="stat-value" id="rptAvgPump" style="color:var(--accent2)">--</div>
-          <div class="stat-unit" data-th="ครั้ง/วัน" data-en="times/day">ครั้ง/วัน</div>
-        </div>
-        <div class="stat-card ok">
-          <div class="stat-label" data-th="วันที่ทำได้เป้า" data-en="Goal Achieved">วันที่ทำได้เป้า</div>
-          <div class="stat-value" id="rptGoalDays" style="color:var(--ok)">--</div>
-          <div class="stat-unit" data-th="วัน" data-en="days">วัน</div>
-        </div>
-        <div class="stat-card warn">
-          <div class="stat-label" data-th="แจ้งเตือนทั้งหมด" data-en="Total Alerts">แจ้งเตือนทั้งหมด</div>
-          <div class="stat-value" id="rptTotalAlerts" style="color:var(--warn)">--</div>
-          <div class="stat-unit" data-th="ครั้ง" data-en="times">ครั้ง</div>
-        </div>
-      </div>
-
-      <!-- Bar chart -->
-      <div class="card mb18">
-        <div class="card-title">📊 <span data-th="กระดกข้อเท้ารายวัน" data-en="Daily Ankle Pump">กระดกข้อเท้ารายวัน</span></div>
-        <div class="chart-wrap-lg"><canvas id="chartReport"></canvas></div>
-      </div>
-
-      <!-- Detail table -->
-      <div class="card">
-        <div class="card-title">📋 <span data-th="ตารางรายวัน" data-en="Daily Table">ตารางรายวัน</span></div>
-        <div style="overflow-x:auto">
-          <table class="alert-table">
-            <thead><tr>
-              <th data-th="วันที่" data-en="Date">วันที่</th>
-              <th data-th="ซ้าย" data-en="Left">ซ้าย (L)</th>
-              <th data-th="ขวา" data-en="Right">ขวา (R)</th>
-              <th data-th="รวม" data-en="Total">รวม</th>
-              <th data-th="เป้า" data-en="Goal">เป้า</th>
-              <th data-th="แจ้งเตือน" data-en="Alerts">แจ้งเตือน</th>
-              <th data-th="แบตเตอรี่" data-en="Battery">แบต เฉลี่ย</th>
-            </tr></thead>
-            <tbody id="reportTbody">
-              <tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">กด "โหลด" เพื่อดูข้อมูล</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
   </main>
 </div>
 
@@ -1826,7 +1753,6 @@ function nav(page) {
   if (pg) pg.classList.add('active');
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
   if (page==='graphs') initCharts();
-  if (page==='report') loadReport();
 }
 
 // ═══════════════════════════════════════════
@@ -2901,112 +2827,6 @@ console.log('[v4.10.5] GAS:', gasUrl ? 'set' : 'none', '| Config cache:', !!loca
 updateLive();
 setInterval(updateLive,    30000); // ทุก 30 วิ ตาม Firmware sleep cycle
 setInterval(tickCountdown,  1000); // countdown ทุก 1 วิ
-
-// ═══════════════════════════════════════════
-// REPORT PAGE
-// ═══════════════════════════════════════════
-let reportDays = 7;
-let chartReportInst = null;
-
-function setReportDays(d) {
-  reportDays = d;
-  document.querySelectorAll('#rpt7,#rpt14,#rpt30').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('rpt' + d);
-  if (btn) btn.classList.add('active');
-  loadReport();
-}
-
-async function loadReport() {
-  if (!gasUrl) { showToast('ยังไม่มี GAS URL', 'warn'); return; }
-  const tbody = document.getElementById('reportTbody');
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px">กำลังโหลด…</td></tr>';
-  try {
-    const r = await fetch(gasUrl + '?action=getReport&days=' + reportDays);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const json = await r.json();
-    if (!json.rows) throw new Error('ไม่มีข้อมูล');
-    renderReport(json.rows);
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--err);padding:20px">โหลดไม่สำเร็จ: ' + err.message + '</td></tr>';
-  }
-}
-
-function renderReport(rows) {
-  const pumpGoal = parseInt(localStorage.getItem('thresh_pumpGoal') || '100');
-  const tbody = document.getElementById('reportTbody');
-
-  if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">ไม่มีข้อมูลในช่วงนี้</td></tr>';
-    document.getElementById('rptTotalPump').textContent = '0';
-    document.getElementById('rptAvgPump').textContent = '0';
-    document.getElementById('rptGoalDays').textContent = '0';
-    document.getElementById('rptTotalAlerts').textContent = '0';
-    return;
-  }
-
-  // Summary
-  const totalPump   = rows.reduce((s, r) => s + (r.pumpTotal || 0), 0);
-  const avgPump     = rows.length > 0 ? Math.round(totalPump / rows.length) : 0;
-  const goalDays    = rows.filter(r => (r.pumpTotal || 0) >= pumpGoal).length;
-  const totalAlerts = rows.reduce((s, r) => s + (r.alerts || 0), 0);
-
-  document.getElementById('rptTotalPump').textContent   = totalPump.toLocaleString();
-  document.getElementById('rptAvgPump').textContent     = avgPump.toLocaleString();
-  document.getElementById('rptGoalDays').textContent    = goalDays;
-  document.getElementById('rptTotalAlerts').textContent = totalAlerts;
-
-  // Table (newest first)
-  tbody.innerHTML = rows.map(r => {
-    const reached = (r.pumpTotal || 0) >= pumpGoal;
-    const goalBadge = reached
-      ? '<span style="color:var(--ok)">✅ ครบ</span>'
-      : '<span style="color:var(--warn)">' + (r.pumpTotal || 0) + '/' + pumpGoal + '</span>';
-    const alertBadge = (r.alerts || 0) > 0
-      ? '<span style="color:var(--err)">' + r.alerts + ' 🔔</span>'
-      : '<span style="color:var(--text2)">-</span>';
-    const battColor = (r.battAvg || 0) < 20 ? 'var(--err)' : (r.battAvg || 0) < 40 ? 'var(--warn)' : 'var(--ok)';
-    return `<tr>
-      <td>${r.date}</td>
-      <td>${r.pumpL || 0}</td>
-      <td>${r.pumpR || 0}</td>
-      <td><strong>${r.pumpTotal || 0}</strong></td>
-      <td>${goalBadge}</td>
-      <td>${alertBadge}</td>
-      <td style="color:${battColor}">${r.battAvg || '--'}%</td>
-    </tr>`;
-  }).join('');
-
-  // Chart
-  const labels = [...rows].reverse().map(r => r.date.slice(5)); // MM-DD
-  const dataL    = [...rows].reverse().map(r => r.pumpL || 0);
-  const dataR    = [...rows].reverse().map(r => r.pumpR || 0);
-  const goalLine = labels.map(() => pumpGoal);
-
-  if (chartReportInst) { chartReportInst.destroy(); chartReportInst = null; }
-  const ctx = document.getElementById('chartReport').getContext('2d');
-  chartReportInst = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: 'ซ้าย (L)', data: dataL, backgroundColor: 'rgba(56,189,248,0.7)', borderRadius: 4, order: 2 },
-        { label: 'ขวา (R)', data: dataR, backgroundColor: 'rgba(251,146,60,0.7)',  borderRadius: 4, order: 2 },
-        { label: 'เป้าหมาย', data: goalLine, type: 'line', borderColor: 'rgba(74,222,128,0.8)',
-          borderWidth: 2, borderDash: [6,3], pointRadius: 0, fill: false, order: 1 },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#9ca3af' } }
-      },
-      scales: {
-        x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        y: { stacked: true, beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-      }
-    }
-  });
-}
 </script>
 <!-- LINE FAB -->
 <div class="line-fab" id="lineFab">

@@ -2059,6 +2059,24 @@ function updateChartData() {
   chartBatt.update('none');
 }
 
+function showToast(msg, type) {
+  let t = document.getElementById('_toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:600;' +
+      'color:#fff;z-index:9999;pointer-events:none;transition:opacity .4s;opacity:0;white-space:nowrap';
+    document.body.appendChild(t);
+  }
+  const bg = type === 'ok' ? '#10b981' : type === 'warn' ? '#f59e0b' : '#ef4444';
+  t.style.background = bg;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
 function initCharts() {
   if(chartHip) return;
   const cc = id=>document.getElementById(id).getContext('2d');
@@ -2753,11 +2771,18 @@ async function loadPendingUsers() {
           <div style="font-size:.72rem;color:var(--text2);font-family:monospace">${u.userId}</div>
           <div style="font-size:.72rem;color:var(--text2)">${u.requestedAt||''}</div>
         </div>
-        <button onclick="approveUser('${u.userId}')"
-          style="background:var(--ok);color:#fff;border:none;border-radius:8px;
-                 padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
-          ✅ อนุมัติ
-        </button>
+        <div style="display:flex;gap:6px">
+          <button onclick="approveUser('${u.userId}')"
+            style="background:var(--ok);color:#fff;border:none;border-radius:8px;
+                   padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
+            ✅ อนุมัติ
+          </button>
+          <button onclick="rejectUser('${u.userId}','${(u.displayName||'').replace(/'/g,"&#39;")}')"
+            style="background:var(--danger);color:#fff;border:none;border-radius:8px;
+                   padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
+            ✗ ปฏิเสธ
+          </button>
+        </div>
       </div>
     `).join('');
   } catch(e) {
@@ -2776,7 +2801,28 @@ async function approveUser(uid) {
     });
     const d = await res.json();
     if (d.status === 'ok') {
-      alert('✅ อนุมัติสำเร็จ! User จะได้รับแจ้งเตือนแล้ว');
+      showToast('✅ อนุมัติสำเร็จ', 'ok');
+      loadPendingUsers();
+    } else {
+      alert('Error: ' + (d.error || d.message));
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function rejectUser(uid, name) {
+  if (!gasUrl) return;
+  if (!confirm('ปฏิเสธ "' + (name || uid) + '" ?\nUser นี้จะไม่ได้รับแจ้งเตือนจากระบบ')) return;
+  try {
+    const res = await fetch(gasUrl, {
+      method: 'POST',
+      body: JSON.stringify({action:'rejectUser', userId:uid}),
+      redirect: 'follow',
+    });
+    const d = await res.json();
+    if (d.status === 'ok') {
+      showToast('❌ ปฏิเสธแล้ว', 'warn');
       loadPendingUsers();
     } else {
       alert('Error: ' + (d.error || d.message));

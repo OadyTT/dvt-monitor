@@ -1126,13 +1126,8 @@ body{
 
     <!-- ─────── ALERTS ─────── -->
     <div class="page" id="page-alerts">
-      <div class="inline-flex mb12" style="flex-wrap:wrap;gap:10px;align-items:center">
-        <div>
-          <div class="page-title" data-th="ประวัติการแจ้งเตือน" data-en="Alert History">ประวัติการแจ้งเตือน</div>
-          <div class="page-subtitle" data-th="บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง" data-en="All alert records by bed">บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง</div>
-        </div>
-        <button class="btn-primary ml-auto" onclick="loadAlerts()">🔄 โหลด</button>
-      </div>
+      <div class="page-title" data-th="ประวัติการแจ้งเตือน" data-en="Alert History">ประวัติการแจ้งเตือน</div>
+      <div class="page-subtitle" data-th="บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง" data-en="All alert records by bed">บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง</div>
       <div class="card">
         <table class="alert-table">
           <thead>
@@ -1721,7 +1716,13 @@ function updateBedFromGAS(d) {
   if(safe('svOk'))    safe('svOk').textContent    = isAlert?'0':'1';
 }
 
-let alertLog = [];
+const alertLog = [
+  {time:'09:42:15', bed:'เตียง 101', type:'danger', detail:'ท่านอนผิด Hip X=32° (>30°)', line:'✅'},
+  {time:'09:15:03', bed:'เตียง 101', type:'warn',   detail:'แรงกด FSR406 ต่ำ (420 < 500)', line:'✅'},
+  {time:'08:58:30', bed:'เตียง 103', type:'warn',   detail:'ท่านอนผิด Hip X=25°', line:'✅'},
+  {time:'08:30:00', bed:'เตียง 102', type:'ok',     detail:'กลับสู่ปกติ', line:'—'},
+  {time:'07:55:12', bed:'เตียง 101', type:'danger', detail:'ไม่พักบนหมอน (FSR=380)', line:'✅'},
+];
 
 // Chart data
 const labels30 = Array.from({length:30},(_,i)=>`${i+1}`);
@@ -1826,7 +1827,6 @@ function nav(page) {
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
   if (page==='graphs') initCharts();
   if (page==='report') loadReport();
-  if (page==='alerts') loadAlerts();
 }
 
 // ═══════════════════════════════════════════
@@ -1988,37 +1988,15 @@ function renderBeds() {
 // ALERT TABLE
 // ═══════════════════════════════════════════
 function renderAlerts() {
-  const tbody = document.getElementById('alertTbody');
-  if (!alertLog.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">ยังไม่มีข้อมูล — กด โหลด หรือรอ refresh อัตโนมัติ</td></tr>';
-    return;
-  }
-  tbody.innerHTML = alertLog.map(a => {
-    const lineBadge = a.lineSent ? '✅' : '—';
-    return `<tr>
+  document.getElementById('alertTbody').innerHTML = alertLog.map(a=>`
+    <tr>
       <td class="font-mono" style="color:var(--text2)">${a.time}</td>
       <td class="fw600">${a.bed}</td>
       <td><span class="alert-tag tag-${a.type}">${a.type.toUpperCase()}</span></td>
       <td>${a.detail}</td>
-      <td style="text-align:center">${lineBadge}</td>
-    </tr>`;
-  }).join('');
-}
-
-async function loadAlerts() {
-  if (!gasUrl) return;
-  const tbody = document.getElementById('alertTbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:16px">กำลังโหลด...</td></tr>';
-  try {
-    const res  = await fetch(gasUrl + '?action=getAlerts&limit=100');
-    const json = await res.json();
-    if (json.rows && Array.isArray(json.rows)) {
-      alertLog = json.rows;
-      renderAlerts();
-    }
-  } catch(e) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:16px">โหลดไม่สำเร็จ: ' + e.message + '</td></tr>';
-  }
+      <td style="text-align:center">${a.line}</td>
+    </tr>
+  `).join('');
 }
 
 // ═══════════════════════════════════════════

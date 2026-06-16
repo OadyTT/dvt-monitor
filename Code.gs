@@ -30,6 +30,7 @@ function doPost(e) {
     if (action === "saveConfig")  return saveConfig(body);   // from saveThresh() — thresholds only
     if (action === "pushConfig")  return pushConfig(body);   // from pushConfigToGAS() — full config
     if (action === "approveUser") return approveUser(body);  // from Admin Web App
+    if (action === "rejectUser")  return rejectUser(body);   // from Admin Web App
 
     return ok({ status: "ok", message: "unknown action: " + action });
 
@@ -49,6 +50,7 @@ function doGet(e) {
   if (action === "getRecipients")  return getRecipientList();
   if (action === "saveUser")       return saveUser(e.parameter);  // LIFF ส่งผ่าน GET
   if (action === "getReport")      return getReport(e.parameter);
+  if (action === "getAlerts")      return getAlerts(e.parameter);
 
   return ok({ status: "ok", app: "Happy HIP DVT v3.1" });
 }
@@ -113,6 +115,47 @@ function logData(data) {
 
   if (data.alert) logAlert(data);
   return ok({ status: "ok", message: "logged" });
+}
+
+// ============================================================
+//  GET ALERTS — ดึง Alert history ให้ Web App
+// ============================================================
+function getAlerts(params) {
+  const limit = Math.min(parseInt((params && params.limit) || 100), 500);
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sh    = ss.getSheetByName(SHEET_NAME_ALERTS);
+  if (!sh || sh.getLastRow() < 2) return ok({ rows: [], status: "ok" });
+
+  const data = sh.getRange(2, 1, sh.getLastRow() - 1, 8).getValues();
+  // cols: 0=Timestamp 1=BedID 2=AlertLevel 3=HipX 4=HipY 5=FSR_L 6=FSR_R 7=BattPct
+  const rows = data
+    .filter(r => r[0])
+    .reverse()
+    .slice(0, limit)
+    .map(r => {
+      const lvl = parseInt(r[2]) || 0;
+      const type = lvl >= 2 ? "danger" : lvl === 1 ? "warn" : "ok";
+      const hipX = parseFloat(r[3]) || 0;
+      const fsrL = parseInt(r[5]) || 0;
+      const fsrR = parseInt(r[6]) || 0;
+      let detail = "";
+      if (lvl >= 2)      detail = "ท่านอนผิด Hip X=" + hipX.toFixed(1) + "°";
+      else if (lvl === 1) detail = "FSR ต่ำ (L=" + fsrL + " R=" + fsrR + ")";
+      else               detail = "กลับสู่ปกติ";
+      return {
+        time:  r[0] ? r[0].toString() : "",
+        bed:   "เตียง " + (r[1] || "B01"),
+        type:  type,
+        detail: detail,
+        hipX:  hipX,
+        fsrL:  fsrL,
+        fsrR:  fsrR,
+        batt:  parseInt(r[7]) || 0,
+        lineSent: lvl > 0,
+      };
+    });
+
+  return ok({ rows, status: "ok" });
 }
 
 // ============================================================
@@ -523,6 +566,28 @@ function approveUser(body) {
 }
 
 // ============================================================
+//  REJECT USER
+// ============================================================
+function rejectUser(body) {
+  const uid = (body && body.userId) || "";
+  if (!uid) return errResp("No userId");
+
+  const ss     = SpreadsheetApp.getActiveSpreadsheet();
+  const pendSh = ss.getSheetByName(SHEET_NAME_PENDING);
+  if (!pendSh || pendSh.getLastRow() < 2) return errResp("User not found: " + uid);
+
+  const rows = pendSh.getRange(2, 1, pendSh.getLastRow() - 1, 5).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][0] !== uid) continue;
+    pendSh.getRange(i + 2, 5).setValue("Rejected");
+    Logger.log("Rejected: " + uid + " (" + rows[i][1] + ")");
+    return ok({ status: "ok", message: "ปฏิเสธสำเร็จ", userId: uid });
+  }
+
+  return errResp("User not found in PendingUsers: " + uid);
+}
+
+// ============================================================
 //  GET PENDING USERS
 // ============================================================
 function getPendingUsers() {
@@ -531,7 +596,7 @@ function getPendingUsers() {
   if (!sh || sh.getLastRow() < 2) return ok([]);
 
   const result = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues()
-    .filter(r => r[0] && r[4] !== "Approved")
+    .filter(r => r[0] && r[4] !== "Approved" && r[4] !== "Rejected")
     .map(r => ({
       userId:      r[0],
       displayName: r[1],

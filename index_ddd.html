@@ -2583,6 +2583,7 @@ async function pushConfigToGAS() {
   try {
     const res  = await fetch(gasUrl, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'pushConfig', config: cfg }),
       redirect: 'follow',
     });
@@ -2685,6 +2686,7 @@ async function approveUser(uid) {
   try {
     const res = await fetch(gasUrl, {
       method: 'POST',
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({action:'approveUser', userId:uid}),
       redirect: 'follow',
     });
@@ -2722,6 +2724,7 @@ async function saveThresh() {
     try {
       const res = await fetch(gasUrl, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action:       'saveConfig',
           angleThresh:  angle,

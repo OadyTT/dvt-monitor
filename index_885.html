@@ -2191,6 +2191,8 @@ function updateDashboard(d) {
   if (safe('battPct'))  safe('battPct').textContent  = bp.toFixed(0)+'%';
   if (safe('battVolt')) safe('battVolt').textContent = bv.toFixed(2)+'V';
   if (safe('battFill')) { safe('battFill').style.width = bp+'%'; safe('battFill').style.background = battColor; }
+  if (safe('chrgPill')) safe('chrgPill').classList.toggle('hidden', !charging);
+
   const charging = d.charging === true || d.charging === 'TRUE';
   if (safe('chrgPill'))   safe('chrgPill').classList.toggle('hidden', !charging);
   if (safe('chrgBanner')) safe('chrgBanner').classList.toggle('hidden', !charging);

@@ -183,6 +183,21 @@ function getLatestData() {
 // ============================================================
 //  CONFIG — ดึงค่า Config ทั้งหมด (GET /getConfig)
 // ============================================================
+// คืน plain object (ไม่ใช่ HTTP response) ใช้ภายใน GAS
+function getConfigMap() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_NAME_CONFIG);
+  const defaults = { lineAlertOn: "true", battAlertOn: "true" };
+  if (!sh || sh.getLastRow() < 2) return defaults;
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues();
+  const cfg  = { ...defaults };
+  rows.forEach(r => {
+    const k = String(r[0]).trim();
+    if (k && r[1] !== "" && r[1] !== null) cfg[k] = String(r[1]);
+  });
+  return cfg;
+}
+
 function getConfig() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sh = ss.getSheetByName(SHEET_NAME_CONFIG);
@@ -286,6 +301,14 @@ function pushConfig(body) {
 //  SEND LINE ALERT — ส่งข้อความ LINE OA
 // ============================================================
 function sendLineAlert(body) {
+  // ตรวจสอบ lineAlertOn จาก Config Sheet ก่อนส่ง
+  const cfg = getConfigMap();
+  const lineOn = (cfg["lineAlertOn"] || "true").toString().toLowerCase();
+  if (lineOn === "false") {
+    Logger.log("sendLineAlert: skipped — lineAlertOn=false");
+    return ok({ status: "ok", sent: 0, skipped: true, reason: "lineAlertOn=false" });
+  }
+
   const msg   = body.message || "Alert from Happy HIP";
   const token = getLineToken();
 

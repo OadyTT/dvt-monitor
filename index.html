@@ -2692,6 +2692,7 @@ function toggleLineAlert() {
   applyToggleUI('lineAlertToggle','lineAlertThumb','lineAlertDesc', lineAlertOn,
     'เปิด = ส่ง LINE เมื่อตรวจพบ Alert',
     'ปิด = ไม่ส่ง LINE (แต่ Buzzer/LED ยังทำงาน)');
+  pushAlertFlagToGAS('lineAlertOn', lineAlertOn);
 }
 
 function toggleBattAlert() {
@@ -2700,6 +2701,17 @@ function toggleBattAlert() {
   applyToggleUI('battAlertToggle','battAlertThumb','battAlertDesc', battAlertOn,
     'เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %',
     'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
+  pushAlertFlagToGAS('battAlertOn', battAlertOn);
+}
+
+async function pushAlertFlagToGAS(key, value) {
+  if (!gasUrl) return;
+  try {
+    const body = { action: 'pushConfig', config: { [key]: String(value) } };
+    await fetch(gasUrl, { method: 'POST', body: JSON.stringify(body) });
+  } catch(e) {
+    console.warn('pushAlertFlagToGAS failed:', e);
+  }
 }
 
 function initAlertToggles() {

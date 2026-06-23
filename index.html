@@ -1084,14 +1084,14 @@ body{
       <!-- Row 2: Motors | Battery -->
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">⚙️ <span data-th="มอเตอร์ AH024 PWM" data-en="AH024 PWM Motor">มอเตอร์ AH024 PWM</span></div>
+          <div class="card-title">⚙️ <span data-th="มอเตอร์ AH024 PWM (เตือนกระดกข้อเท้า)" data-en="AH024 PWM Motor (Ankle Pump Reminder)">มอเตอร์ AH024 PWM (เตือนกระดกข้อเท้า)</span></div>
           <div class="prog-row">
-            <div class="prog-label"><span>Hip Motor</span><span class="font-mono" id="vMotHip">--/255</span></div>
-            <div class="prog-track"><div class="prog-fill" id="pMotHip" style="width:0%;background:var(--motor)"></div></div>
+            <div class="prog-label"><span data-th="มอเตอร์ข้อเท้าซ้าย" data-en="Ankle Motor L">มอเตอร์ข้อเท้าซ้าย</span><span class="font-mono" id="vMotAnkL">--/255</span></div>
+            <div class="prog-track"><div class="prog-fill" id="pMotAnkL" style="width:0%;background:var(--motor)"></div></div>
           </div>
           <div class="prog-row">
-            <div class="prog-label"><span>Ankle Motor</span><span class="font-mono" id="vMotAnk">--/255</span></div>
-            <div class="prog-track"><div class="prog-fill" id="pMotAnk" style="width:0%;background:var(--motor)"></div></div>
+            <div class="prog-label"><span data-th="มอเตอร์ข้อเท้าขวา" data-en="Ankle Motor R">มอเตอร์ข้อเท้าขวา</span><span class="font-mono" id="vMotAnkR">--/255</span></div>
+            <div class="prog-track"><div class="prog-fill" id="pMotAnkR" style="width:0%;background:var(--motor)"></div></div>
           </div>
         </div>
         <div class="card">
@@ -1221,7 +1221,7 @@ body{
             <th data-th="สถานะ" data-en="Status">สถานะ</th>
           </tr></thead>
           <tbody>
-            <tr><td class="fw600 green">AH024 PWM Motor ×2 🆕</td><td>3-5V PWM Vibration Module (แทน Coin)</td><td class="font-mono">GPIO25/26</td><td><span class="hw-chip chip-new">🆕 PWM</span></td></tr>
+            <tr><td class="fw600 green">AH024 PWM Motor ×2 🆕</td><td>3-5V PWM Vibration Module — Ankle L/R (ไม่มี Hip motor)</td><td class="font-mono">GPIO25(L)/26(R)</td><td><span class="hw-chip chip-new">🆕 PWM</span></td></tr>
             <tr><td class="fw600">LED Green/Yellow/Red</td><td>5mm, Blink 100ms/4.9s</td><td class="font-mono">GPIO2/13/15</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
             <tr><td class="fw600">Tactile Button</td><td>6×6mm INPUT_PULLUP</td><td class="font-mono">GPIO4</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
             <tr><td class="fw600 green">CHRG Detection 🆕</td><td>TP4056 CHRG → R10k → 3.3V</td><td class="font-mono">GPIO36</td><td><span class="hw-chip chip-new">🆕 New</span></td></tr>
@@ -1352,8 +1352,8 @@ body{
           </div>
           <div class="setting-row">
             <div class="setting-info">
-              <div class="setting-label" data-th="PWM มอเตอร์ Alert" data-en="Motor PWM Alert">PWM มอเตอร์ Alert</div>
-              <div class="setting-desc" data-th="0-255 (AH024 PWM)" data-en="0-255 (AH024 PWM)">0-255 (AH024 PWM)</div>
+              <div class="setting-label" data-th="PWM มอเตอร์เตือนกระดกข้อเท้า" data-en="Ankle Pump Reminder Motor PWM">PWM มอเตอร์เตือนกระดกข้อเท้า</div>
+              <div class="setting-desc" data-th="0-255 (AH024 PWM, Ankle L/R)" data-en="0-255 (AH024 PWM, Ankle L/R)">0-255 (AH024 PWM, Ankle L/R)</div>
             </div>
             <input class="input-field" value="200" id="inpPwm" style="width:80px" type="number">
           </div>
@@ -1804,7 +1804,7 @@ function setOfflineUI() {
   ['vHipX','vHipY','vAnkL','vAnkR'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
   ['vFsrHip','vFsrAnk'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
   ['vPumpL','vPumpR','vPumpTotal'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
-  ['vMotHip','vMotAnk'].forEach(id => { if(safe(id)) safe(id).textContent = '--/255'; });
+  ['vMotAnkL','vMotAnkR'].forEach(id => { if(safe(id)) safe(id).textContent = '--/255'; });
   if (safe('svBatt'))  { safe('svBatt').textContent = '--%'; safe('svBatt').style.color = 'var(--gnd)'; }
   if (safe('svBattV')) safe('svBattV').textContent = '--V';
   if (safe('vBattPct')) safe('vBattPct').textContent = '--%';
@@ -1814,7 +1814,7 @@ function setOfflineUI() {
   if (safe('scBatt'))   safe('scBatt').className  = 'stat-card';
   if (safe('svPumpStat'))     { safe('svPumpStat').textContent = '--'; safe('svPumpStat').style.color = 'var(--gnd)'; }
   if (safe('svPumpGoalStat'))   safe('svPumpGoalStat').textContent = 'เป้า -- ครั้ง';
-  ['pFsrHip','pFsrAnk','pBatt','pPumpTotal','pMotHip','pMotAnk'].forEach(id => {
+  ['pFsrHip','pFsrAnk','pBatt','pPumpTotal','pMotAnkL','pMotAnkR'].forEach(id => {
     if(safe(id)) safe(id).style.width = '0%';
   });
   ['gaugeHipX','gaugeHipY','gaugeAnkL','gaugeAnkR'].forEach(id => {
@@ -2440,11 +2440,11 @@ function updateLive() {
   if (safe('sFsrHip')) { safe('sFsrHip').textContent = fh>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrHip').className = 'sensor-item-badge '+(fh>500?'s-ok':'s-danger'); }
   if (safe('sFsrAnk')) { safe('sFsrAnk').textContent = fa>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrAnk').className = 'sensor-item-badge '+(fa>500?'s-ok':'s-danger'); }
 
-  const mh = Math.random()>.8?200:0, ma = Math.random()>.8?150:0;
-  if (safe('vMotHip')) safe('vMotHip').textContent = mh+'/255';
-  if (safe('vMotAnk')) safe('vMotAnk').textContent = ma+'/255';
-  if (safe('pMotHip')) safe('pMotHip').style.width = (mh/255*100)+'%';
-  if (safe('pMotAnk')) safe('pMotAnk').style.width = (ma/255*100)+'%';
+  const mL = Math.random()>.8?200:0, mR = Math.random()>.8?150:0;
+  if (safe('vMotAnkL')) safe('vMotAnkL').textContent = mL+'/255';
+  if (safe('vMotAnkR')) safe('vMotAnkR').textContent = mR+'/255';
+  if (safe('pMotAnkL')) safe('pMotAnkL').style.width = (mL/255*100)+'%';
+  if (safe('pMotAnkR')) safe('pMotAnkR').style.width = (mR/255*100)+'%';
 
   // ── Update beds + stat cards + charts ──
   const fsrT       = parseInt(localStorage.getItem('thresh_fsr')||500);

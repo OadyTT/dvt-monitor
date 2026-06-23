@@ -48,9 +48,13 @@ html.fs-xl  { font-size: 22px; }
 *{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px}  /* default, overridden by fs classes */
 body{
-  background:var(--bg);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(47,129,247,.07), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(88,214,255,.05), transparent 45%),
+    var(--bg);
   color:var(--text);
   font-family:'IBM Plex Sans Thai',sans-serif;
+  line-height:1.55;
   min-height:100vh;
   overflow-x:hidden;
 }
@@ -250,6 +254,12 @@ body{
   border:1px solid var(--brd);
   border-radius:14px;
   padding:16px;
+  box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 6px 16px -8px rgba(0,0,0,.5);
+  transition:border-color .2s,box-shadow .2s,transform .2s;
+}
+.card:hover{
+  border-color:var(--brd2);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 24px -10px rgba(0,0,0,.6);
 }
 .card-title{
   font-size:.78rem;font-weight:600;
@@ -315,7 +325,12 @@ body{
   border-radius:14px;
   padding:16px 18px;
   position:relative;overflow:hidden;
-  transition:border-color .2s;
+  box-shadow:0 6px 16px -8px rgba(0,0,0,.5);
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.stat-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px -10px rgba(0,0,0,.6);
 }
 .stat-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
@@ -1035,7 +1050,7 @@ body{
               <div class="prog-fill" id="pPumpTotal" style="width:0%;background:var(--ok);transition:.5s"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text2)">
-              <span>0 ครั้ง</span>
+              <span><span id="vPumpCurrent">0</span> ครั้ง</span>
               <span>เป้า <span id="vPumpGoal">100</span> ครั้ง/วัน</span>
             </div>
           </div>
@@ -1050,6 +1065,7 @@ body{
                 <div class="prog-track">
                   <div class="prog-fill" id="pFsrHip" style="width:0%;background:var(--ok)"></div>
                 </div>
+                <div class="sensor-item-badge s-offline" id="sFsrHip" style="margin-top:6px">—</div>
               </div>
               <div class="fsr-col">
                 <div class="fsr-lbl">หมอนขวา (FSR R)</div>
@@ -1057,6 +1073,7 @@ body{
                 <div class="prog-track">
                   <div class="prog-fill" id="pFsrAnk" style="width:0%;background:var(--ok)"></div>
                 </div>
+                <div class="sensor-item-badge s-offline" id="sFsrAnk" style="margin-top:6px">—</div>
               </div>
             </div>
           </div>
@@ -2337,6 +2354,8 @@ function updateDashboard(d) {
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
+  if (safe('sFsrHip')) { safe('sFsrHip').textContent = fh>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrHip').className = 'sensor-item-badge '+(fh>500?'s-ok':'s-danger'); }
+  if (safe('sFsrAnk')) { safe('sFsrAnk').textContent = fa>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrAnk').className = 'sensor-item-badge '+(fa>500?'s-ok':'s-danger'); }
 
   // ── Pump Count ──
   const pL   = parseInt(d.pumpCountL) || 0;
@@ -2347,6 +2366,7 @@ function updateDashboard(d) {
   if (safe('vPumpR'))         safe('vPumpR').textContent         = pR;
   if (safe('vPumpTotal'))     safe('vPumpTotal').textContent     = pT;
   if (safe('pPumpTotal'))     safe('pPumpTotal').style.width     = Math.min(pT/goal*100, 100)+'%';
+  if (safe('vPumpCurrent'))   safe('vPumpCurrent').textContent   = pT;
   if (safe('svPumpStat'))     { safe('svPumpStat').textContent = pT; safe('svPumpStat').style.color = pT>=goal?'var(--ok)':'var(--text)'; }
   if (safe('svPumpGoalStat')) safe('svPumpGoalStat').textContent = `เป้า ${goal} ครั้ง`;
 
@@ -2417,6 +2437,8 @@ function updateLive() {
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
+  if (safe('sFsrHip')) { safe('sFsrHip').textContent = fh>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrHip').className = 'sensor-item-badge '+(fh>500?'s-ok':'s-danger'); }
+  if (safe('sFsrAnk')) { safe('sFsrAnk').textContent = fa>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrAnk').className = 'sensor-item-badge '+(fa>500?'s-ok':'s-danger'); }
 
   const mh = Math.random()>.8?200:0, ma = Math.random()>.8?150:0;
   if (safe('vMotHip')) safe('vMotHip').textContent = mh+'/255';

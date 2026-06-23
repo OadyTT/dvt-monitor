@@ -2370,6 +2370,16 @@ function updateDashboard(d) {
   if (safe('svPumpStat'))     { safe('svPumpStat').textContent = pT; safe('svPumpStat').style.color = pT>=goal?'var(--ok)':'var(--text)'; }
   if (safe('svPumpGoalStat')) safe('svPumpGoalStat').textContent = `เป้า ${goal} ครั้ง`;
 
+  // ── Ankle Pump Reminder Motors (สถานะจริงจาก ESP32) ──
+  const motL    = d.motAnkL === true || d.motAnkL === 'TRUE';
+  const motR    = d.motAnkR === true || d.motAnkR === 'TRUE';
+  const motLPwm = motL ? (parseInt(d.motAnkLPwm) || 0) : 0;
+  const motRPwm = motR ? (parseInt(d.motAnkRPwm) || 0) : 0;
+  if (safe('vMotAnkL')) safe('vMotAnkL').textContent = motLPwm+'/255';
+  if (safe('vMotAnkR')) safe('vMotAnkR').textContent = motRPwm+'/255';
+  if (safe('pMotAnkL')) { safe('pMotAnkL').style.width=(motLPwm/255*100)+'%'; safe('pMotAnkL').style.background = motL?'var(--warn)':'var(--motor)'; }
+  if (safe('pMotAnkR')) { safe('pMotAnkR').style.width=(motRPwm/255*100)+'%'; safe('pMotAnkR').style.background = motR?'var(--warn)':'var(--motor)'; }
+
   // ── Alert status → stat cards ──
   const isAlert = d.alert === true || d.alert === 'TRUE';
   if (safe('svAlert'))  { safe('svAlert').textContent = isAlert?'1':'0'; safe('svAlert').style.color = isAlert?'var(--danger)':'var(--ok)'; }

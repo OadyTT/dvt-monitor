@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart HIP DVT System v4.10.6</title>
+<title>Smart HIP DVT System v4.10.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -48,9 +48,13 @@ html.fs-xl  { font-size: 22px; }
 *{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px}  /* default, overridden by fs classes */
 body{
-  background:var(--bg);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(47,129,247,.07), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(88,214,255,.05), transparent 45%),
+    var(--bg);
   color:var(--text);
   font-family:'IBM Plex Sans Thai',sans-serif;
+  line-height:1.55;
   min-height:100vh;
   overflow-x:hidden;
 }
@@ -240,7 +244,7 @@ body{
   background:linear-gradient(90deg,var(--text),var(--accent2));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
 }
-.page-subtitle{font-size:.8rem;color:var(--text2);margin-bottom:18px}
+.page-subtitle{font-size:.8rem;color:var(--text2);margin-bottom:10px}
 
 /* ═══════════════════════════════════════════
    CARDS & GRID
@@ -250,6 +254,12 @@ body{
   border:1px solid var(--brd);
   border-radius:14px;
   padding:16px;
+  box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 6px 16px -8px rgba(0,0,0,.5);
+  transition:border-color .2s,box-shadow .2s,transform .2s;
+}
+.card:hover{
+  border-color:var(--brd2);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 24px -10px rgba(0,0,0,.6);
 }
 .card-title{
   font-size:.78rem;font-weight:600;
@@ -289,6 +299,15 @@ body{
   .card{border-radius:12px;padding:14px}
   .stat-card{padding:12px 14px}
   .stat-number{font-size:1.8rem}
+  .stat-card-row{padding:9px 12px}
+  .stat-card-row .stat-label{font-size:.68rem}
+  .stat-card-row .stat-value{font-size:.95rem}
+}
+
+/* จอมือถือแคบมาก: ให้ label/value ของ stat-card-row ตกลงมาคนละบรรทัดแทนการบีบจนล้น */
+@media(max-width:420px){
+  .stat-card-row{flex-direction:column;align-items:flex-start;gap:2px}
+  .stat-card-row .stat-vals{margin-left:0}
 }
 
 /* Desktop: nav-overlay always hidden */
@@ -315,7 +334,12 @@ body{
   border-radius:14px;
   padding:16px 18px;
   position:relative;overflow:hidden;
-  transition:border-color .2s;
+  box-shadow:0 6px 16px -8px rgba(0,0,0,.5);
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.stat-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px -10px rgba(0,0,0,.6);
 }
 .stat-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
@@ -331,6 +355,16 @@ body{
 .stat-value{font-size:1.8rem;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1}
 .stat-unit{font-size:.75rem;color:var(--text2);margin-top:3px}
 .stat-sub{font-size:.7rem;color:var(--text2);margin-top:8px}
+
+/* ── Compact single-line stat card (Dashboard header row) ── */
+.stat-card-row{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:6px 10px;padding:10px 14px;
+}
+.stat-card-row .stat-label{margin-bottom:0;white-space:nowrap;flex-shrink:0}
+.stat-card-row .stat-vals{display:flex;align-items:baseline;gap:7px;margin-left:auto}
+.stat-card-row .stat-value{font-size:1.05rem;line-height:1.1;white-space:nowrap}
+.stat-card-row .stat-sub,.stat-card-row .stat-unit{margin-top:0;font-size:.66rem;white-space:nowrap}
 
 /* ═══════════════════════════════════════════
    SENSOR GAUGE
@@ -429,31 +463,6 @@ body{
 ═══════════════════════════════════════════ */
 .chart-wrap{position:relative;height:200px}
 .chart-wrap-lg{position:relative;height:260px}
-
-/* ═══════════════════════════════════════════
-   HARDWARE SPEC TABLE
-═══════════════════════════════════════════ */
-.hw-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.hw-table th{
-  text-align:left;padding:8px 12px;
-  background:var(--surface2);
-  color:var(--text2);font-size:.68rem;
-  text-transform:uppercase;letter-spacing:.07em;
-  border-bottom:1px solid var(--brd);
-}
-.hw-table td{padding:9px 12px;border-bottom:1px solid var(--brd);vertical-align:middle}
-.hw-table tr:last-child td{border-bottom:none}
-.hw-table tr:hover td{background:var(--surface2)}
-.hw-chip{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:2px 8px;border-radius:99px;
-  font-family:'IBM Plex Mono',monospace;font-size:.68rem;
-  font-weight:600;
-}
-.chip-ok{background:#052010;color:var(--ok);border:1px solid #0a3020}
-.chip-new{background:#031a08;color:var(--new);border:1px solid #0a3015}
-.chip-blue{background:#041020;color:var(--sda);border:1px solid #0a2040}
-.chip-orange{background:#1a0d00;color:var(--p33);border:1px solid #503000}
 
 /* ═══════════════════════════════════════════
    SETTINGS
@@ -633,6 +642,80 @@ body{
 .red{color:var(--danger)}
 .orange{color:var(--charging)}
 .blue{color:var(--sda)}
+.warn{color:var(--warn)}
+
+/* ── Connection Banner ── */
+.conn-banner{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 14px;border-radius:12px;margin-bottom:10px;
+  transition:all .3s;
+}
+.conn-banner.conn-offline{background:#0d0404;border:1px solid #6b2222;color:var(--danger)}
+.conn-banner.conn-mock   {background:#0d0900;border:1px solid #664400;color:var(--warn)}
+.conn-banner.conn-live   {background:#030d06;border:1px solid #1a4a1a;color:var(--ok)}
+.conn-banner.conn-error  {background:#0d0404;border:1px solid var(--danger);color:var(--danger)}
+.conn-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.conn-dot.offline{background:var(--gnd)}
+.conn-dot.mock   {background:var(--warn);animation:live-pulse 2s ease-in-out infinite}
+.conn-dot.live   {background:var(--ok); animation:live-pulse 1.5s ease-in-out infinite}
+.conn-dot.fetching{background:var(--accent2);animation:live-pulse .6s ease-in-out infinite}
+.conn-dot.error  {background:var(--danger);animation:live-pulse .8s ease-in-out infinite}
+
+/* Fetch spinner */
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.fetch-spinner{
+  width:16px;height:16px;border-radius:50%;flex-shrink:0;
+  border:2px solid rgba(255,255,255,.15);
+  border-top-color:var(--ok);
+  animation:spin .7s linear infinite;
+  display:none;
+}
+.conn-banner.conn-error .fetch-spinner{border-top-color:var(--danger)}
+.conn-banner.conn-mock  .fetch-spinner{border-top-color:var(--warn)}
+.conn-title{font-weight:600;font-size:.85rem}
+.conn-sub  {font-size:.72rem;color:var(--text2);margin-top:1px}
+
+/* ── Sensor Section ── */
+.sensor-section{background:var(--surface2);border-radius:10px;padding:10px 12px;margin-top:0}
+.sensor-section+.sensor-section{margin-top:10px}
+.sensor-section-title{
+  font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text2);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;
+}
+.sensor-item-badge{
+  font-size:.66rem;font-weight:600;margin-top:3px;
+  padding:2px 7px;border-radius:5px;display:inline-block;
+  transition:all .3s;
+}
+.sensor-item-badge.s-ok     {background:#052010;color:var(--ok);  border:1px solid #0a3020}
+.sensor-item-badge.s-warn   {background:#1a1000;color:var(--warn);border:1px solid #553300}
+.sensor-item-badge.s-danger {background:#1a0505;color:var(--danger);border:1px solid #500}
+.sensor-item-badge.s-offline{background:var(--surface);color:var(--gnd);border:1px solid var(--brd)}
+
+/* ── Posture illustration (top-view bed) ── */
+.posture-illust{display:flex;justify-content:center;margin-bottom:4px}
+.posture-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0}
+.posture-row-lbl{font-size:.74rem;color:var(--text)}
+.posture-dot{transition:fill .3s}
+.posture-dot.pulse{animation:live-pulse 1.1s ease-in-out infinite}
+
+/* ── Pump display ── */
+.pump-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;text-align:center;padding:6px 0}
+.pump-num{font-family:'IBM Plex Mono',monospace;font-size:1.7rem;font-weight:800;color:var(--ok);line-height:1}
+.pump-total-num{font-family:'IBM Plex Mono',monospace;font-size:2rem;font-weight:900;color:var(--ok);line-height:1}
+.pump-total{border-left:1px solid var(--brd);border-right:1px solid var(--brd)}
+.pump-side-lbl{font-size:.68rem;color:var(--text2);margin-top:3px}
+
+/* ── Admin grid responsive ── */
+@media(max-width:600px){
+  .admin-grid-2{grid-template-columns:1fr !important}
+}
+
+/* ── FSR two-column ── */
+.fsr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fsr-col{padding:8px 10px;background:var(--surface2);border-radius:8px}
+.fsr-lbl{font-size:.68rem;color:var(--text2);margin-bottom:3px}
+.fsr-num{font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:700;margin-bottom:5px}
 </style>
 </head>
 <body class="fs-md">
@@ -669,6 +752,26 @@ body{
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     CALIBRATION MODAL (ครั้งแรกที่เชื่อมต่อกับผู้ป่วย)
+══════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="calibModal">
+  <div class="modal" style="width:360px;text-align:left">
+    <div class="modal-title" style="text-align:center">🎯 ตั้งค่าเริ่มต้นก่อนเริ่มติดตาม</div>
+    <div class="modal-sub" style="text-align:center">
+      เชื่อมต่ออุปกรณ์กับผู้ป่วย <b id="calibPatientName" style="color:var(--text)">ผู้ป่วย</b> ครั้งแรก
+      กรุณาจัดท่าและ Calibrate ก่อนเริ่มวัด
+    </div>
+    <ol style="font-size:.8rem;line-height:1.7;color:var(--text);padding-left:20px;margin-bottom:18px">
+      <li>วางหมอนกางขา (Abduction Pillow) ให้แนบสนิทกับสะโพกทั้งสองข้าง ตั้งแต่ระหว่างเข่าถึงข้อเท้า</li>
+      <li>จัดให้ผู้ป่วยนอนหงายตรงกึ่งกลางเตียง ไม่เอียงซ้าย-ขวา</li>
+      <li>ปรับข้อเท้าซ้ายและขวาให้ตั้งฉากกับพื้นเตียง (มุมเริ่มต้น 0°) ก่อนกดยืนยัน</li>
+      <li>ตรวจสอบว่าเซ็นเซอร์ MPU6050 ทุกจุดติดตั้งแน่น ไม่หลวมหรือเอียงจากตำแหน่งเดิม</li>
+    </ol>
+    <button class="btn-primary" style="width:100%" onclick="closeCalibModal()">✅ เข้าใจแล้ว เริ่มติดตาม</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      TOPBAR
 ══════════════════════════════════════════════════════ -->
 <!-- Nav Overlay -->
@@ -677,8 +780,8 @@ body{
 <div class="topbar">
   <div class="hamburger" id="hamburgerBtn" onclick="toggleNav()">☰</div>
   <div class="topbar-logo">
-    🛏️ DVT Monitor
-    <span id="verBadge">v4.10.6</span>
+    🛏️ Happy HIP Monitor
+    <span id="verBadge">v4.10.5</span>
   </div>
 
   <!-- Charging indicator -->
@@ -750,13 +853,13 @@ body{
       <span class="nav-badge" id="badgeAlerts">5</span>
     </div>
     <div class="nav-section" data-th="ระบบ" data-en="System">ระบบ</div>
-    <div class="nav-item" onclick="nav('hardware')">
-      <span class="nav-icon">🔧</span>
-      <span data-th="ฮาร์ดแวร์" data-en="Hardware">ฮาร์ดแวร์</span>
-    </div>
     <div class="nav-item" onclick="nav('settings')">
       <span class="nav-icon">⚙️</span>
       <span data-th="ตั้งค่า" data-en="Settings">ตั้งค่า</span>
+    </div>
+    <div class="nav-item" onclick="nav('report')">
+      <span class="nav-icon">📋</span>
+      <span data-th="รายงานรายวัน" data-en="Daily Report">รายงานรายวัน</span>
     </div>
   </nav>
 
@@ -765,12 +868,29 @@ body{
 
     <!-- ─────── DASHBOARD ─────── -->
     <div class="page active" id="page-dashboard">
+
+      <!-- Page header -->
       <div class="inline-flex mb12">
         <div>
           <div class="page-title" data-th="แดชบอร์ด" data-en="Dashboard">แดชบอร์ด</div>
-          <div class="page-subtitle" data-th="ภาพรวมระบบ DVT realtime" data-en="DVT System realtime overview">ภาพรวมระบบ DVT realtime</div>
+          <div class="page-subtitle" data-th="ภาพรวมระบบ Smart HIP DVT" data-en="Smart HIP DVT Overview">ภาพรวมระบบ Smart HIP DVT</div>
         </div>
-        <div class="ml-auto text-sm" id="lastUpdate">อัปเดตล่าสุด: --:--:--</div>
+      </div>
+
+      <!-- Connection status banner -->
+      <div id="connBanner" class="conn-banner conn-offline">
+        <div class="conn-dot offline" id="connDot"></div>
+        <div style="flex:1;min-width:0">
+          <div class="conn-title" id="connTitle">ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์</div>
+          <div class="conn-sub"   id="connSub">ไปที่ Settings เพื่อใส่ GAS URL</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div class="fetch-spinner" id="fetchSpinner"></div>
+          <div style="text-align:right">
+            <div id="lastUpdate" style="font-size:.72rem;color:var(--text2)">--:--:--</div>
+            <div id="connMode"   style="font-size:.62rem;color:var(--text2);margin-top:1px;font-family:'IBM Plex Mono',monospace">—</div>
+          </div>
+        </div>
       </div>
 
       <!-- Charging banner -->
@@ -780,175 +900,188 @@ body{
           <div class="fw600" style="color:var(--charging)" data-th="กำลังชาร์จ USB Type-C" data-en="Charging via USB Type-C">กำลังชาร์จ USB Type-C</div>
           <div class="text-sm" data-th="ระบบ Light Sleep ถูกปิดชั่วคราว" data-en="Light Sleep paused during charging">ระบบ Light Sleep ถูกปิดชั่วคราว</div>
         </div>
-        <div class="ml-auto font-mono fw600" style="color:var(--charging)" id="chrgPct">78%</div>
+        <div class="ml-auto font-mono fw600" style="color:var(--charging)" id="chrgPct">--%</div>
       </div>
 
-      <!-- Stat row -->
-      <div class="grid-4 mb18">
-        <div class="stat-card info">
-          <div class="stat-label" data-th="เตียงทั้งหมด" data-en="Total Beds">เตียงทั้งหมด</div>
-          <div class="stat-value">4</div>
-          <div class="stat-unit" data-th="เตียง" data-en="beds">เตียง</div>
+      <!-- Stat cards row -->
+      <div class="grid-4 mb12">
+        <!-- Connection -->
+        <div class="stat-card stat-card-row" id="scConn">
+          <div class="stat-label">สถานะระบบ</div>
+          <div class="stat-vals">
+            <div class="stat-value" id="svConnStatus" style="color:var(--gnd)">Offline</div>
+            <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
+          </div>
         </div>
-        <div class="stat-card danger" id="scAlert">
+        <!-- Alerts -->
+        <div class="stat-card stat-card-row" id="scAlert">
           <div class="stat-label" data-th="แจ้งเตือนตอนนี้" data-en="Active Alerts">แจ้งเตือนตอนนี้</div>
-          <div class="stat-value red" id="svAlert">2</div>
-          <div class="stat-unit" data-th="เตียง" data-en="beds">เตียง</div>
+          <div class="stat-vals">
+            <div class="stat-value" id="svAlert" style="color:var(--gnd)">--</div>
+            <div class="stat-unit" data-th="แจ้งเตือน" data-en="alerts">แจ้งเตือน</div>
+          </div>
         </div>
-        <div class="stat-card charging" id="scBatt">
+        <!-- Battery -->
+        <div class="stat-card stat-card-row" id="scBatt">
           <div class="stat-label" data-th="แบตเตอรี่" data-en="Battery">แบตเตอรี่</div>
-          <div class="stat-value" id="svBatt" style="color:var(--ok)">78%</div>
-          <div class="stat-sub font-mono" id="svBattV">3.95V</div>
+          <div class="stat-vals">
+            <div class="stat-value" id="svBatt" style="color:var(--gnd)">--%</div>
+            <div class="stat-sub font-mono" id="svBattV">--V</div>
+          </div>
         </div>
-        <div class="stat-card ok">
-          <div class="stat-label" data-th="เตียงปกติ" data-en="Normal Beds">เตียงปกติ</div>
-          <div class="stat-value green" id="svOk">2</div>
-          <div class="stat-unit" data-th="เตียง" data-en="beds">เตียง</div>
+        <!-- Pump progress -->
+        <div class="stat-card stat-card-row" id="scPump">
+          <div class="stat-label">กระดกข้อเท้าวันนี้</div>
+          <div class="stat-vals">
+            <div class="stat-value" id="svPumpStat" style="color:var(--gnd)">--</div>
+            <div class="stat-sub"   id="svPumpGoalStat">เป้า -- ครั้ง</div>
+          </div>
+        </div>
+      </div>
+      <!-- hidden compat -->
+      <span id="svOk" style="display:none">1</span>
+
+      <!-- Row 1: Pump + FSR | Posture sensors -->
+      <div class="grid-2 mb18">
+
+        <!-- Left column: Pump + FSR -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+
+          <!-- Ankle pump -->
+          <div class="card" style="border-color:var(--ok)">
+            <div class="card-title" style="color:var(--ok)">
+              🦶 <span data-th="กระดกข้อเท้า (Ankle Pump)" data-en="Ankle Pump Count">กระดกข้อเท้า (Ankle Pump)</span>
+            </div>
+            <div class="pump-row">
+              <div>
+                <div class="pump-num" id="vPumpL">--</div>
+                <div class="pump-side-lbl">ซ้าย (L)</div>
+              </div>
+              <div class="pump-total">
+                <div class="pump-total-num" id="vPumpTotal">--</div>
+                <div class="pump-side-lbl">รวม</div>
+              </div>
+              <div>
+                <div class="pump-num" id="vPumpR">--</div>
+                <div class="pump-side-lbl">ขวา (R)</div>
+              </div>
+            </div>
+            <div class="prog-track" style="margin:8px 0 4px">
+              <div class="prog-fill" id="pPumpTotal" style="width:0%;background:var(--ok);transition:.5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text2)">
+              <span><span id="vPumpCurrent">0</span> ครั้ง</span>
+              <span>เป้า <span id="vPumpGoal">100</span> ครั้ง/วัน</span>
+            </div>
+          </div>
+
+          <!-- FSR pillows -->
+          <div class="card">
+            <div class="card-title">👟 <span data-th="แรงกด FSR หมอน" data-en="Pillow FSR Pressure">แรงกด FSR หมอน</span></div>
+            <div class="fsr-grid">
+              <div class="fsr-col">
+                <div class="fsr-lbl">หมอนซ้าย (FSR L)</div>
+                <div class="fsr-num" id="vFsrHip">--</div>
+                <div class="prog-track">
+                  <div class="prog-fill" id="pFsrHip" style="width:0%;background:var(--ok)"></div>
+                </div>
+                <div class="sensor-item-badge s-offline" id="sFsrHip" style="margin-top:6px">—</div>
+              </div>
+              <div class="fsr-col">
+                <div class="fsr-lbl">หมอนขวา (FSR R)</div>
+                <div class="fsr-num" id="vFsrAnk">--</div>
+                <div class="prog-track">
+                  <div class="prog-fill" id="pFsrAnk" style="width:0%;background:var(--ok)"></div>
+                </div>
+                <div class="sensor-item-badge s-offline" id="sFsrAnk" style="margin-top:6px">—</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Posture sensor card -->
+        <div class="card">
+          <div class="card-title">
+            🛏️ <span data-th="ท่านอน MPU6050" data-en="Posture MPU6050">ท่านอน MPU6050</span>
+            <span class="ml-auto" id="postureLiveBadge" style="font-size:.68rem;color:var(--gnd);font-family:'IBM Plex Mono',monospace">● OFFLINE</span>
+          </div>
+
+          <!-- ภาพประกอบท่านอน: มุมมองบนเตียง สะโพกแนบหมอนกางขา -->
+          <div class="posture-illust">
+            <svg viewBox="0 0 220 260" width="100%" height="220" preserveAspectRatio="xMidYMid meet">
+              <rect x="8" y="4" width="204" height="252" rx="18" fill="var(--surface2)" stroke="var(--brd2)" stroke-width="2"/>
+              <rect x="65" y="16" width="90" height="30" rx="10" fill="var(--brd2)"/>
+              <circle cx="110" cy="58" r="15" fill="#3a4658"/>
+              <path d="M90,72 Q110,66 130,72 L126,140 Q110,147 94,140 Z" fill="#3a4658"/>
+              <path d="M91,78 Q70,96 74,126" stroke="#3a4658" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M129,78 Q150,96 146,126" stroke="#3a4658" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M100,140 Q80,178 72,222" stroke="#3a4658" stroke-width="15" fill="none" stroke-linecap="round"/>
+              <path d="M120,140 Q140,178 148,222" stroke="#3a4658" stroke-width="15" fill="none" stroke-linecap="round"/>
+              <path id="hipPillow" d="M110,143 L92,220 L128,220 Z" fill="var(--gnd)" opacity=".4" stroke="var(--gnd)" stroke-width="1.5"/>
+              <ellipse cx="72" cy="228" rx="12" ry="8" fill="#3a4658"/>
+              <ellipse cx="148" cy="228" rx="12" ry="8" fill="#3a4658"/>
+              <circle id="dotHip"  class="posture-dot" cx="110" cy="145" r="9" fill="var(--gnd)" stroke="#0b0f14" stroke-width="1.5"/>
+              <circle id="dotAnkL" class="posture-dot" cx="72"  cy="228" r="8" fill="var(--gnd)" stroke="#0b0f14" stroke-width="1.5"/>
+              <circle id="dotAnkR" class="posture-dot" cx="148" cy="228" r="8" fill="var(--gnd)" stroke="#0b0f14" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="text-sm" style="text-align:center;margin:-6px 0 10px" data-th="หมอนกางขาแนบสะโพก + นอนตรงกึ่งกลางเตียง" data-en="Abduction pillow flush to hip + centered on bed">หมอนกางขาแนบสะโพก + นอนตรงกึ่งกลางเตียง</div>
+
+          <!-- Hip -->
+          <div class="sensor-section">
+            <div class="sensor-section-title">🦴 สะโพก (Hip)</div>
+            <div class="posture-row">
+              <span class="posture-row-lbl" data-th="งอสะโพก (Flexion)" data-en="Flexion">งอสะโพก (Flexion)</span>
+              <span class="sensor-item-badge s-offline" id="badgeHipX">—</span>
+            </div>
+            <div class="posture-row">
+              <span class="posture-row-lbl" data-th="กางสะโพก (Abduction)" data-en="Abduction">กางสะโพก (Abduction)</span>
+              <span class="sensor-item-badge s-offline" id="badgeHipY">—</span>
+            </div>
+          </div>
+
+          <!-- Ankle -->
+          <div class="sensor-section">
+            <div class="sensor-section-title">🦶 ข้อเท้า (Ankle)</div>
+            <div class="posture-row">
+              <span class="posture-row-lbl" data-th="ข้อเท้าซ้าย" data-en="Ankle L">ข้อเท้าซ้าย</span>
+              <span class="sensor-item-badge s-offline" id="badgeAnkL">—</span>
+            </div>
+            <div class="posture-row">
+              <span class="posture-row-lbl" data-th="ข้อเท้าขวา" data-en="Ankle R">ข้อเท้าขวา</span>
+              <span class="sensor-item-badge s-offline" id="badgeAnkR">—</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Sensor gauges -->
-      <div class="grid-2 mb18">
+      <!-- Row 2: Motors | Battery -->
+      <div class="grid-2">
         <div class="card">
-          <div class="card-title">
-            🎯 <span data-th="เซ็นเซอร์ท่านอน MPU6050" data-en="Posture Sensor MPU6050">เซ็นเซอร์ท่านอน MPU6050</span>
-            <span class="ml-auto"><span class="live-dot" data-th="สด" data-en="Live">สด</span></span>
+          <div class="card-title">⚙️ <span data-th="มอเตอร์ AH024 PWM (เตือนกระดกข้อเท้า)" data-en="AH024 PWM Motor (Ankle Pump Reminder)">มอเตอร์ AH024 PWM (เตือนกระดกข้อเท้า)</span></div>
+          <div class="prog-row">
+            <div class="prog-label"><span data-th="มอเตอร์ข้อเท้าซ้าย" data-en="Ankle Motor L">มอเตอร์ข้อเท้าซ้าย</span><span class="font-mono" id="vMotAnkL">--/255</span></div>
+            <div class="prog-track"><div class="prog-fill" id="pMotAnkL" style="width:0%;background:var(--motor)"></div></div>
           </div>
-          <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center">
-            <div class="gauge-wrap">
-              <div class="gauge-ring">
-                <svg width="90" height="90" viewBox="0 0 90 90">
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--sda)" stroke-width="7"
-                    stroke-dasharray="226" id="gaugeHipX" stroke-dashoffset="170" stroke-linecap="round"/>
-                </svg>
-                <div class="gauge-val"><div class="gauge-num blue" id="vHipX">18°</div><div class="gauge-u">Flexion</div></div>
-              </div>
-              <div class="text-sm text-muted">สะโพก (Flexion)</div>
-            </div>
-            <div class="gauge-wrap">
-              <div class="gauge-ring">
-                <svg width="90" height="90" viewBox="0 0 90 90">
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--scl)" stroke-width="7"
-                    stroke-dasharray="226" id="gaugeHipY" stroke-dashoffset="195" stroke-linecap="round"/>
-                </svg>
-                <div class="gauge-val"><div class="gauge-num" style="color:var(--scl)" id="vHipY">11°</div><div class="gauge-u">Abduction</div></div>
-              </div>
-              <div class="text-sm text-muted">สะโพก (Abduction)</div>
-            </div>
-            <div class="gauge-wrap">
-              <div class="gauge-ring">
-                <svg width="90" height="90" viewBox="0 0 90 90">
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--danger)" stroke-width="7"
-                    stroke-dasharray="226" id="gaugeAnkL" stroke-dashoffset="80" stroke-linecap="round"/>
-                </svg>
-                <div class="gauge-val"><div class="gauge-num red" id="vAnkL">35°</div><div class="gauge-u">ข้อเท้าซ้าย</div></div>
-              </div>
-              <div class="text-sm text-muted" style="color:var(--danger)">⚠️ ข้อเท้าซ้าย</div>
-            </div>
-            <div class="gauge-wrap">
-              <div class="gauge-ring">
-                <svg width="90" height="90" viewBox="0 0 90 90">
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--surface2)" stroke-width="7"/>
-                  <circle cx="45" cy="45" r="36" fill="none" stroke="var(--ok)" stroke-width="7"
-                    stroke-dasharray="226" id="gaugeAnkR" stroke-dashoffset="200" stroke-linecap="round"/>
-                </svg>
-                <div class="gauge-val"><div class="gauge-num green" id="vAnkR">9°</div><div class="gauge-u">ข้อเท้าขวา</div></div>
-              </div>
-              <div class="text-sm text-muted">ข้อเท้าขวา</div>
-            </div>
+          <div class="prog-row">
+            <div class="prog-label"><span data-th="มอเตอร์ข้อเท้าขวา" data-en="Ankle Motor R">มอเตอร์ข้อเท้าขวา</span><span class="font-mono" id="vMotAnkR">--/255</span></div>
+            <div class="prog-track"><div class="prog-fill" id="pMotAnkR" style="width:0%;background:var(--motor)"></div></div>
           </div>
         </div>
-
-        <!-- ── Pump Count Card ── -->
-        <div class="card" style="border-color:var(--ok)">
-          <div class="card-title" style="color:var(--ok)">
-            🦶 <span data-th="นับกระดกข้อเท้า (Ankle Pump)" data-en="Ankle Pump Count">นับกระดกข้อเท้า (Ankle Pump)</span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;padding:8px 0">
-            <div>
-              <div style="font-size:2rem;font-weight:800;color:var(--ok)" id="vPumpL">0</div>
-              <div style="font-size:0.75rem;color:var(--text2)">ซ้าย (L)</div>
-            </div>
-            <div style="border-left:1px solid var(--brd);border-right:1px solid var(--brd)">
-              <div style="font-size:2.5rem;font-weight:900;color:var(--ok)" id="vPumpTotal">0</div>
-              <div style="font-size:0.75rem;color:var(--text2)">รวมทั้งหมด</div>
-            </div>
-            <div>
-              <div style="font-size:2rem;font-weight:800;color:var(--ok)" id="vPumpR">0</div>
-              <div style="font-size:0.75rem;color:var(--text2)">ขวา (R)</div>
-            </div>
-          </div>
-          <div class="prog-track" style="margin-top:4px">
-            <div class="prog-fill" id="pPumpTotal" style="width:0%;background:var(--ok);transition:.5s"></div>
-          </div>
-          <div style="font-size:0.7rem;color:var(--text2);text-align:center;margin-top:4px">
-            เป้าหมาย: <span id="vPumpGoal">100</span> ครั้ง/วัน
-          </div>
-        </div>
-
         <div class="card">
-          <div class="card-title">
-            👟 <span data-th="แรงกด FSR หมอน" data-en="Pillow FSR Pressure">แรงกด FSR หมอน</span>
-          </div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span data-th="หมอนซ้าย (FSR L)" data-en="Pillow L">หมอนซ้าย (FSR L)</span>
-              <span class="font-mono" id="vFsrHip">1840</span>
-            </div>
-            <div class="prog-track">
-              <div class="prog-fill" id="pFsrHip" style="width:45%;background:var(--ok)"></div>
-            </div>
-          </div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span data-th="หมอนขวา (FSR R)" data-en="Pillow R">หมอนขวา (FSR R)</span>
-              <span class="font-mono" id="vFsrAnk">320</span>
-            </div>
-            <div class="prog-track">
-              <div class="prog-fill" id="pFsrAnk" style="width:8%;background:var(--danger)"></div>
-            </div>
-          </div>
-          <div class="sep"></div>
-          <div class="card-title" style="margin-top:8px">
-            ⚙️ <span data-th="มอเตอร์ AH024 PWM" data-en="AH024 PWM Motor">มอเตอร์ AH024 PWM</span>
-          </div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span>Hip Motor</span>
-              <span class="font-mono" id="vMotHip">0/255</span>
-            </div>
-            <div class="prog-track">
-              <div class="prog-fill" id="pMotHip" style="width:0%;background:var(--motor)"></div>
-            </div>
-          </div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span>Ankle Motor</span>
-              <span class="font-mono" id="vMotAnk">0/255</span>
-            </div>
-            <div class="prog-track">
-              <div class="prog-fill" id="pMotAnk" style="width:0%;background:var(--motor)"></div>
-            </div>
-          </div>
-          <div class="sep"></div>
-          <div class="card-title" style="margin-top:4px">
-            🔋 <span data-th="แบตเตอรี่ INA219" data-en="Battery INA219">แบตเตอรี่ INA219</span>
-          </div>
+          <div class="card-title">🔋 <span data-th="แบตเตอรี่ INA219" data-en="Battery INA219">แบตเตอรี่ INA219</span></div>
           <div class="prog-row">
             <div class="prog-label">
               <span id="battLabel">LiPo 2000mAh</span>
-              <span class="font-mono green" id="vBattPct">78%</span>
+              <span class="font-mono" id="vBattPct">--%</span>
             </div>
-            <div class="prog-track">
-              <div class="prog-fill" id="pBatt" style="width:78%;background:var(--ok)"></div>
-            </div>
+            <div class="prog-track"><div class="prog-fill" id="pBatt" style="width:0%;background:var(--ok)"></div></div>
           </div>
-          <div class="text-sm" id="battInfo">3.95V · -42mA · <span class="green" data-th="ปกติ" data-en="Normal">ปกติ</span></div>
+          <div class="text-sm" id="battInfo" style="margin-top:4px">--V · --mA</div>
         </div>
       </div>
+
     </div>
 
     <!-- ─────── BEDS ─────── -->
@@ -985,8 +1118,13 @@ body{
 
     <!-- ─────── ALERTS ─────── -->
     <div class="page" id="page-alerts">
-      <div class="page-title" data-th="ประวัติการแจ้งเตือน" data-en="Alert History">ประวัติการแจ้งเตือน</div>
-      <div class="page-subtitle" data-th="บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง" data-en="All alert records by bed">บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง</div>
+      <div class="inline-flex mb12" style="flex-wrap:wrap;gap:10px;align-items:center">
+        <div>
+          <div class="page-title" data-th="ประวัติการแจ้งเตือน" data-en="Alert History">ประวัติการแจ้งเตือน</div>
+          <div class="page-subtitle" data-th="บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง" data-en="All alert records by bed">บันทึกการแจ้งเตือนทั้งหมด แยกตามเตียง</div>
+        </div>
+        <button class="btn-primary ml-auto" onclick="loadAlerts()">🔄 โหลด</button>
+      </div>
       <div class="card">
         <table class="alert-table">
           <thead>
@@ -1003,101 +1141,10 @@ body{
       </div>
     </div>
 
-    <!-- ─────── HARDWARE ─────── -->
-    <div class="page" id="page-hardware">
-      <div class="page-title" data-th="ฮาร์ดแวร์ v3.3" data-en="Hardware v3.3">ฮาร์ดแวร์ v3.3</div>
-      <div class="page-subtitle" data-th="อุปกรณ์ทั้งหมดในระบบ DVT ปัจจุบัน" data-en="All current DVT system hardware">อุปกรณ์ทั้งหมดในระบบ DVT ปัจจุบัน</div>
-      <div class="card mb18">
-        <div class="card-title" data-th="MCU & Sensors" data-en="MCU & Sensors">MCU & Sensors</div>
-        <table class="hw-table">
-          <thead><tr>
-            <th data-th="อุปกรณ์" data-en="Component">อุปกรณ์</th>
-            <th data-th="สเปค" data-en="Spec">สเปค</th>
-            <th data-th="GPIO / Bus" data-en="GPIO / Bus">GPIO / Bus</th>
-            <th data-th="สถานะ" data-en="Status">สถานะ</th>
-          </tr></thead>
-          <tbody>
-            <tr><td class="fw600">ESP32 DevKit v1</td><td>Dual-core 240MHz, WiFi+BT</td><td class="font-mono">—</td><td><span class="hw-chip chip-ok">✅ Online</span></td></tr>
-            <tr><td class="fw600">TCA9548A</td><td>I2C Mux 8-ch (addr 0x70)</td><td class="font-mono">SDA:21 SCL:22</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600">MPU6050 Hip</td><td>Gyro+Accel, CH0</td><td class="font-mono">TCA CH0</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600">MPU6050 Ankle L</td><td>Gyro+Accel, CH1</td><td class="font-mono">TCA CH1</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600">MPU6050 Ankle R</td><td>Gyro+Accel, CH2</td><td class="font-mono">TCA CH2</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600">INA219</td><td>Current/Voltage Monitor</td><td class="font-mono">TCA CH3</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600 green">RFP-611 ×2 🆕</td><td>FSR หมอนซ้าย(GPIO34) + ขวา(GPIO35)</td><td class="font-mono">GPIO34/35</td><td><span class="hw-chip chip-new">🆕 Upgraded</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card mb18">
-        <div class="card-title" data-th="Power & Protection" data-en="Power & Protection">Power & Protection</div>
-        <table class="hw-table">
-          <thead><tr>
-            <th data-th="อุปกรณ์" data-en="Component">อุปกรณ์</th>
-            <th data-th="สเปค" data-en="Spec">สเปค</th>
-            <th data-th="หน้าที่" data-en="Role">หน้าที่</th>
-            <th data-th="สถานะ" data-en="Status">สถานะ</th>
-          </tr></thead>
-          <tbody>
-            <tr><td class="fw600">LiPo 2000mAh</td><td>3.7V JST 2-pin</td><td data-th="แหล่งพลังงาน" data-en="Power source">แหล่งพลังงาน</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600 green">TP4056 Type-C 🆕</td><td>USB-C Charger 1A + CHRG pin</td><td data-th="ชาร์จ LiPo" data-en="LiPo Charger">ชาร์จ LiPo</td><td><span class="hw-chip chip-new">🆕 Type-C</span></td></tr>
-            <tr><td class="fw600">MT3608</td><td>Boost 3.7V→5V (85%)</td><td>5V Rail</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600 green">MP2307 🆕</td><td>Buck 5V→3.3V (92%)</td><td data-th="แทน AMS1117" data-en="Replaces AMS1117">แทน AMS1117</td><td><span class="hw-chip chip-new">🆕 Cooler</span></td></tr>
-            <tr><td class="fw600 green">AO3401 🆕</td><td>P-MOSFET SOT-23</td><td data-th="ป้องกันไฟผิดขั้ว" data-en="Reverse Polarity">ป้องกันไฟผิดขั้ว</td><td><span class="hw-chip chip-new">🆕 Protection</span></td></tr>
-            <tr><td class="fw600 green">TVS SMBJ5.0A 🆕</td><td>Bidirectional TVS 5V</td><td data-th="ป้องกันแรงดันเกิน" data-en="Overvoltage">ป้องกันแรงดันเกิน</td><td><span class="hw-chip chip-new">🆕 Protection</span></td></tr>
-            <tr><td class="fw600 green">PRTR5V0U2X 🆕</td><td>ESD USB SOT-363</td><td>ESD USB-C</td><td><span class="hw-chip chip-new">🆕 Protection</span></td></tr>
-            <tr><td class="fw600">Polyfuse 1A</td><td>Resettable PPTC</td><td data-th="ป้องกันกระแสเกิน" data-en="Overcurrent">ป้องกันกระแสเกิน</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <div class="card-title" data-th="Output & Firmware" data-en="Output & Firmware">Output & Firmware</div>
-        <table class="hw-table">
-          <thead><tr>
-            <th data-th="อุปกรณ์" data-en="Component">อุปกรณ์</th>
-            <th data-th="สเปค" data-en="Spec">สเปค</th>
-            <th data-th="GPIO" data-en="GPIO">GPIO</th>
-            <th data-th="สถานะ" data-en="Status">สถานะ</th>
-          </tr></thead>
-          <tbody>
-            <tr><td class="fw600 green">AH024 PWM Motor ×2 🆕</td><td>3-5V PWM Vibration Module (แทน Coin)</td><td class="font-mono">GPIO25/26</td><td><span class="hw-chip chip-new">🆕 PWM</span></td></tr>
-            <tr><td class="fw600">LED Green/Yellow/Red</td><td>5mm, Blink 100ms/4.9s</td><td class="font-mono">GPIO2/13/15</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600">Tactile Button</td><td>6×6mm INPUT_PULLUP</td><td class="font-mono">GPIO4</td><td><span class="hw-chip chip-ok">✅ OK</span></td></tr>
-            <tr><td class="fw600 green">CHRG Detection 🆕</td><td>TP4056 CHRG → R10k → 3.3V</td><td class="font-mono">GPIO36</td><td><span class="hw-chip chip-new">🆕 New</span></td></tr>
-            <tr><td class="fw600 green">Firmware v3.2 🆕</td><td>Light Sleep + WiFi Burst + PWM Motor</td><td class="font-mono">—</td><td><span class="hw-chip chip-new">🆕 v3.2</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- ─────── SETTINGS ─────── -->
     <div class="page" id="page-settings">
       <div class="page-title" data-th="ตั้งค่าระบบ" data-en="System Settings">ตั้งค่าระบบ</div>
-      <div class="page-subtitle" data-th="การแจ้งเตือน · ค่า Threshold · Calibrate" data-en="Alerts · Threshold · Calibrate">การแจ้งเตือน · ค่า Threshold · Calibrate</div>
-
-      <!-- Calibrate Card (ทุกคนเห็น) -->
-      <div class="card" style="border-color:var(--teal);margin-bottom:16px">
-        <div class="card-title" style="color:var(--teal)">🎯 Calibrate Sensor</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
-          <div style="text-align:center">
-            <div style="font-size:.85rem;color:var(--text2);margin-bottom:8px">จัดท่าผู้ป่วยให้ถูกต้องก่อนกด</div>
-            <button class="btn-primary" onclick="calibrateHip()"
-              style="width:100%;background:var(--teal);padding:14px 8px;font-size:.95rem">
-              🦴 Calibrate สะโพก
-            </button>
-            <div id="calHipResult" style="margin-top:6px;font-size:.8rem;color:var(--ok);min-height:18px"></div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:.85rem;color:var(--text2);margin-bottom:8px">วางข้อเท้าในท่าปกติก่อนกด</div>
-            <button class="btn-primary" onclick="calibrateAnkle()"
-              style="width:100%;background:var(--purple,#7c3aed);padding:14px 8px;font-size:.95rem">
-              🦶 Calibrate ข้อเท้า
-            </button>
-            <div id="calAnkResult" style="margin-top:6px;font-size:.8rem;color:var(--ok);min-height:18px"></div>
-          </div>
-        </div>
-        <div style="margin-top:10px;padding:8px;background:var(--surface2);border-radius:8px;font-size:.8rem;color:var(--text2)">
-          ℹ️ Calibrate = บันทึกมุมพื้นฐาน (Baseline) สำหรับผู้ป่วยคนนี้ ต้องทำทุกครั้งที่เปลี่ยนผู้ป่วย
-        </div>
-      </div>
+      <div class="page-subtitle" data-th="จัดการการแจ้งเตือน LINE และการเชื่อมต่อ" data-en="Manage LINE alerts and connections">จัดการการแจ้งเตือน LINE และการเชื่อมต่อ</div>
 
       <div class="grid-2">
         <!-- Pending Users Card (Admin only) -->
@@ -1215,8 +1262,8 @@ body{
           </div>
           <div class="setting-row">
             <div class="setting-info">
-              <div class="setting-label" data-th="PWM มอเตอร์ Alert" data-en="Motor PWM Alert">PWM มอเตอร์ Alert</div>
-              <div class="setting-desc" data-th="0-255 (AH024 PWM)" data-en="0-255 (AH024 PWM)">0-255 (AH024 PWM)</div>
+              <div class="setting-label" data-th="PWM มอเตอร์เตือนกระดกข้อเท้า" data-en="Ankle Pump Reminder Motor PWM">PWM มอเตอร์เตือนกระดกข้อเท้า</div>
+              <div class="setting-desc" data-th="0-255 (AH024 PWM, Ankle L/R)" data-en="0-255 (AH024 PWM, Ankle L/R)">0-255 (AH024 PWM, Ankle L/R)</div>
             </div>
             <input class="input-field" value="200" id="inpPwm" style="width:80px" type="number">
           </div>
@@ -1264,48 +1311,276 @@ body{
           </div>
         </div>
 
-        <!-- Admin Only: จัดการบัญชี -->
-        <div class="card admin-only-card" id="adminAccountCard" style="display:none;border-color:var(--warn)">
-          <div class="card-title" style="color:var(--warn)">
-            👑 จัดการบัญชี (Admin เท่านั้น)
+        <!-- Config Sync from Google Sheets (visible all) -->
+        <div class="card" style="grid-column:1/-1;border-color:var(--accent)">
+          <div class="card-title" style="color:var(--accent2)">
+            ☁️ Config จาก Google Sheets
+            <span class="ml-auto font-mono" id="cfgBadge" style="font-size:.65rem;color:var(--text2)">—</span>
           </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="เปลี่ยน Admin PIN" data-en="Change Admin PIN">เปลี่ยน Admin PIN</div>
-              <div class="setting-desc" data-th="PIN ปัจจุบัน: 4 หลัก" data-en="Current PIN: 4 digits">PIN ปัจจุบัน: 4 หลัก</div>
-            </div>
-            <button class="btn-primary" onclick="alert('ฟีเจอร์นี้ต้องการสิทธิ์ Admin')" data-th="เปลี่ยน PIN" data-en="Change PIN">เปลี่ยน PIN</button>
-          </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label">Google Sheets URL</div>
-              <div class="setting-desc">GAS Backend endpoint</div>
-            </div>
-            <input class="input-field" placeholder="https://script.google.com/..." id="inpGas">
-          </div>
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label" data-th="โหมดข้อมูล" data-en="Data Mode">โหมดข้อมูล</div>
-              <div class="setting-desc" id="dataModeDesc">Mock Data (ยังไม่ได้เชื่อม GAS)</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <span id="dataModeLabel" style="font-size:0.8rem;color:var(--text2)">MOCK</span>
-              <div id="dataModeToggle" onclick="toggleDataMode()"
-                style="width:44px;height:24px;border-radius:12px;background:var(--surface2);
-                       border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s">
-                <div id="dataModeThumb"
-                  style="width:20px;height:20px;border-radius:50%;background:#666;
-                         position:absolute;top:2px;left:2px;transition:.3s"></div>
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:.82rem;margin-bottom:6px;line-height:1.5">
+                ดึงค่า <strong>Admin PIN</strong>, <strong>Threshold</strong>, <strong>LINE Token</strong>
+                จาก Sheet ชื่อ <code style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:.78rem">Config</code>
+                โดยอัตโนมัติ — ไม่ต้องกรอกใหม่ทุกครั้ง
               </div>
-              <span id="dataModeLabelR" style="font-size:0.8rem;color:var(--ok)">LIVE</span>
-            </label>
+              <div style="font-size:.75rem;color:var(--text2)">Sync ล่าสุด: <span id="cfgLastSync" style="color:var(--text)">ยังไม่ได้ sync</span></div>
+              <div id="cfgStatus" style="font-size:.78rem;margin-top:5px;min-height:18px;color:var(--text2)">—</div>
+            </div>
+            <button class="btn-primary" onclick="loadConfigFromGAS(true)" style="white-space:nowrap;align-self:center">
+              🔄 โหลดตอนนี้
+            </button>
           </div>
-          <div style="padding-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary" onclick="saveSettings()" data-th="บันทึกและเชื่อมต่อ GAS" data-en="Save & Connect GAS">บันทึกและเชื่อมต่อ GAS</button>
-            <button class="btn-primary" onclick="testGASConn()" style="background:var(--surface2)">ทดสอบการเชื่อมต่อ</button>
-            <button class="btn-primary btn-danger" onclick="clearData()" data-th="ล้างข้อมูล" data-en="Clear Data">ล้างข้อมูล</button>
+
+          <!-- Config key reference table -->
+          <div style="margin-top:14px;padding:10px 12px;background:var(--surface2);border-radius:8px">
+            <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);font-family:'IBM Plex Mono',monospace;margin-bottom:8px">
+              📋 คีย์ใน Sheet "Config" (คอลัมน์ A = key, คอลัมน์ B = value)
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:5px;font-family:'IBM Plex Mono',monospace;font-size:.73rem">
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">adminPin</span>
+                <span id="cfgPinMask" style="color:var(--warn)">****</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">angleThresh</span>
+                <span id="cfgPreviewAngle" style="color:var(--ok)">30°</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">fsrThresh</span>
+                <span id="cfgPreviewFsr" style="color:var(--ok)">500</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">battLow</span>
+                <span id="cfgPreviewBatt" style="color:var(--ok)">15%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">pwmMotor</span>
+                <span id="cfgPreviewPwm" style="color:var(--ok)">200</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">pumpGoal</span>
+                <span id="cfgPreviewPump" style="color:var(--ok)">100</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">lineToken</span>
+                <span style="color:var(--sda)">••••</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">doctorId</span>
+                <span style="color:var(--sda)">Uxxxx</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">nurseId</span>
+                <span style="color:var(--sda)">Uxxxx</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">lineAlertOn</span>
+                <span id="cfgPreviewLine" style="color:var(--ok)">true</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
+                <span style="color:var(--text2)">battAlertOn</span>
+                <span id="cfgPreviewBattA" style="color:var(--ok)">true</span>
+              </div>
+            </div>
           </div>
-          <div id="gasTestResult" style="margin-top:8px;font-size:0.8rem;color:var(--ok);display:none"></div>
+        </div>
+
+        <!-- Admin Only: จัดการบัญชี -->
+        <div class="card admin-only-card" id="adminAccountCard" style="display:none;border-color:var(--warn);grid-column:1/-1">
+          <div class="card-title" style="color:var(--warn)">
+            👑 Admin Settings — จัดการบัญชีและระบบ
+          </div>
+
+          <!-- ── GAS URL + Mode ─────────────────── -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" class="admin-grid-2">
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">GAS URL</div>
+              <input class="input-field" placeholder="https://script.google.com/macros/s/..." id="inpGas" style="width:100%">
+              <div style="font-size:.7rem;color:var(--text2);margin-top:4px">Google Apps Script Web App endpoint</div>
+            </div>
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">โหมดข้อมูล</div>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;height:36px">
+                <span style="font-size:.82rem;color:var(--text2)">MOCK</span>
+                <div id="dataModeToggle" onclick="toggleDataMode()"
+                  style="width:44px;height:24px;border-radius:12px;background:var(--surface2);
+                         border:1px solid var(--brd);position:relative;cursor:pointer;transition:.3s;flex-shrink:0">
+                  <div id="dataModeThumb"
+                    style="width:20px;height:20px;border-radius:50%;background:#666;
+                           position:absolute;top:2px;left:2px;transition:.3s"></div>
+                </div>
+                <span style="font-size:.82rem;color:var(--ok)">LIVE</span>
+              </label>
+              <div style="font-size:.7rem;color:var(--text2);margin-top:2px" id="dataModeDesc">Mock Data (ยังไม่ได้เชื่อม GAS)</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <button class="btn-primary" onclick="saveSettings()">💾 บันทึก GAS URL</button>
+            <button class="btn-primary" onclick="testGASConn()" style="background:var(--surface2)">🔌 ทดสอบเชื่อมต่อ</button>
+          </div>
+          <div id="gasTestResult" style="font-size:.8rem;color:var(--ok);min-height:18px;margin-bottom:12px"></div>
+
+          <div style="border-top:1px solid var(--brd);margin:4px 0 14px"></div>
+
+          <!-- ── PIN + Config fields ────────────── -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="admin-grid-2">
+
+            <!-- Admin PIN -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Admin PIN</div>
+              <div style="display:flex;gap:8px">
+                <input class="input-field" id="inpNewPin" placeholder="PIN ใหม่ 4 หลัก"
+                  maxlength="4" type="password" pattern="[0-9]{4}" style="width:130px"
+                  oninput="this.value=this.value.replace(/\D/g,'')">
+                <button class="btn-primary" onclick="changePIN()" style="white-space:nowrap">บันทึก</button>
+              </div>
+              <div id="pinChangeMsg" style="font-size:.75rem;margin-top:5px;min-height:16px;color:var(--text2)">
+                PIN ปัจจุบัน: <span id="pinDisplay">****</span>
+              </div>
+            </div>
+
+            <!-- ชื่อผู้ป่วย -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">ชื่อผู้ป่วย (แสดงใน Bed Card)</div>
+              <div style="display:flex;gap:8px">
+                <input class="input-field" id="inpPatient" placeholder="ชื่อผู้ป่วย..." style="flex:1">
+                <button class="btn-primary" onclick="savePatientName()" style="white-space:nowrap">บันทึก</button>
+              </div>
+            </div>
+
+            <!-- LINE Token -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">LINE Channel Token</div>
+              <input class="input-field" placeholder="Bearer token..." id="inpToken" type="password" style="width:100%">
+            </div>
+
+            <!-- Doctor / Nurse IDs -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">LINE User IDs</div>
+              <input class="input-field" placeholder="Doctor — Uxxxxxxxxxx" id="inpDoctor" style="width:100%;margin-bottom:6px">
+              <input class="input-field" placeholder="Nurse  — Uxxxxxxxxxx" id="inpNurse"  style="width:100%">
+            </div>
+
+            <!-- Thresholds -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Alert Thresholds</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">มุมสะโพก (°)</div>
+                  <input class="input-field" id="inpAngle" type="number" value="30" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">FSR ต่ำสุด</div>
+                  <input class="input-field" id="inpFsr" type="number" value="500" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">แบตต่ำ (%)</div>
+                  <input class="input-field" id="inpBattLow" type="number" value="15" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">PWM มอเตอร์</div>
+                  <input class="input-field" id="inpPwm" type="number" value="200" style="width:100%">
+                </div>
+              </div>
+            </div>
+
+            <!-- Pump goal -->
+            <div>
+              <div style="font-size:.72rem;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">เป้ากระดกข้อเท้า</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">เป้า/วัน (ครั้ง)</div>
+                  <input class="input-field" id="inpPumpGoal" type="number" value="100" style="width:100%">
+                </div>
+                <div>
+                  <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">มุม Pump (°)</div>
+                  <input class="input-field" id="inpPumpThresh" type="number" value="20" style="width:100%">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── Action buttons ─────────────────── -->
+          <div style="border-top:1px solid var(--brd);margin:14px 0 12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn-primary" onclick="saveAllAdminConfig()">💾 บันทึกทั้งหมด (Local)</button>
+            <button class="btn-primary" onclick="pushConfigToGAS()" style="background:var(--accent2);color:#000">
+              ☁️ Push Config → GAS Sheet
+            </button>
+            <button class="btn-primary btn-danger" onclick="clearData()" style="margin-left:auto">🗑 ล้างข้อมูล</button>
+          </div>
+          <div id="adminSaveMsg" style="font-size:.78rem;margin-top:8px;min-height:18px;color:var(--text2)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────── REPORT ─────── -->
+    <div class="page" id="page-report">
+      <div class="inline-flex mb12" style="flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="page-title" data-th="รายงานรายวัน" data-en="Daily Report">รายงานรายวัน</div>
+          <div class="page-subtitle" data-th="สรุปการกระดกข้อเท้าและการแจ้งเตือนย้อนหลัง" data-en="Daily ankle pump and alert summary">สรุปการกระดกข้อเท้าและการแจ้งเตือนย้อนหลัง</div>
+        </div>
+        <div class="ml-auto" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;border:1px solid var(--brd);border-radius:8px;overflow:hidden">
+            <button class="fs-btn active" id="rpt7"  onclick="setReportDays(7)">7 วัน</button>
+            <button class="fs-btn"        id="rpt14" onclick="setReportDays(14)">14 วัน</button>
+            <button class="fs-btn"        id="rpt30" onclick="setReportDays(30)">30 วัน</button>
+          </div>
+          <button class="btn-primary" onclick="loadReport()">🔄 โหลด</button>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="grid-4 mb18">
+        <div class="stat-card info">
+          <div class="stat-label" data-th="รวมกระดกช่วงนี้" data-en="Total Pumps">รวมกระดกช่วงนี้</div>
+          <div class="stat-value" id="rptTotalPump" style="color:var(--ok)">--</div>
+          <div class="stat-unit" data-th="ครั้ง" data-en="times">ครั้ง</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-label" data-th="เฉลี่ยต่อวัน" data-en="Daily Average">เฉลี่ยต่อวัน</div>
+          <div class="stat-value" id="rptAvgPump" style="color:var(--accent2)">--</div>
+          <div class="stat-unit" data-th="ครั้ง/วัน" data-en="times/day">ครั้ง/วัน</div>
+        </div>
+        <div class="stat-card ok">
+          <div class="stat-label" data-th="วันที่ทำได้เป้า" data-en="Goal Achieved">วันที่ทำได้เป้า</div>
+          <div class="stat-value" id="rptGoalDays" style="color:var(--ok)">--</div>
+          <div class="stat-unit" data-th="วัน" data-en="days">วัน</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label" data-th="แจ้งเตือนทั้งหมด" data-en="Total Alerts">แจ้งเตือนทั้งหมด</div>
+          <div class="stat-value" id="rptTotalAlerts" style="color:var(--warn)">--</div>
+          <div class="stat-unit" data-th="ครั้ง" data-en="times">ครั้ง</div>
+        </div>
+      </div>
+
+      <!-- Bar chart -->
+      <div class="card mb18">
+        <div class="card-title">📊 <span data-th="กระดกข้อเท้ารายวัน" data-en="Daily Ankle Pump">กระดกข้อเท้ารายวัน</span></div>
+        <div class="chart-wrap-lg"><canvas id="chartReport"></canvas></div>
+      </div>
+
+      <!-- Detail table -->
+      <div class="card">
+        <div class="card-title">📋 <span data-th="ตารางรายวัน" data-en="Daily Table">ตารางรายวัน</span></div>
+        <div style="overflow-x:auto">
+          <table class="alert-table">
+            <thead><tr>
+              <th data-th="วันที่" data-en="Date">วันที่</th>
+              <th data-th="ซ้าย" data-en="Left">ซ้าย (L)</th>
+              <th data-th="ขวา" data-en="Right">ขวา (R)</th>
+              <th data-th="รวม" data-en="Total">รวม</th>
+              <th data-th="เป้า" data-en="Goal">เป้า</th>
+              <th data-th="แจ้งเตือน" data-en="Alerts">แจ้งเตือน</th>
+              <th data-th="แบตเตอรี่" data-en="Battery">แบต เฉลี่ย</th>
+            </tr></thead>
+            <tbody id="reportTbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">กด "โหลด" เพื่อดูข้อมูล</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1322,6 +1597,15 @@ let role = 'staff'; // staff | admin
 let PIN  = '1234';
 let pinBuffer = '';
 let isCharging = false;
+
+// Fetch state
+let isFetching    = false;
+let lastFetchTime = null;
+let fetchError    = false;
+let nextFetchIn   = 0; // countdown seconds to next fetch
+
+// Config cache
+let cachedConfig  = {};
 
 // เตียงจริง 1 เตียง — อัปเดตจาก GAS
 const bedData = [
@@ -1360,22 +1644,128 @@ function updateBedFromGAS(d) {
   renderBeds();
   // อัปเดต stat cards
   const safe = id => document.getElementById(id);
-  if(safe('svBeds'))   safe('svBeds').textContent   = '1';
-  if(safe('svAlert'))  safe('svAlert').textContent  = isAlert?'1':'0';
-  if(safe('svNormal')) safe('svNormal').textContent = isAlert?'0':'1';
+  if(safe('svAlert')) safe('svAlert').textContent = isAlert?'1':'0';
+  if(safe('svOk'))    safe('svOk').textContent    = isAlert?'0':'1';
 }
 
-const alertLog = [
-  {time:'09:42:15', bed:'เตียง 101', type:'danger', detail:'ท่านอนผิด Hip X=32° (>30°)', line:'✅'},
-  {time:'09:15:03', bed:'เตียง 101', type:'warn',   detail:'แรงกด FSR406 ต่ำ (420 < 500)', line:'✅'},
-  {time:'08:58:30', bed:'เตียง 103', type:'warn',   detail:'ท่านอนผิด Hip X=25°', line:'✅'},
-  {time:'08:30:00', bed:'เตียง 102', type:'ok',     detail:'กลับสู่ปกติ', line:'—'},
-  {time:'07:55:12', bed:'เตียง 101', type:'danger', detail:'ไม่พักบนหมอน (FSR=380)', line:'✅'},
-];
+let alertLog = [];
 
 // Chart data
 const labels30 = Array.from({length:30},(_,i)=>`${i+1}`);
 const randArr  = (mn,mx,n=30)=>Array.from({length:n},()=>+(Math.random()*(mx-mn)+mn).toFixed(1));
+
+// ═══════════════════════════════════════════
+// SHARED HELPERS
+// ═══════════════════════════════════════════
+function angleStatus(val, thresh) {
+  if (val > thresh)            return 'danger';
+  if (val > thresh * 0.8)      return 'warn';
+  return 'ok';
+}
+function worseStatus(a, b) {
+  const rank = {ok:0, warn:1, danger:2};
+  return rank[b] > rank[a] ? b : a;
+}
+const STATUS_LABEL = {ok:'✅ ท่าถูกต้อง', warn:'⚠ ควรปรับท่า', danger:'⛔ ผิดท่า'};
+
+// อัปเดต badge ข้อความสถานะ (ไม่โชว์องศา แสดงมุมจริงเป็น tooltip ตอน hover แทน)
+function updateAngleBadge(id, val, thresh) {
+  const el = document.getElementById(id);
+  if (!el) return angleStatus(val, thresh);
+  const status = angleStatus(val, thresh);
+  el.textContent  = STATUS_LABEL[status];
+  el.className    = 'sensor-item-badge s-' + status;
+  el.title        = `มุมปัจจุบัน: ${val.toFixed(1)}°`;
+  return status;
+}
+
+// อัปเดตสีจุดสถานะบนภาพประกอบท่านอน
+function updatePostureDot(id, status) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const color = {ok:'var(--ok)', warn:'var(--warn)', danger:'var(--danger)', offline:'var(--gnd)'}[status] || 'var(--gnd)';
+  el.setAttribute('fill', color);
+  el.classList.toggle('pulse', status === 'danger' || status === 'warn');
+  const pillow = document.getElementById('hipPillow');
+  if (pillow && id === 'dotHip') { pillow.setAttribute('fill', color); pillow.setAttribute('stroke', color); }
+}
+
+function updateConnBanner(mode) {
+  const safe = id => document.getElementById(id);
+  const banner = safe('connBanner');
+  if (!banner) return;
+  banner.className = 'conn-banner conn-' + mode;
+  const dot = safe('connDot');
+  if (mode === 'offline') {
+    if (dot) dot.className = 'conn-dot offline';
+    if (safe('connTitle')) safe('connTitle').textContent = 'ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์';
+    if (safe('connSub'))   safe('connSub').textContent   = 'ไปที่ Settings เพื่อใส่ GAS URL';
+    if (safe('connMode'))  safe('connMode').textContent  = 'OFFLINE';
+    if (safe('scConn'))    safe('scConn').className      = 'stat-card';
+    if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Offline'; safe('svConnStatus').style.color = 'var(--gnd)'; }
+    if (safe('svConnSub'))    safe('svConnSub').textContent = 'ไม่มีข้อมูล';
+    if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '● OFFLINE'; safe('postureLiveBadge').style.color = 'var(--gnd)'; }
+  } else if (mode === 'mock') {
+    if (dot) dot.className = 'conn-dot mock';
+    if (safe('connTitle')) safe('connTitle').textContent = 'Mock Data — ข้อมูลจำลอง (Demo)';
+    if (safe('connSub'))   safe('connSub').textContent   = 'แสดงข้อมูลสุ่ม ยังไม่ได้เชื่อมอุปกรณ์จริง';
+    if (safe('connMode'))  safe('connMode').textContent  = 'MOCK';
+    if (safe('scConn'))    safe('scConn').className      = 'stat-card warn';
+    if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Mock'; safe('svConnStatus').style.color = 'var(--warn)'; }
+    if (safe('svConnSub'))    safe('svConnSub').textContent = 'Demo Mode';
+    if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '◌ MOCK'; safe('postureLiveBadge').style.color = 'var(--warn)'; }
+  } else {
+    if (dot) dot.className = 'conn-dot live';
+    if (safe('connTitle')) safe('connTitle').textContent = 'เชื่อมต่อแล้ว — รับข้อมูล Live จาก ESP32';
+    if (safe('connSub'))   safe('connSub').textContent   = 'อัปเดตทุก 30 วินาที ตาม Firmware sleep cycle';
+    if (safe('connMode'))  safe('connMode').textContent  = 'LIVE';
+    if (safe('scConn'))    safe('scConn').className      = 'stat-card ok';
+    if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Online'; safe('svConnStatus').style.color = 'var(--ok)'; }
+    if (safe('svConnSub'))    safe('svConnSub').textContent = 'Live Data';
+    if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '● LIVE'; safe('postureLiveBadge').style.color = 'var(--ok)'; }
+    maybeShowCalibModal();
+  }
+}
+
+// ── First-connect calibration instructions ──────────────────
+// โชว์ครั้งแรกที่เชื่อมต่อ Live กับผู้ป่วยแต่ละคน (เทียบชื่อผู้ป่วยที่ตั้งไว้ใน Settings)
+// เพื่อกันไม่ให้ค่ามุมสะโพก/ข้อเท้าที่วัดได้คลาดเคลื่อนจากตำแหน่งเซนเซอร์ที่ยังไม่ได้ตั้งศูนย์
+function maybeShowCalibModal() {
+  const patient = localStorage.getItem('patientName') || 'ผู้ป่วย';
+  if (localStorage.getItem('calibDoneFor') === patient) return;
+  const modal = document.getElementById('calibModal');
+  if (!modal || !modal.classList.contains('hidden')) return; // เปิดอยู่แล้ว หรือไม่มี element
+  document.getElementById('calibPatientName').textContent = patient;
+  modal.classList.remove('hidden');
+}
+function closeCalibModal() {
+  localStorage.setItem('calibDoneFor', localStorage.getItem('patientName') || 'ผู้ป่วย');
+  document.getElementById('calibModal').classList.add('hidden');
+}
+
+function setOfflineUI() {
+  const safe = id => document.getElementById(id);
+  ['vFsrHip','vFsrAnk'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
+  ['vPumpL','vPumpR','vPumpTotal'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
+  ['vMotAnkL','vMotAnkR'].forEach(id => { if(safe(id)) safe(id).textContent = '--/255'; });
+  if (safe('svBatt'))  { safe('svBatt').textContent = '--%'; safe('svBatt').style.color = 'var(--gnd)'; }
+  if (safe('svBattV')) safe('svBattV').textContent = '--V';
+  if (safe('vBattPct')) safe('vBattPct').textContent = '--%';
+  if (safe('battInfo')) safe('battInfo').textContent = '--V · --mA';
+  if (safe('svAlert'))  { safe('svAlert').textContent = '--'; safe('svAlert').style.color = 'var(--gnd)'; }
+  if (safe('scAlert'))  safe('scAlert').className = 'stat-card';
+  if (safe('scBatt'))   safe('scBatt').className  = 'stat-card';
+  if (safe('svPumpStat'))     { safe('svPumpStat').textContent = '--'; safe('svPumpStat').style.color = 'var(--gnd)'; }
+  if (safe('svPumpGoalStat'))   safe('svPumpGoalStat').textContent = 'เป้า -- ครั้ง';
+  ['pFsrHip','pFsrAnk','pBatt','pPumpTotal','pMotAnkL','pMotAnkR'].forEach(id => {
+    if(safe(id)) safe(id).style.width = '0%';
+  });
+  ['badgeHipX','badgeHipY','badgeAnkL','badgeAnkR'].forEach(id => {
+    const el = safe(id); if (!el) return;
+    el.textContent = '—'; el.className = 'sensor-item-badge s-offline'; el.removeAttribute('title');
+  });
+  ['dotHip','dotAnkL','dotAnkR'].forEach(id => updatePostureDot(id, 'offline'));
+}
 
 let chartHip, chartAnkle, chartFsr, chartBatt;
 
@@ -1391,6 +1781,8 @@ function nav(page) {
   if (pg) pg.classList.add('active');
   if (event && event.currentTarget) event.currentTarget.classList.add('active');
   if (page==='graphs') initCharts();
+  if (page==='report') loadReport();
+  if (page==='alerts') loadAlerts();
 }
 
 // ═══════════════════════════════════════════
@@ -1453,10 +1845,29 @@ function updateRoleBadge() {
   const dot = document.getElementById('roleDot');
   lbl.textContent = lang==='th' ? (role==='admin'?'Admin':'Staff') : (role==='admin'?'Admin':'Staff');
   dot.style.background = role==='admin' ? 'var(--warn)' : 'var(--ok)';
-  // แสดง/ซ่อน admin-only cards
   document.querySelectorAll('.admin-only-card').forEach(el => {
     el.style.display = role === 'admin' ? 'block' : 'none';
   });
+  if (role === 'admin') loadAdminFields(); // โหลดค่าเข้า fields ทุกครั้งที่เปิด admin
+}
+
+function loadAdminFields() {
+  const safe = id => document.getElementById(id);
+  // GAS URL
+  if (safe('inpGas') && gasUrl) safe('inpGas').value = gasUrl;
+  // LINE
+  if (safe('inpToken'))  safe('inpToken').value  = localStorage.getItem('line_token')  || '';
+  if (safe('inpDoctor')) safe('inpDoctor').value = localStorage.getItem('line_doctor') || '';
+  if (safe('inpNurse'))  safe('inpNurse').value  = localStorage.getItem('line_nurse')  || '';
+  // Thresholds
+  if (safe('inpAngle'))      safe('inpAngle').value      = localStorage.getItem('thresh_angle')    || '30';
+  if (safe('inpFsr'))        safe('inpFsr').value        = localStorage.getItem('thresh_fsr')      || '500';
+  if (safe('inpBattLow'))    safe('inpBattLow').value    = localStorage.getItem('thresh_battLow')  || '15';
+  if (safe('inpPwm'))        safe('inpPwm').value        = localStorage.getItem('thresh_pwm')      || '200';
+  if (safe('inpPumpGoal'))   safe('inpPumpGoal').value   = localStorage.getItem('thresh_pumpGoal') || '100';
+  if (safe('inpPumpThresh')) safe('inpPumpThresh').value = localStorage.getItem('thresh_pumpUp')   || '20';
+  // Patient name
+  if (safe('inpPatient')) safe('inpPatient').value = localStorage.getItem('patientName') || '';
 }
 function pinInput(d) {
   if(pinBuffer.length>=4) return;
@@ -1533,15 +1944,37 @@ function renderBeds() {
 // ALERT TABLE
 // ═══════════════════════════════════════════
 function renderAlerts() {
-  document.getElementById('alertTbody').innerHTML = alertLog.map(a=>`
-    <tr>
+  const tbody = document.getElementById('alertTbody');
+  if (!alertLog.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">ยังไม่มีข้อมูล — กด โหลด หรือรอ refresh อัตโนมัติ</td></tr>';
+    return;
+  }
+  tbody.innerHTML = alertLog.map(a => {
+    const lineBadge = a.lineSent ? '✅' : '—';
+    return `<tr>
       <td class="font-mono" style="color:var(--text2)">${a.time}</td>
       <td class="fw600">${a.bed}</td>
       <td><span class="alert-tag tag-${a.type}">${a.type.toUpperCase()}</span></td>
       <td>${a.detail}</td>
-      <td style="text-align:center">${a.line}</td>
-    </tr>
-  `).join('');
+      <td style="text-align:center">${lineBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadAlerts() {
+  if (!gasUrl) return;
+  const tbody = document.getElementById('alertTbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:16px">กำลังโหลด...</td></tr>';
+  try {
+    const res  = await fetch(gasUrl + '?action=getAlerts&limit=100');
+    const json = await res.json();
+    if (json.rows && Array.isArray(json.rows)) {
+      alertLog = json.rows;
+      renderAlerts();
+    }
+  } catch(e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:16px">โหลดไม่สำเร็จ: ' + e.message + '</td></tr>';
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1602,6 +2035,24 @@ function updateChartData() {
   chartBatt.data.labels   = [...chartBuf.labels];
   chartBatt.data.datasets[0].data = [...chartBuf.batt];
   chartBatt.update('none');
+}
+
+function showToast(msg, type) {
+  let t = document.getElementById('_toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:600;' +
+      'color:#fff;z-index:9999;pointer-events:none;transition:opacity .4s;opacity:0;white-space:nowrap';
+    document.body.appendChild(t);
+  }
+  const bg = type === 'ok' ? '#10b981' : type === 'warn' ? '#f59e0b' : '#ef4444';
+  t.style.background = bg;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
 function initCharts() {
@@ -1710,153 +2161,381 @@ async function testGASConn() {
 
 
 
+// ── Fetch UI helpers ──────────────────────────────────────
+function setFetchingUI(loading) {
+  const safe = id => document.getElementById(id);
+  const spinner = safe('fetchSpinner');
+  if (loading) {
+    if (spinner) spinner.style.display = 'block';
+    if (safe('connDot'))   safe('connDot').className   = 'conn-dot fetching';
+    if (safe('connSub'))   safe('connSub').textContent = 'กำลังดึงข้อมูลจาก GAS...';
+    if (safe('connMode'))  safe('connMode').textContent = '⟳ กำลังโหลด...';
+    if (safe('lastUpdate')) safe('lastUpdate').textContent = 'กำลังโหลด...';
+  } else {
+    if (spinner) spinner.style.display = 'none';
+    const t = lastFetchTime
+      ? lastFetchTime.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'})
+      : '--:--:--';
+    if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
+    if (safe('connSub'))    safe('connSub').textContent = 'อัปเดตล่าสุด: ' + t;
+    if (!fetchError) {
+      if (safe('connDot'))  safe('connDot').className   = 'conn-dot live';
+      if (safe('connMode')) safe('connMode').textContent = 'LIVE · อัปเดตใน ' + nextFetchIn + 's';
+    }
+  }
+}
+
+function setFetchErrorUI(msg) {
+  fetchError = true;
+  const safe = id => document.getElementById(id);
+  if (safe('connBanner'))   safe('connBanner').className      = 'conn-banner conn-error';
+  if (safe('connDot'))      safe('connDot').className         = 'conn-dot error';
+  if (safe('connTitle'))    safe('connTitle').textContent     = 'ดึงข้อมูลไม่ได้ — ตรวจสอบ GAS URL';
+  if (safe('connSub'))      safe('connSub').textContent       = msg || 'เครือข่าย / GAS offline';
+  if (safe('connMode'))     safe('connMode').textContent      = 'ERROR · ลองใน ' + nextFetchIn + 's';
+  if (safe('scConn'))       safe('scConn').className         = 'stat-card danger';
+  if (safe('svConnStatus')) {
+    safe('svConnStatus').textContent = 'Error';
+    safe('svConnStatus').style.color = 'var(--danger)';
+  }
+  if (safe('svConnSub'))    safe('svConnSub').textContent = 'ดึงข้อมูลไม่ได้';
+  const spinner = safe('fetchSpinner');
+  if (spinner) spinner.style.display = 'none';
+}
+
+function tickCountdown() {
+  if (!gasUrl || !useRealData) return;
+  const safe = id => document.getElementById(id);
+  nextFetchIn = Math.max(0, nextFetchIn - 1);
+  if (isFetching) {
+    if (safe('connMode')) safe('connMode').textContent = '⟳ กำลังโหลด...';
+    return;
+  }
+  const label = fetchError ? 'ERROR · ลองใน ' : 'LIVE · อัปเดตใน ';
+  if (safe('connMode')) safe('connMode').textContent = label + nextFetchIn + 's';
+}
+
 async function fetchGASData() {
   if (!gasUrl) return;
+  isFetching  = true;
+  fetchError  = false;
+  setFetchingUI(true);
   try {
-    const res = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
+    const res  = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
     const data = await res.json();
     if (data && data.status === 'ok') {
-      lastGasData = data;
+      lastGasData   = data;
+      lastFetchTime = new Date();
       updateDashboard(data);
     } else {
       console.warn('[GAS] response:', data);
+      setFetchErrorUI(data?.error || 'GAS ตอบกลับผิดปกติ');
     }
   } catch(err) {
     console.warn('[GAS] fetch error:', err.message);
+    setFetchErrorUI(err.message);
+  } finally {
+    isFetching  = false;
+    nextFetchIn = 30;
+    if (!fetchError) setFetchingUI(false);
   }
 }
 
 function updateDashboard(d) {
-  const t = new Date().toLocaleTimeString('th-TH');
-  const el = document.getElementById('lastUpdate');
-  if (el) el.textContent = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+' [LIVE]';
+  const safe = id => document.getElementById(id);
+  updateConnBanner('live'); // ตั้ง banner เป็น live (spinner/timestamp จัดการโดย setFetchingUI)
 
-  // Battery
+  // ── Battery ──
   const bv = parseFloat(d.battVolt) || 0;
   const bp = parseFloat(d.battPct)  || 0;
-  const safe = id => document.getElementById(id);
+  const battColor = bp>50?'var(--ok)':bp>20?'var(--warn)':'var(--danger)';
+  if (safe('svBatt'))   { safe('svBatt').textContent = bp.toFixed(0)+'%'; safe('svBatt').style.color = battColor; }
+  if (safe('svBattV'))  safe('svBattV').textContent  = bv.toFixed(2)+'V';
+  if (safe('vBattPct')) safe('vBattPct').textContent = bp.toFixed(0)+'%';
+  if (safe('pBatt'))    { safe('pBatt').style.width = bp+'%'; safe('pBatt').style.background = battColor; }
+  if (safe('battInfo')) safe('battInfo').innerHTML = `${bv.toFixed(2)}V · <span style="color:${battColor}">${bp.toFixed(0)}%</span>`;
+  if (safe('chrgPct'))  safe('chrgPct').textContent = bp.toFixed(0)+'%';
+  const battClass = bp>50?'stat-card ok':bp>20?'stat-card warn':'stat-card danger';
+  if (safe('scBatt')) safe('scBatt').className = battClass;
+  // topbar battery widget
   if (safe('battPct'))  safe('battPct').textContent  = bp.toFixed(0)+'%';
   if (safe('battVolt')) safe('battVolt').textContent = bv.toFixed(2)+'V';
-  if (safe('battFill')) {
-    safe('battFill').style.width = bp+'%';
-    safe('battFill').style.background = bp>50?'var(--ok)':bp>20?'var(--warn)':'var(--danger)';
-  }
-  if (safe('svBatt'))  { safe('svBatt').textContent = bp.toFixed(0)+'%'; safe('svBatt').style.color = bp>50?'var(--ok)':bp>20?'var(--warn)':'var(--danger)'; }
-  if (safe('svBattV')) safe('svBattV').textContent = bv.toFixed(2)+'V';
-  if (safe('vBattPct'))safe('vBattPct').textContent = bp.toFixed(0)+'%';
-  if (safe('pBatt'))   safe('pBatt').style.width = bp+'%';
-  if (safe('battInfo'))safe('battInfo').innerHTML = `${bv.toFixed(2)}V · <span class="${bp>50?'green':bp>20?'warn':'red'}">${bp.toFixed(0)}%</span>`;
-  if (safe('chrgPct')) safe('chrgPct').textContent = bp.toFixed(0)+'%';
-
+  if (safe('battFill')) { safe('battFill').style.width = bp+'%'; safe('battFill').style.background = battColor; }
   const charging = d.charging === true || d.charging === 'TRUE';
   if (safe('chrgPill'))   safe('chrgPill').classList.toggle('hidden', !charging);
   if (safe('chrgBanner')) safe('chrgBanner').classList.toggle('hidden', !charging);
 
-  // Hip Sensor
+  // ── Hip Sensor ──
   const hx = parseFloat(d.hipAngleX) || 0;
   const hy = parseFloat(d.hipAngleY) || 0;
-  if (safe('vHipX')) safe('vHipX').textContent = hx.toFixed(1)+'°';
-  if (safe('vHipY')) safe('vHipY').textContent = hy.toFixed(1)+'°';
+  const thresh = parseFloat(localStorage.getItem('thresh_angle')||30);
+  const hxStatus = updateAngleBadge('badgeHipX', Math.abs(hx), thresh);
+  const hyStatus = updateAngleBadge('badgeHipY', Math.abs(hy), thresh);
+  updatePostureDot('dotHip', worseStatus(hxStatus, hyStatus));
 
-  // Ankle Sensor
+  // ── Ankle Sensor ──
   const al = Math.abs(parseFloat(d.ankLAngleX) || 0);
   const ar = Math.abs(parseFloat(d.ankRAngleX) || 0);
-  if (safe('vAnkL')) safe('vAnkL').textContent = al.toFixed(1)+'°';
-  if (safe('vAnkR')) safe('vAnkR').textContent = ar.toFixed(1)+'°';
+  updatePostureDot('dotAnkL', updateAngleBadge('badgeAnkL', al, thresh));
+  updatePostureDot('dotAnkR', updateAngleBadge('badgeAnkR', ar, thresh));
 
-  // Gauges
-  const gaugeSet = (id,val,mx) => {
-    const el2 = document.getElementById(id);
-    if (!el2) return;
-    const circ=226, off=circ-(Math.min(val,mx)/mx*circ);
-    el2.setAttribute('stroke-dashoffset', off);
-  };
-  gaugeSet('gaugeHipX',Math.abs(hx),60);
-  gaugeSet('gaugeHipY',Math.abs(hy),60);
-  gaugeSet('gaugeAnkL',al,60);
-  gaugeSet('gaugeAnkR',ar,60);
-
-  // FSR — หมอนซ้าย (FSR_L=GPIO34), หมอนขวา (FSR_R=GPIO35)
-  const fh = parseInt(d.fsrL) || parseInt(d.fsrHip) || 0;  // FSR ซ้าย
-  const fa = parseInt(d.fsrR) || parseInt(d.fsrAnkle) || 0; // FSR ขวา
+  // ── FSR ──
+  const fh = parseInt(d.fsrL) || parseInt(d.fsrHip) || 0;
+  const fa = parseInt(d.fsrR) || parseInt(d.fsrAnkle) || 0;
   if (safe('vFsrHip')) safe('vFsrHip').textContent = fh;
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
+  if (safe('sFsrHip')) { safe('sFsrHip').textContent = fh>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrHip').className = 'sensor-item-badge '+(fh>500?'s-ok':'s-danger'); }
+  if (safe('sFsrAnk')) { safe('sFsrAnk').textContent = fa>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrAnk').className = 'sensor-item-badge '+(fa>500?'s-ok':'s-danger'); }
 
-  // Push data to charts (real-time buffer)
-  pushChartData(d);
+  // ── Pump Count ──
+  const pL   = parseInt(d.pumpCountL) || 0;
+  const pR   = parseInt(d.pumpCountR) || 0;
+  const pT   = parseInt(d.pumpTotal)  || (pL + pR);
+  const goal = parseInt(localStorage.getItem('thresh_pumpGoal')||100);
+  if (safe('vPumpL'))         safe('vPumpL').textContent         = pL;
+  if (safe('vPumpR'))         safe('vPumpR').textContent         = pR;
+  if (safe('vPumpTotal'))     safe('vPumpTotal').textContent     = pT;
+  if (safe('pPumpTotal'))     safe('pPumpTotal').style.width     = Math.min(pT/goal*100, 100)+'%';
+  if (safe('vPumpCurrent'))   safe('vPumpCurrent').textContent   = pT;
+  if (safe('svPumpStat'))     { safe('svPumpStat').textContent = pT; safe('svPumpStat').style.color = pT>=goal?'var(--ok)':'var(--text)'; }
+  if (safe('svPumpGoalStat')) safe('svPumpGoalStat').textContent = `เป้า ${goal} ครั้ง`;
 
-  // Pump Count
-  const pL = parseInt(d.pumpCountL) || 0;
-  const pR = parseInt(d.pumpCountR) || 0;
-  const pT = parseInt(d.pumpTotal)  || (pL + pR);
-  const goal = 100;
-  if (safe('vPumpL'))     safe('vPumpL').textContent     = pL;
-  if (safe('vPumpR'))     safe('vPumpR').textContent     = pR;
-  if (safe('vPumpTotal')) safe('vPumpTotal').textContent = pT;
-  if (safe('pPumpTotal')) safe('pPumpTotal').style.width = Math.min(pT/goal*100, 100)+'%';
+  // ── Ankle Pump Reminder Motors (สถานะจริงจาก ESP32) ──
+  const motL    = d.motAnkL === true || d.motAnkL === 'TRUE';
+  const motR    = d.motAnkR === true || d.motAnkR === 'TRUE';
+  const motLPwm = motL ? (parseInt(d.motAnkLPwm) || 0) : 0;
+  const motRPwm = motR ? (parseInt(d.motAnkRPwm) || 0) : 0;
+  if (safe('vMotAnkL')) safe('vMotAnkL').textContent = motLPwm+'/255';
+  if (safe('vMotAnkR')) safe('vMotAnkR').textContent = motRPwm+'/255';
+  if (safe('pMotAnkL')) { safe('pMotAnkL').style.width=(motLPwm/255*100)+'%'; safe('pMotAnkL').style.background = motL?'var(--warn)':'var(--motor)'; }
+  if (safe('pMotAnkR')) { safe('pMotAnkR').style.width=(motRPwm/255*100)+'%'; safe('pMotAnkR').style.background = motR?'var(--warn)':'var(--motor)'; }
 
-  // อัปเดต bed card จาก real data
-  updateBedFromGAS(d);
-
-  // Alert status
+  // ── Alert status → stat cards ──
   const isAlert = d.alert === true || d.alert === 'TRUE';
-  const alertLv = parseInt(d.alertLevel) || 0;
-  if (safe('svStatus')) {
-    safe('svStatus').textContent = isAlert ? `⚠ Alert L${alertLv}` : '✅ ปกติ';
-    safe('svStatus').style.color = isAlert ? 'var(--danger)' : 'var(--ok)';
-  }
+  if (safe('svAlert'))  { safe('svAlert').textContent = isAlert?'1':'0'; safe('svAlert').style.color = isAlert?'var(--danger)':'var(--ok)'; }
+  if (safe('scAlert'))  safe('scAlert').className = isAlert?'stat-card danger':'stat-card ok';
+
+  // ── Push to chart buffer + bed card ──
+  pushChartData(d);
+  updateBedFromGAS(d);
 }
 
 function updateLive() {
-  if (useRealData && gasUrl) {
-    fetchGASData();
+  const safe = id => document.getElementById(id);
+
+  // ── Truly offline (no GAS URL) ──────────────
+  if (!gasUrl) {
+    updateConnBanner('offline');
+    setOfflineUI();
+    const t = new Date().toLocaleTimeString('th-TH');
+    if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
     return;
   }
-  // ── Mock Data (fallback) ──────────────────
-  const t = new Date().toLocaleTimeString('th-TH');
-  const el = document.getElementById('lastUpdate');
-  if (el) el.innerHTML = (lang==='th'?'อัปเดตล่าสุด: ':'Last update: ')+t+'&nbsp;<span style="color:var(--warn);font-size:.75rem">[MOCK — ใส่ GAS URL ใน Settings]</span>';
+
+  // ── Real data from GAS ──────────────────────
+  if (useRealData) {
+    nextFetchIn = 30;
+    fetchGASData(); // spinner/timestamp handled inside fetchGASData
+    return;
+  }
+
+  // ── Mock Data (admin toggled) ───────────────
+  updateConnBanner('mock');
+  const mockT = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if (safe('lastUpdate')) safe('lastUpdate').textContent = mockT;
+  if (safe('connSub'))    safe('connSub').textContent    = 'Mock อัปเดต: ' + mockT;
+  if (safe('connMode'))   safe('connMode').textContent   = 'MOCK · อัปเดตใน 30s';
 
   const bv = 3.95, bp = 78;
-  const safe = id => document.getElementById(id);
-  if (safe('battPct'))  safe('battPct').textContent  = bp+'%';
-  if (safe('battVolt')) safe('battVolt').textContent = bv+'V';
-  if (safe('battFill')) { safe('battFill').style.width = bp+'%'; safe('battFill').style.background = 'var(--ok)'; }
-  if (safe('svBatt'))   safe('svBatt').textContent   = bp+'%';
+  const battColor = 'var(--ok)';
+  if (safe('svBatt'))   { safe('svBatt').textContent = bp+'%'; safe('svBatt').style.color = battColor; }
   if (safe('svBattV'))  safe('svBattV').textContent  = bv+'V';
   if (safe('vBattPct')) safe('vBattPct').textContent = bp+'%';
-  if (safe('pBatt'))    safe('pBatt').style.width     = bp+'%';
-  if (safe('battInfo')) safe('battInfo').innerHTML    = `${bv}V · -42mA · <span class="green">Mock</span>`;
+  if (safe('pBatt'))    { safe('pBatt').style.width = bp+'%'; safe('pBatt').style.background = battColor; }
+  if (safe('battInfo')) safe('battInfo').innerHTML   = `${bv}V · -42mA · <span style="color:var(--ok)">Mock</span>`;
   if (safe('chrgPct'))  safe('chrgPct').textContent  = bp+'%';
+  if (safe('scBatt'))   safe('scBatt').className = 'stat-card ok';
 
-  const hx=+(15+Math.random()*20).toFixed(1), hy=+(5+Math.random()*12).toFixed(1);
-  const al=+(25+Math.random()*15).toFixed(1), ar=+(4+Math.random()*8).toFixed(1);
-  if (safe('vHipX')) safe('vHipX').textContent = hx+'°';
-  if (safe('vHipY')) safe('vHipY').textContent = hy+'°';
-  if (safe('vAnkL')) safe('vAnkL').textContent = al+'°';
-  if (safe('vAnkR')) safe('vAnkR').textContent = ar+'°';
+  const hx = +(15+Math.random()*20).toFixed(1);
+  const hy = +(5 +Math.random()*12).toFixed(1);
+  const al = +(25+Math.random()*15).toFixed(1);
+  const ar = +(4 +Math.random()*8 ).toFixed(1);
 
-  const gaugeSet = (id,val,mx) => {
-    const el2=document.getElementById(id); if(!el2) return;
-    const circ=226, off=circ-(val/mx*circ);
-    el2.setAttribute('stroke-dashoffset',off);
-  };
-  gaugeSet('gaugeHipX',hx,60); gaugeSet('gaugeHipY',hy,60);
-  gaugeSet('gaugeAnkL',al,60); gaugeSet('gaugeAnkR',ar,60);
+  const thresh = parseFloat(localStorage.getItem('thresh_angle')||30);
+  const hxStatus = updateAngleBadge('badgeHipX',hx,thresh);
+  const hyStatus = updateAngleBadge('badgeHipY',hy,thresh);
+  updatePostureDot('dotHip', worseStatus(hxStatus, hyStatus));
+  updatePostureDot('dotAnkL', updateAngleBadge('badgeAnkL',al,thresh));
+  updatePostureDot('dotAnkR', updateAngleBadge('badgeAnkR',ar,thresh));
 
-  const fh=Math.floor(800+Math.random()*1200), fa=Math.floor(200+Math.random()*800);
+  const fh = Math.floor(800+Math.random()*1200);
+  const fa = Math.floor(200+Math.random()*800);
   if (safe('vFsrHip')) safe('vFsrHip').textContent = fh;
   if (safe('vFsrAnk')) safe('vFsrAnk').textContent = fa;
   if (safe('pFsrHip')) { safe('pFsrHip').style.width=(fh/4095*100)+'%'; safe('pFsrHip').style.background=fh>500?'var(--ok)':'var(--danger)'; }
   if (safe('pFsrAnk')) { safe('pFsrAnk').style.width=(fa/4095*100)+'%'; safe('pFsrAnk').style.background=fa>500?'var(--ok)':'var(--danger)'; }
+  if (safe('sFsrHip')) { safe('sFsrHip').textContent = fh>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrHip').className = 'sensor-item-badge '+(fh>500?'s-ok':'s-danger'); }
+  if (safe('sFsrAnk')) { safe('sFsrAnk').textContent = fa>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrAnk').className = 'sensor-item-badge '+(fa>500?'s-ok':'s-danger'); }
 
-  const mh=Math.random()>.8?200:0, ma=Math.random()>.8?150:0;
-  if (safe('vMotHip')) safe('vMotHip').textContent=mh+'/255';
-  if (safe('vMotAnk')) safe('vMotAnk').textContent=ma+'/255';
-  if (safe('pMotHip')) safe('pMotHip').style.width=(mh/255*100)+'%';
-  if (safe('pMotAnk')) safe('pMotAnk').style.width=(ma/255*100)+'%';
+  const mL = Math.random()>.8?200:0, mR = Math.random()>.8?150:0;
+  if (safe('vMotAnkL')) safe('vMotAnkL').textContent = mL+'/255';
+  if (safe('vMotAnkR')) safe('vMotAnkR').textContent = mR+'/255';
+  if (safe('pMotAnkL')) safe('pMotAnkL').style.width = (mL/255*100)+'%';
+  if (safe('pMotAnkR')) safe('pMotAnkR').style.width = (mR/255*100)+'%';
+
+  // ── Update beds + stat cards + charts ──
+  const fsrT       = parseInt(localStorage.getItem('thresh_fsr')||500);
+  const goal       = parseInt(localStorage.getItem('thresh_pumpGoal')||100);
+  const mockIsAlert = hx > thresh || hy > thresh || al > thresh;
+  const mockSt     = mockIsAlert ? 'danger' : ((fh<fsrT || fa<fsrT) && (fh+fa)>0 ? 'warn' : 'ok');
+  bedData[0] = {...bedData[0], hipX:hx, hipY:hy, ankL:al, ankR:ar, fsrH:fh, fsrA:fa, batt:bp, status:mockSt};
+  renderBeds();
+  if (safe('svAlert'))  { safe('svAlert').textContent = mockIsAlert?'1':'0'; safe('svAlert').style.color = mockIsAlert?'var(--danger)':'var(--ok)'; }
+  if (safe('scAlert'))  safe('scAlert').className = mockIsAlert?'stat-card danger':'stat-card ok';
+  if (safe('svOk'))     safe('svOk').textContent  = mockIsAlert?'0':'1';
+  if (safe('svPumpStat'))     { safe('svPumpStat').textContent = '0'; safe('svPumpStat').style.color = 'var(--gnd)'; }
+  if (safe('svPumpGoalStat')) safe('svPumpGoalStat').textContent = `เป้า ${goal} ครั้ง`;
+  pushChartData({hipAngleX:hx, hipAngleY:hy, ankLAngleX:al, ankRAngleX:ar, fsrL:fh, fsrR:fa, battVolt:String(bv)});
+}
+
+// ═══════════════════════════════════════════
+// CONFIG FROM GOOGLE SHEETS
+// ═══════════════════════════════════════════
+/*
+ * ใน GAS script เพิ่มใน doGet(e):
+ *
+ * if (e.parameter.action === 'getConfig') {
+ *   const sheet = SpreadsheetApp.getActive().getSheetByName('Config');
+ *   const rows  = sheet.getDataRange().getValues();
+ *   const cfg   = {};
+ *   rows.forEach(r => { if (r[0]) cfg[String(r[0]).trim()] = String(r[1]).trim(); });
+ *   return ContentService
+ *     .createTextOutput(JSON.stringify(cfg))
+ *     .setMimeType(ContentService.MimeType.JSON);
+ * }
+ *
+ * Sheet "Config" (A=key, B=value):
+ *   adminPin | 1234
+ *   angleThresh | 30
+ *   fsrThresh | 500
+ *   battLow | 15
+ *   pwmMotor | 200
+ *   pumpGoal | 100
+ *   pumpUpThresh | 20
+ *   lineToken | <token>
+ *   doctorId | U...
+ *   nurseId | U...
+ *   lineAlertOn | true
+ *   battAlertOn | true
+ */
+
+function applyConfig(cfg) {
+  if (!cfg || typeof cfg !== 'object') return;
+  // PIN
+  if (cfg.adminPin) PIN = String(cfg.adminPin);
+  // Thresholds → localStorage
+  if (cfg.angleThresh)  localStorage.setItem('thresh_angle',     cfg.angleThresh);
+  if (cfg.fsrThresh)    localStorage.setItem('thresh_fsr',       cfg.fsrThresh);
+  if (cfg.battLow)      localStorage.setItem('thresh_battLow',   cfg.battLow);
+  if (cfg.pwmMotor)     localStorage.setItem('thresh_pwm',       cfg.pwmMotor);
+  if (cfg.pumpGoal)     localStorage.setItem('thresh_pumpGoal',  cfg.pumpGoal);
+  if (cfg.pumpUpThresh) localStorage.setItem('thresh_pumpUp',    cfg.pumpUpThresh);
+  // LINE settings → localStorage
+  if (cfg.lineToken)    localStorage.setItem('line_token',       cfg.lineToken);
+  if (cfg.doctorId)     localStorage.setItem('line_doctor',      cfg.doctorId);
+  if (cfg.nurseId)      localStorage.setItem('line_nurse',       cfg.nurseId);
+  if (cfg.lineAlertOn !== undefined) {
+    lineAlertOn = cfg.lineAlertOn === 'true' || cfg.lineAlertOn === true;
+    localStorage.setItem('lineAlertOn', String(lineAlertOn));
+  }
+  if (cfg.battAlertOn !== undefined) {
+    battAlertOn = cfg.battAlertOn === 'true' || cfg.battAlertOn === true;
+    localStorage.setItem('battAlertOn', String(battAlertOn));
+  }
+  // Refresh UI
+  loadThresh();
+  loadLineSettings();
+  initAlertToggles();
+  updateConfigPreview(cfg);
+}
+
+function updateConfigPreview(cfg) {
+  const safe = id => document.getElementById(id);
+  const t    = localStorage.getItem('configFetchedAt');
+  const ts   = t ? new Date(parseInt(t)).toLocaleTimeString('th-TH') : '—';
+  if (safe('cfgLastSync'))     safe('cfgLastSync').textContent     = ts;
+  if (safe('cfgBadge'))        safe('cfgBadge').textContent        = '✅ ' + ts;
+  if (safe('cfgPinMask'))      safe('cfgPinMask').textContent      = cfg.adminPin ? '****' : '—';
+  if (safe('cfgPreviewAngle')) safe('cfgPreviewAngle').textContent = (cfg.angleThresh   || localStorage.getItem('thresh_angle')   || 30) + '°';
+  if (safe('cfgPreviewFsr'))   safe('cfgPreviewFsr').textContent   = cfg.fsrThresh      || localStorage.getItem('thresh_fsr')    || 500;
+  if (safe('cfgPreviewBatt'))  safe('cfgPreviewBatt').textContent  = (cfg.battLow       || localStorage.getItem('thresh_battLow')|| 15) + '%';
+  if (safe('cfgPreviewPwm'))   safe('cfgPreviewPwm').textContent   = cfg.pwmMotor       || localStorage.getItem('thresh_pwm')   || 200;
+  if (safe('cfgPreviewPump'))  safe('cfgPreviewPump').textContent  = cfg.pumpGoal       || localStorage.getItem('thresh_pumpGoal')|| 100;
+  const la = cfg.lineAlertOn !== undefined ? cfg.lineAlertOn : localStorage.getItem('lineAlertOn');
+  const ba = cfg.battAlertOn !== undefined ? cfg.battAlertOn : localStorage.getItem('battAlertOn');
+  if (safe('cfgPreviewLine'))  { safe('cfgPreviewLine').textContent  = String(la) === 'false' ? 'false' : 'true'; safe('cfgPreviewLine').style.color  = String(la) === 'false' ? 'var(--gnd)' : 'var(--ok)'; }
+  if (safe('cfgPreviewBattA')) { safe('cfgPreviewBattA').textContent = String(ba) === 'false' ? 'false' : 'true'; safe('cfgPreviewBattA').style.color = String(ba) === 'false' ? 'var(--gnd)' : 'var(--ok)'; }
+}
+
+function loadCachedConfig() {
+  const raw = localStorage.getItem('cachedConfig');
+  if (!raw) {
+    // ไม่มี cache → แสดงค่า default จาก localStorage เท่านั้น
+    updateConfigPreview({});
+    return;
+  }
+  try {
+    cachedConfig = JSON.parse(raw);
+    applyConfig(cachedConfig);
+  } catch(e) {
+    console.warn('[Config] parse error:', e);
+  }
+}
+
+function loadLineSettings() {
+  const safe = id => document.getElementById(id);
+  if (safe('inpToken'))  safe('inpToken').value  = localStorage.getItem('line_token')  || '';
+  if (safe('inpDoctor')) safe('inpDoctor').value = localStorage.getItem('line_doctor') || '';
+  if (safe('inpNurse'))  safe('inpNurse').value  = localStorage.getItem('line_nurse')  || '';
+}
+
+async function loadConfigFromGAS(showStatus = false) {
+  if (!gasUrl) {
+    const safe = id => document.getElementById(id);
+    if (showStatus && safe('cfgStatus')) {
+      safe('cfgStatus').textContent = '⚠ ยังไม่ได้ใส่ GAS URL — ไปที่ Admin Settings ก่อน';
+      safe('cfgStatus').style.color = 'var(--warn)';
+    }
+    return;
+  }
+  const safe = id => document.getElementById(id);
+  if (showStatus) {
+    if (safe('cfgStatus')) { safe('cfgStatus').textContent = '⟳ กำลังโหลด Config...'; safe('cfgStatus').style.color = 'var(--text2)'; }
+    if (safe('cfgBadge'))    safe('cfgBadge').textContent  = '⟳ ...';
+  }
+  try {
+    const res = await fetch(gasUrl + '?action=getConfig', { method: 'GET', redirect: 'follow' });
+    const cfg = await res.json();
+    if (cfg && !cfg.error && typeof cfg === 'object') {
+      cachedConfig = cfg;
+      localStorage.setItem('cachedConfig',    JSON.stringify(cfg));
+      localStorage.setItem('configFetchedAt', Date.now().toString());
+      applyConfig(cfg);
+      const t = new Date().toLocaleTimeString('th-TH');
+      if (safe('cfgStatus')) { safe('cfgStatus').textContent = '✅ โหลด Config สำเร็จ · ' + t; safe('cfgStatus').style.color = 'var(--ok)'; }
+    } else {
+      if (safe('cfgStatus')) {
+        safe('cfgStatus').textContent = '⚠ GAS ไม่มี getConfig — เพิ่ม action ใน GAS script ก่อน';
+        safe('cfgStatus').style.color = 'var(--warn)';
+      }
+      if (safe('cfgBadge')) safe('cfgBadge').textContent = '⚠ ไม่มี Config';
+    }
+  } catch(e) {
+    if (safe('cfgStatus')) { safe('cfgStatus').textContent = '❌ ' + e.message; safe('cfgStatus').style.color = 'var(--danger)'; }
+    if (safe('cfgBadge'))    safe('cfgBadge').textContent  = '❌ Error';
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1866,6 +2545,135 @@ function toggleSet(id) {
   const el = document.getElementById(id);
   el.classList.toggle('on');
 }
+// ── Admin: Change PIN ──────────────────────────────────────
+function changePIN() {
+  const safe = id => document.getElementById(id);
+  const inp  = safe('inpNewPin');
+  const msg  = safe('pinChangeMsg');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!/^\d{4}$/.test(val)) {
+    if (msg) { msg.textContent = '❌ PIN ต้องเป็นตัวเลข 4 หลักเท่านั้น'; msg.style.color = 'var(--danger)'; }
+    return;
+  }
+  PIN = val;
+  localStorage.setItem('adminPin', val);
+  inp.value = '';
+  if (msg) { msg.innerHTML = `✅ เปลี่ยน PIN สำเร็จ &nbsp;·&nbsp; PIN ปัจจุบัน: <span id="pinDisplay">****</span>`; msg.style.color = 'var(--ok)'; }
+  setTimeout(() => {
+    if (msg) { msg.innerHTML = `PIN ปัจจุบัน: <span id="pinDisplay">****</span>`; msg.style.color = 'var(--text2)'; }
+  }, 3000);
+}
+
+// ── Admin: Save patient name ───────────────────────────────
+function savePatientName() {
+  const safe = id => document.getElementById(id);
+  const val  = safe('inpPatient')?.value.trim() || 'ผู้ป่วย';
+  const prevPatient = localStorage.getItem('patientName') || 'ผู้ป่วย';
+  localStorage.setItem('patientName', val);
+  if (val !== prevPatient) localStorage.removeItem('calibDoneFor'); // ผู้ป่วยเปลี่ยน ต้อง calibrate ใหม่
+  if (bedData[0]) { bedData[0].patient = val; renderBeds(); }
+  const msg = safe('adminSaveMsg');
+  if (msg) { msg.textContent = '✅ บันทึกชื่อผู้ป่วยแล้ว: ' + val; msg.style.color = 'var(--ok)'; }
+}
+
+// ── Admin: Save all config to localStorage ─────────────────
+function saveAllAdminConfig() {
+  const safe = id => document.getElementById(id);
+  const msg  = safe('adminSaveMsg');
+
+  // LINE
+  const token  = safe('inpToken')?.value.trim()  || '';
+  const doctor = safe('inpDoctor')?.value.trim() || '';
+  const nurse  = safe('inpNurse')?.value.trim()  || '';
+  localStorage.setItem('line_token',  token);
+  localStorage.setItem('line_doctor', doctor);
+  localStorage.setItem('line_nurse',  nurse);
+
+  // Thresholds
+  const angle    = parseFloat(safe('inpAngle')?.value)     || 30;
+  const fsr      = parseInt(safe('inpFsr')?.value)          || 500;
+  const battLow  = parseFloat(safe('inpBattLow')?.value)   || 15;
+  const pwm      = parseInt(safe('inpPwm')?.value)          || 200;
+  const pumpGoal = parseInt(safe('inpPumpGoal')?.value)     || 100;
+  const pumpUp   = parseFloat(safe('inpPumpThresh')?.value) || 20;
+  localStorage.setItem('thresh_angle',    angle);
+  localStorage.setItem('thresh_fsr',      fsr);
+  localStorage.setItem('thresh_battLow',  battLow);
+  localStorage.setItem('thresh_pwm',      pwm);
+  localStorage.setItem('thresh_pumpGoal', pumpGoal);
+  localStorage.setItem('thresh_pumpUp',   pumpUp);
+
+  loadThresh();
+  updateConfigPreview({adminPin:PIN, angleThresh:angle, fsrThresh:fsr, battLow, pwmMotor:pwm, pumpGoal});
+  if (msg) { msg.textContent = '✅ บันทึกทั้งหมดใน Local แล้ว'; msg.style.color = 'var(--ok)'; }
+  setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+}
+
+// ── Admin: Push config to GAS Config Sheet ─────────────────
+/*
+ * GAS doPost handler ที่ต้องเพิ่ม:
+ *
+ * function doPost(e) {
+ *   const body = JSON.parse(e.postData.contents);
+ *   if (body.action === 'pushConfig') {
+ *     const sheet = SpreadsheetApp.getActive().getSheetByName('Config');
+ *     const cfg   = body.config;   // object { adminPin, angleThresh, ... }
+ *     const data  = sheet.getDataRange().getValues();
+ *     // update existing rows
+ *     data.forEach((row, i) => {
+ *       if (cfg[row[0]] !== undefined) sheet.getRange(i+1, 2).setValue(cfg[row[0]]);
+ *     });
+ *     // add new keys that don't exist yet
+ *     const existingKeys = data.map(r => r[0]);
+ *     Object.entries(cfg).forEach(([k, v]) => {
+ *       if (!existingKeys.includes(k)) sheet.appendRow([k, v]);
+ *     });
+ *     return ContentService.createTextOutput(JSON.stringify({status:'ok'}))
+ *       .setMimeType(ContentService.MimeType.JSON);
+ *   }
+ * }
+ */
+async function pushConfigToGAS() {
+  const safe = id => document.getElementById(id);
+  const msg  = safe('adminSaveMsg');
+  if (!gasUrl) {
+    if (msg) { msg.textContent = '⚠ กรุณาบันทึก GAS URL ก่อน'; msg.style.color = 'var(--warn)'; }
+    return;
+  }
+  // รวบรวมค่าทั้งหมด
+  const cfg = {
+    adminPin:     localStorage.getItem('adminPin')         || PIN,
+    angleThresh:  localStorage.getItem('thresh_angle')     || '30',
+    fsrThresh:    localStorage.getItem('thresh_fsr')       || '500',
+    battLow:      localStorage.getItem('thresh_battLow')   || '15',
+    pwmMotor:     localStorage.getItem('thresh_pwm')       || '200',
+    pumpGoal:     localStorage.getItem('thresh_pumpGoal')  || '100',
+    pumpUpThresh: localStorage.getItem('thresh_pumpUp')    || '20',
+    lineToken:    localStorage.getItem('line_token')       || '',
+    doctorId:     localStorage.getItem('line_doctor')      || '',
+    nurseId:      localStorage.getItem('line_nurse')       || '',
+    lineAlertOn:  String(lineAlertOn),
+    battAlertOn:  String(battAlertOn),
+  };
+  if (msg) { msg.textContent = '⟳ กำลัง Push ไป GAS...'; msg.style.color = 'var(--text2)'; }
+  try {
+    const res  = await fetch(gasUrl, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'pushConfig', config: cfg }),
+      redirect: 'follow',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.status === 'ok') {
+      if (msg) { msg.textContent = '✅ Push Config ไป GAS Sheet สำเร็จ!'; msg.style.color = 'var(--ok)'; }
+    } else {
+      if (msg) { msg.textContent = '⚠ GAS ตอบ: ' + (data.error || 'ไม่มี pushConfig handler'); msg.style.color = 'var(--warn)'; }
+    }
+  } catch(e) {
+    if (msg) { msg.textContent = '❌ ' + e.message; msg.style.color = 'var(--danger)'; }
+  }
+}
+
 // ── Alert Toggles ────────────────────────────────────────
 let lineAlertOn = localStorage.getItem('lineAlertOn') !== 'false';
 let battAlertOn = localStorage.getItem('battAlertOn') !== 'false';
@@ -1881,75 +2689,13 @@ function applyToggleUI(toggleId, thumbId, descId, isOn, onText, offText) {
   if (d) d.textContent = isOn ? onText : offText;
 }
 
-// ── Calibrate Functions ──────────────────────────────────────
-async function calibrateHip() {
-  const btn = event.currentTarget;
-  const res = document.getElementById('calHipResult');
-  btn.disabled = true; btn.textContent = '⏳ กำลัง Calibrate...';
-  res.textContent = '';
-  
-  // ส่งคำสั่ง Calibrate ไป GAS → GAS จะ update Config hipBaseX, hipBaseY
-  if (gasUrl) {
-    try {
-      const r = await fetch(gasUrl + '?action=saveConfig&hipCalibrate=true', {redirect:'follow'});
-      const d = await r.json();
-      res.textContent = '✅ บันทึกมุม Hip Baseline แล้ว';
-      res.style.color = 'var(--ok)';
-    } catch(e) {
-      res.textContent = '⚠️ บันทึกผ่าน GAS ไม่ได้ — Firmware จะ Calibrate เองเมื่อ Boot';
-      res.style.color = 'var(--warn)';
-    }
-  } else {
-    res.textContent = '⚠️ ใส่ GAS URL ก่อน (Admin Settings)';
-    res.style.color = 'var(--warn)';
-  }
-  
-  // Flash LED simulate
-  btn.textContent = '✅ Calibrate สะโพก';
-  btn.style.background = 'var(--ok)';
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.textContent = '🦴 Calibrate สะโพก';
-    btn.style.background = 'var(--teal)';
-  }, 3000);
-}
-
-async function calibrateAnkle() {
-  const btn = event.currentTarget;
-  const res = document.getElementById('calAnkResult');
-  btn.disabled = true; btn.textContent = '⏳ กำลัง Calibrate...';
-  res.textContent = '';
-  
-  if (gasUrl) {
-    try {
-      const r = await fetch(gasUrl + '?action=saveConfig&ankleCalibrate=true', {redirect:'follow'});
-      const d = await r.json();
-      res.textContent = '✅ บันทึกมุม Ankle Baseline แล้ว';
-      res.style.color = 'var(--ok)';
-    } catch(e) {
-      res.textContent = '⚠️ Firmware จะ Calibrate เองเมื่อ Boot';
-      res.style.color = 'var(--warn)';
-    }
-  } else {
-    res.textContent = '⚠️ ใส่ GAS URL ก่อน (Admin Settings)';
-    res.style.color = 'var(--warn)';
-  }
-  
-  btn.textContent = '✅ Calibrate ข้อเท้า';
-  btn.style.background = 'var(--ok)';
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.textContent = '🦶 Calibrate ข้อเท้า';
-    btn.style.background = 'var(--purple,#7c3aed)';
-  }, 3000);
-}
-
 function toggleLineAlert() {
   lineAlertOn = !lineAlertOn;
   localStorage.setItem('lineAlertOn', lineAlertOn.toString());
   applyToggleUI('lineAlertToggle','lineAlertThumb','lineAlertDesc', lineAlertOn,
     'เปิด = ส่ง LINE เมื่อตรวจพบ Alert',
     'ปิด = ไม่ส่ง LINE (แต่ Buzzer/LED ยังทำงาน)');
+  pushAlertFlagToGAS('lineAlertOn', lineAlertOn);
 }
 
 function toggleBattAlert() {
@@ -1958,6 +2704,17 @@ function toggleBattAlert() {
   applyToggleUI('battAlertToggle','battAlertThumb','battAlertDesc', battAlertOn,
     'เปิด = แจ้งเตือนเมื่อแบตต่ำกว่า %',
     'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
+  pushAlertFlagToGAS('battAlertOn', battAlertOn);
+}
+
+async function pushAlertFlagToGAS(key, value) {
+  if (!gasUrl) return;
+  try {
+    const body = { action: 'pushConfig', config: { [key]: String(value) } };
+    await fetch(gasUrl, { method: 'POST', body: JSON.stringify(body) });
+  } catch(e) {
+    console.warn('pushAlertFlagToGAS failed:', e);
+  }
 }
 
 function initAlertToggles() {
@@ -1969,7 +2726,16 @@ function initAlertToggles() {
     'ปิด = ไม่แจ้งเตือนแบตเตอรี่');
 }
 
-function saveLine() { alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅'); }
+function saveLine() {
+  const safe = id => document.getElementById(id);
+  const token  = safe('inpToken')?.value.trim()  || '';
+  const doctor = safe('inpDoctor')?.value.trim() || '';
+  const nurse  = safe('inpNurse')?.value.trim()  || '';
+  localStorage.setItem('line_token',  token);
+  localStorage.setItem('line_doctor', doctor);
+  localStorage.setItem('line_nurse',  nurse);
+  alert(lang==='th'?'บันทึก LINE settings แล้ว ✅':'LINE settings saved ✅');
+}
 // ── Pending Users (Admin) ──────────────────────────────────
 async function loadPendingUsers() {
   if (!gasUrl) { alert('กรุณาตั้งค่า GAS URL ก่อน'); return; }
@@ -1990,11 +2756,18 @@ async function loadPendingUsers() {
           <div style="font-size:.72rem;color:var(--text2);font-family:monospace">${u.userId}</div>
           <div style="font-size:.72rem;color:var(--text2)">${u.requestedAt||''}</div>
         </div>
-        <button onclick="approveUser('${u.userId}')"
-          style="background:var(--ok);color:#fff;border:none;border-radius:8px;
-                 padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
-          ✅ อนุมัติ
-        </button>
+        <div style="display:flex;gap:6px">
+          <button onclick="approveUser('${u.userId}')"
+            style="background:var(--ok);color:#fff;border:none;border-radius:8px;
+                   padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
+            ✅ อนุมัติ
+          </button>
+          <button onclick="rejectUser('${u.userId}','${(u.displayName||'').replace(/'/g,"&#39;")}')"
+            style="background:var(--danger);color:#fff;border:none;border-radius:8px;
+                   padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;white-space:nowrap">
+            ✗ ปฏิเสธ
+          </button>
+        </div>
       </div>
     `).join('');
   } catch(e) {
@@ -2008,13 +2781,33 @@ async function approveUser(uid) {
   try {
     const res = await fetch(gasUrl, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({action:'approveUser', userId:uid}),
       redirect: 'follow',
     });
     const d = await res.json();
     if (d.status === 'ok') {
-      alert('✅ อนุมัติสำเร็จ! User จะได้รับแจ้งเตือนแล้ว');
+      showToast('✅ อนุมัติสำเร็จ', 'ok');
+      loadPendingUsers();
+    } else {
+      alert('Error: ' + (d.error || d.message));
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function rejectUser(uid, name) {
+  if (!gasUrl) return;
+  if (!confirm('ปฏิเสธ "' + (name || uid) + '" ?\nUser นี้จะไม่ได้รับแจ้งเตือนจากระบบ')) return;
+  try {
+    const res = await fetch(gasUrl, {
+      method: 'POST',
+      body: JSON.stringify({action:'rejectUser', userId:uid}),
+      redirect: 'follow',
+    });
+    const d = await res.json();
+    if (d.status === 'ok') {
+      showToast('❌ ปฏิเสธแล้ว', 'warn');
       loadPendingUsers();
     } else {
       alert('Error: ' + (d.error || d.message));
@@ -2046,7 +2839,6 @@ async function saveThresh() {
     try {
       const res = await fetch(gasUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action:       'saveConfig',
           angleThresh:  angle,
@@ -2092,7 +2884,19 @@ function loadThresh() {
   const vg = document.getElementById('vPumpGoal');
   if (vg) vg.textContent = pumpGoal;
 }
-function saveSettings() { alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅'); }
+function saveSettings() {
+  const inp = document.getElementById('inpGas');
+  if (inp && inp.value.trim()) {
+    gasUrl = inp.value.trim();
+    localStorage.setItem('gasUrl', gasUrl);
+    useRealData = true;
+    localStorage.setItem('useRealData', 'true');
+    updateDataModeUI();
+  }
+  alert(lang==='th'?'บันทึกการตั้งค่าทั้งหมดแล้ว ✅':'All settings saved ✅');
+  updateLive();             // เริ่มดึงข้อมูล sensor ทันที
+  loadConfigFromGAS(true);  // โหลด config จาก Sheet ด้วย
+}
 function clearData() {
   if(confirm(lang==='th'?'ล้างข้อมูลทั้งหมด?':'Clear all data?'))
     alert(lang==='th'?'ล้างข้อมูลแล้ว':'Data cleared');
@@ -2104,18 +2908,15 @@ function clearData() {
 renderBeds();
 renderAlerts();
 
-// Load saved GAS URL
+// ── โหลด GAS URL ──────────────────────────
 gasUrl = localStorage.getItem('gasUrl') || '';
-// ถ้ามี GAS URL บันทึกไว้ → ใช้ real data อัตโนมัติ
 if (gasUrl) useRealData = true;
-else useRealData = false;
+else        useRealData = false;
 localStorage.setItem('useRealData', useRealData.toString());
 const inpGasEl = document.getElementById('inpGas');
 if (inpGasEl && gasUrl) inpGasEl.value = gasUrl;
 
-// Show mode indicator
-console.log('[v4.10.6] Mode:', useRealData ? 'REAL DATA from GAS' : 'MOCK DATA');
-// โหลด font size ที่บันทึกไว้
+// ── font size ──────────────────────────────
 const savedFs = localStorage.getItem('fontSize') || 'md';
 document.documentElement.classList.remove('fs-sm','fs-md','fs-lg','fs-xl');
 document.documentElement.classList.add('fs-' + savedFs);
@@ -2123,11 +2924,132 @@ document.querySelectorAll('.fs-btn').forEach(b => {
   b.classList.toggle('active', b.getAttribute('onclick') === `setFs('${savedFs}')`);
 });
 updateDataModeUI();
-loadThresh();
+
+// ── โหลด PIN จาก localStorage (ถ้ามี) ────
+const savedPin = localStorage.getItem('adminPin');
+if (savedPin) PIN = savedPin;
+
+// ── โหลด patient name ────────────────────
+if (bedData[0]) bedData[0].patient = localStorage.getItem('patientName') || 'ผู้ป่วย';
+
+// ── โหลด Config: cache ก่อน (instant) แล้ว fetch ใหม่ใน background ──
+loadCachedConfig();                         // ① ใช้ค่าที่จำไว้ทันที (ไม่รอ network)
+if (gasUrl) loadConfigFromGAS(false);       // ② fetch config ใหม่เงียบๆ เบื้องหลัง
+
+loadLineSettings();
 initAlertToggles();
 
+console.log('[v4.10.5] GAS:', gasUrl ? 'set' : 'none', '| Config cache:', !!localStorage.getItem('cachedConfig'));
+
 updateLive();
-setInterval(updateLive, 30000); // ทุก 30 วิ ตาม Firmware sleep cycle
+setInterval(updateLive,    30000); // ทุก 30 วิ ตาม Firmware sleep cycle
+setInterval(tickCountdown,  1000); // countdown ทุก 1 วิ
+
+// ═══════════════════════════════════════════
+// REPORT PAGE
+// ═══════════════════════════════════════════
+let reportDays = 7;
+let chartReportInst = null;
+
+function setReportDays(d) {
+  reportDays = d;
+  document.querySelectorAll('#rpt7,#rpt14,#rpt30').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('rpt' + d);
+  if (btn) btn.classList.add('active');
+  loadReport();
+}
+
+async function loadReport() {
+  if (!gasUrl) { showToast('ยังไม่มี GAS URL', 'warn'); return; }
+  const tbody = document.getElementById('reportTbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px">กำลังโหลด…</td></tr>';
+  try {
+    const r = await fetch(gasUrl + '?action=getReport&days=' + reportDays);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const json = await r.json();
+    if (!json.rows) throw new Error('ไม่มีข้อมูล');
+    renderReport(json.rows);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--err);padding:20px">โหลดไม่สำเร็จ: ' + err.message + '</td></tr>';
+  }
+}
+
+function renderReport(rows) {
+  const pumpGoal = parseInt(localStorage.getItem('thresh_pumpGoal') || '100');
+  const tbody = document.getElementById('reportTbody');
+
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">ไม่มีข้อมูลในช่วงนี้</td></tr>';
+    document.getElementById('rptTotalPump').textContent = '0';
+    document.getElementById('rptAvgPump').textContent = '0';
+    document.getElementById('rptGoalDays').textContent = '0';
+    document.getElementById('rptTotalAlerts').textContent = '0';
+    return;
+  }
+
+  // Summary
+  const totalPump   = rows.reduce((s, r) => s + (r.pumpTotal || 0), 0);
+  const avgPump     = rows.length > 0 ? Math.round(totalPump / rows.length) : 0;
+  const goalDays    = rows.filter(r => (r.pumpTotal || 0) >= pumpGoal).length;
+  const totalAlerts = rows.reduce((s, r) => s + (r.alerts || 0), 0);
+
+  document.getElementById('rptTotalPump').textContent   = totalPump.toLocaleString();
+  document.getElementById('rptAvgPump').textContent     = avgPump.toLocaleString();
+  document.getElementById('rptGoalDays').textContent    = goalDays;
+  document.getElementById('rptTotalAlerts').textContent = totalAlerts;
+
+  // Table (newest first)
+  tbody.innerHTML = rows.map(r => {
+    const reached = (r.pumpTotal || 0) >= pumpGoal;
+    const goalBadge = reached
+      ? '<span style="color:var(--ok)">✅ ครบ</span>'
+      : '<span style="color:var(--warn)">' + (r.pumpTotal || 0) + '/' + pumpGoal + '</span>';
+    const alertBadge = (r.alerts || 0) > 0
+      ? '<span style="color:var(--err)">' + r.alerts + ' 🔔</span>'
+      : '<span style="color:var(--text2)">-</span>';
+    const battColor = (r.battAvg || 0) < 20 ? 'var(--err)' : (r.battAvg || 0) < 40 ? 'var(--warn)' : 'var(--ok)';
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${r.pumpL || 0}</td>
+      <td>${r.pumpR || 0}</td>
+      <td><strong>${r.pumpTotal || 0}</strong></td>
+      <td>${goalBadge}</td>
+      <td>${alertBadge}</td>
+      <td style="color:${battColor}">${r.battAvg || '--'}%</td>
+    </tr>`;
+  }).join('');
+
+  // Chart
+  const labels = [...rows].reverse().map(r => r.date.slice(5)); // MM-DD
+  const dataL    = [...rows].reverse().map(r => r.pumpL || 0);
+  const dataR    = [...rows].reverse().map(r => r.pumpR || 0);
+  const goalLine = labels.map(() => pumpGoal);
+
+  if (chartReportInst) { chartReportInst.destroy(); chartReportInst = null; }
+  const ctx = document.getElementById('chartReport').getContext('2d');
+  chartReportInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'ซ้าย (L)', data: dataL, backgroundColor: 'rgba(56,189,248,0.7)', borderRadius: 4, order: 2 },
+        { label: 'ขวา (R)', data: dataR, backgroundColor: 'rgba(251,146,60,0.7)',  borderRadius: 4, order: 2 },
+        { label: 'เป้าหมาย', data: goalLine, type: 'line', borderColor: 'rgba(74,222,128,0.8)',
+          borderWidth: 2, borderDash: [6,3], pointRadius: 0, fill: false, order: 1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#9ca3af' } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { stacked: true, beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
 </script>
 <!-- LINE FAB -->
 <div class="line-fab" id="lineFab">

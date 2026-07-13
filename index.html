@@ -925,16 +925,8 @@ body{
           </div>
         </div>
 
-        <!-- Stat cards -->
+        <!-- Stat cards (สถานะระบบ ย้ายไปขวาสุด) -->
         <div class="dash-stats">
-          <!-- Connection -->
-          <div class="stat-card stat-card-row" id="scConn">
-            <div class="stat-label">สถานะระบบ</div>
-            <div class="stat-vals">
-              <div class="stat-value" id="svConnStatus" style="color:var(--gnd)">Offline</div>
-              <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
-            </div>
-          </div>
           <!-- Alerts -->
           <div class="stat-card stat-card-row" id="scAlert">
             <div class="stat-label" data-th="แจ้งเตือนตอนนี้" data-en="Active Alerts">แจ้งเตือนตอนนี้</div>
@@ -957,6 +949,14 @@ body{
             <div class="stat-vals">
               <div class="stat-value" id="svPumpStat" style="color:var(--gnd)">--</div>
               <div class="stat-sub"   id="svPumpGoalStat">เป้า -- ครั้ง</div>
+            </div>
+          </div>
+          <!-- Connection (ขวาสุด) -->
+          <div class="stat-card stat-card-row" id="scConn">
+            <div class="stat-label">สถานะระบบ</div>
+            <div class="stat-vals">
+              <div class="stat-value" id="svConnStatus" style="color:var(--gnd)">Offline</div>
+              <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
             </div>
           </div>
         </div>
@@ -1005,7 +1005,7 @@ body{
             </div>
             <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text2)">
               <span><span id="vPumpCurrent">0</span> ครั้ง</span>
-              <span>เป้า <span id="vPumpGoal">100</span> ครั้ง/วัน</span>
+              <span>เป้า <span id="vPumpGoal">300</span> ครั้ง/วัน</span>
             </div>
           </div>
 
@@ -1305,9 +1305,9 @@ body{
           <div class="setting-row">
             <div class="setting-info">
               <div class="setting-label" data-th="เป้ากระดกข้อเท้า/วัน" data-en="Ankle Pump Goal/Day">เป้ากระดกข้อเท้า/วัน</div>
-              <div class="setting-desc" data-th="ครั้ง (default 100)" data-en="times (default 100)">ครั้ง (default 100)</div>
+              <div class="setting-desc" data-th="ครั้ง (default 300)" data-en="times (default 300)">ครั้ง (default 300)</div>
             </div>
-            <input class="input-field" value="100" id="inpPumpGoal" style="width:80px" type="number">
+            <input class="input-field" value="300" id="inpPumpGoal" style="width:80px" type="number">
           </div>
           <div class="setting-row">
             <div class="setting-info">
@@ -1395,7 +1395,7 @@ body{
               </div>
               <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
                 <span style="color:var(--text2)">pumpGoal</span>
-                <span id="cfgPreviewPump" style="color:var(--ok)">100</span>
+                <span id="cfgPreviewPump" style="color:var(--ok)">300</span>
               </div>
               <div style="display:flex;justify-content:space-between;padding:3px 6px;background:var(--surface);border-radius:4px">
                 <span style="color:var(--text2)">lineToken</span>
@@ -1526,7 +1526,7 @@ body{
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
                 <div>
                   <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">เป้า/วัน (ครั้ง)</div>
-                  <input class="input-field" id="inpPumpGoal" type="number" value="100" style="width:100%">
+                  <input class="input-field" id="inpPumpGoal" type="number" value="300" style="width:100%">
                 </div>
                 <div>
                   <div style="font-size:.68rem;color:var(--text2);margin-bottom:2px">มุม Pump (°)</div>
@@ -2010,7 +2010,7 @@ function loadAdminFields() {
   if (safe('inpFsr'))        safe('inpFsr').value        = localStorage.getItem('thresh_fsr')      || '500';
   if (safe('inpBattLow'))    safe('inpBattLow').value    = localStorage.getItem('thresh_battLow')  || '15';
   if (safe('inpPwm'))        safe('inpPwm').value        = localStorage.getItem('thresh_pwm')      || '200';
-  if (safe('inpPumpGoal'))   safe('inpPumpGoal').value   = localStorage.getItem('thresh_pumpGoal') || '100';
+  if (safe('inpPumpGoal'))   safe('inpPumpGoal').value   = localStorage.getItem('thresh_pumpGoal') || '300';
   if (safe('inpPumpThresh')) safe('inpPumpThresh').value = localStorage.getItem('thresh_pumpUp')   || '20';
   // Patient name
   if (safe('inpPatient')) safe('inpPatient').value = localStorage.getItem('patientName') || '';
@@ -2479,7 +2479,7 @@ function updateDashboard(d, stale) {
   const pL   = parseInt(d.pumpCountL) || 0;
   const pR   = parseInt(d.pumpCountR) || 0;
   const pT   = parseInt(d.pumpTotal)  || (pL + pR);
-  const goal = parseInt(localStorage.getItem('thresh_pumpGoal')||100);
+  const goal = parseInt(localStorage.getItem('thresh_pumpGoal')||300);
   if (safe('vPumpL'))         safe('vPumpL').textContent         = pL;
   if (safe('vPumpR'))         safe('vPumpR').textContent         = pR;
   if (safe('vPumpTotal'))     safe('vPumpTotal').textContent     = pT;
@@ -2571,7 +2571,7 @@ function updateLive() {
 
   // ── Update beds + stat cards + charts ──
   const fsrT       = parseInt(localStorage.getItem('thresh_fsr')||500);
-  const goal       = parseInt(localStorage.getItem('thresh_pumpGoal')||100);
+  const goal       = parseInt(localStorage.getItem('thresh_pumpGoal')||300);
   const mockIsAlert = hx > thresh || hy > thresh || al > thresh;
   const mockSt     = mockIsAlert ? 'danger' : ((fh<fsrT || fa<fsrT) && (fh+fa)>0 ? 'warn' : 'ok');
   bedData[0] = {...bedData[0], hipX:hx, hipY:hy, ankL:al, ankR:ar, fsrH:fh, fsrA:fa, batt:bp, status:mockSt};
@@ -2606,7 +2606,7 @@ function updateLive() {
  *   fsrThresh | 500
  *   battLow | 15
  *   pwmMotor | 200
- *   pumpGoal | 100
+ *   pumpGoal | 300
  *   pumpUpThresh | 20
  *   lineToken | <token>
  *   doctorId | U...
@@ -2658,7 +2658,7 @@ function updateConfigPreview(cfg) {
   if (safe('cfgPreviewFsr'))   safe('cfgPreviewFsr').textContent   = cfg.fsrThresh      || localStorage.getItem('thresh_fsr')    || 500;
   if (safe('cfgPreviewBatt'))  safe('cfgPreviewBatt').textContent  = (cfg.battLow       || localStorage.getItem('thresh_battLow')|| 15) + '%';
   if (safe('cfgPreviewPwm'))   safe('cfgPreviewPwm').textContent   = cfg.pwmMotor       || localStorage.getItem('thresh_pwm')   || 200;
-  if (safe('cfgPreviewPump'))  safe('cfgPreviewPump').textContent  = cfg.pumpGoal       || localStorage.getItem('thresh_pumpGoal')|| 100;
+  if (safe('cfgPreviewPump'))  safe('cfgPreviewPump').textContent  = cfg.pumpGoal       || localStorage.getItem('thresh_pumpGoal')|| 300;
   const la = cfg.lineAlertOn !== undefined ? cfg.lineAlertOn : localStorage.getItem('lineAlertOn');
   const ba = cfg.battAlertOn !== undefined ? cfg.battAlertOn : localStorage.getItem('battAlertOn');
   if (safe('cfgPreviewLine'))  { safe('cfgPreviewLine').textContent  = String(la) === 'false' ? 'false' : 'true'; safe('cfgPreviewLine').style.color  = String(la) === 'false' ? 'var(--gnd)' : 'var(--ok)'; }
@@ -2787,7 +2787,7 @@ function saveAllAdminConfig() {
   const fsr      = parseInt(safe('inpFsr')?.value)          || 500;
   const battLow  = parseFloat(safe('inpBattLow')?.value)   || 15;
   const pwm      = parseInt(safe('inpPwm')?.value)          || 200;
-  const pumpGoal = parseInt(safe('inpPumpGoal')?.value)     || 100;
+  const pumpGoal = parseInt(safe('inpPumpGoal')?.value)     || 300;
   const pumpUp   = parseFloat(safe('inpPumpThresh')?.value) || 20;
   localStorage.setItem('thresh_angle',    angle);
   localStorage.setItem('thresh_fsr',      fsr);
@@ -2840,7 +2840,7 @@ async function pushConfigToGAS() {
     fsrThresh:    localStorage.getItem('thresh_fsr')       || '500',
     battLow:      localStorage.getItem('thresh_battLow')   || '15',
     pwmMotor:     localStorage.getItem('thresh_pwm')       || '200',
-    pumpGoal:     localStorage.getItem('thresh_pumpGoal')  || '100',
+    pumpGoal:     localStorage.getItem('thresh_pumpGoal')  || '300',
     pumpUpThresh: localStorage.getItem('thresh_pumpUp')    || '20',
     lineToken:    localStorage.getItem('line_token')       || '',
     doctorId:     localStorage.getItem('line_doctor')      || '',
@@ -3014,7 +3014,7 @@ async function saveThresh() {
   const fsr      = parseInt(document.getElementById('inpFsr')?.value)         || 500;
   const battLow  = parseFloat(document.getElementById('inpBattLow')?.value)  || 15;
   const pwm      = parseInt(document.getElementById('inpPwm')?.value)         || 200;
-  const pumpGoal = parseInt(document.getElementById('inpPumpGoal')?.value)    || 100;
+  const pumpGoal = parseInt(document.getElementById('inpPumpGoal')?.value)    || 300;
 
   // 1. บันทึกใน localStorage
   localStorage.setItem('thresh_angle',   angle);
@@ -3064,7 +3064,7 @@ function loadThresh() {
   const fsr      = localStorage.getItem('thresh_fsr')      || 500;
   const battLow  = localStorage.getItem('thresh_battLow')  || 15;
   const pwm      = localStorage.getItem('thresh_pwm')      || 200;
-  const pumpGoal = localStorage.getItem('thresh_pumpGoal') || 100;
+  const pumpGoal = localStorage.getItem('thresh_pumpGoal') || 300;
 
   const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
   set('inpAngle',    angle);
@@ -3167,7 +3167,7 @@ async function loadReport() {
 }
 
 function renderReport(rows) {
-  const pumpGoal = parseInt(localStorage.getItem('thresh_pumpGoal') || '100');
+  const pumpGoal = parseInt(localStorage.getItem('thresh_pumpGoal') || '300');
   const tbody = document.getElementById('reportTbody');
 
   if (!rows || rows.length === 0) {

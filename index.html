@@ -698,6 +698,14 @@ body{
 .posture-row-lbl{font-size:.74rem;color:var(--text)}
 .posture-dot{transition:fill .3s}
 .posture-dot.pulse{animation:live-pulse 1.1s ease-in-out infinite}
+.calib-btn{
+  background:var(--surface2);border:1px solid var(--brd2);border-radius:7px;
+  color:var(--accent2);padding:4px 10px;font-size:.68rem;font-weight:600;
+  cursor:pointer;transition:all .15s;font-family:'IBM Plex Sans Thai',sans-serif;
+  text-transform:none;letter-spacing:0;
+}
+.calib-btn:hover{border-color:var(--accent2);background:var(--brd2)}
+.calib-btn:active{transform:scale(.96)}
 
 /* ── Pump display ── */
 .pump-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;text-align:center;padding:6px 0}
@@ -755,19 +763,25 @@ body{
      CALIBRATION MODAL (ครั้งแรกที่เชื่อมต่อกับผู้ป่วย)
 ══════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="calibModal">
-  <div class="modal" style="width:360px;text-align:left">
-    <div class="modal-title" style="text-align:center">🎯 ตั้งค่าเริ่มต้นก่อนเริ่มติดตาม</div>
+  <div class="modal" style="width:380px;text-align:left">
+    <div class="modal-title" style="text-align:center">🎯 Calibrate ท่าตั้งต้น</div>
     <div class="modal-sub" style="text-align:center">
-      เชื่อมต่ออุปกรณ์กับผู้ป่วย <b id="calibPatientName" style="color:var(--text)">ผู้ป่วย</b> ครั้งแรก
-      กรุณาจัดท่าและ Calibrate ก่อนเริ่มวัด
+      ผู้ป่วย <b id="calibPatientName" style="color:var(--text)">ผู้ป่วย</b> —
+      จัดท่าให้ถูกต้องก่อน แล้วกด Calibrate เพื่อตั้งค่าปัจจุบันเป็นจุดเริ่มต้น (0°)
     </div>
-    <ol style="font-size:.8rem;line-height:1.7;color:var(--text);padding-left:20px;margin-bottom:18px">
-      <li>วางหมอนกางขา (Abduction Pillow) ให้แนบสนิทกับสะโพกทั้งสองข้าง ตั้งแต่ระหว่างเข่าถึงข้อเท้า</li>
+    <ol style="font-size:.8rem;line-height:1.7;color:var(--text);padding-left:20px;margin-bottom:14px">
+      <li>วางหมอนกางขา (Abduction Pillow) ให้แนบสนิทกับสะโพกทั้งสองข้าง</li>
       <li>จัดให้ผู้ป่วยนอนหงายตรงกึ่งกลางเตียง ไม่เอียงซ้าย-ขวา</li>
-      <li>ปรับข้อเท้าซ้ายและขวาให้ตั้งฉากกับพื้นเตียง (มุมเริ่มต้น 0°) ก่อนกดยืนยัน</li>
-      <li>ตรวจสอบว่าเซ็นเซอร์ MPU6050 ทุกจุดติดตั้งแน่น ไม่หลวมหรือเอียงจากตำแหน่งเดิม</li>
+      <li>ปรับข้อเท้าซ้าย-ขวาให้อยู่ในท่าตั้งต้นที่ถูกต้อง</li>
+      <li>ตรวจสอบว่าเซ็นเซอร์ MPU6050 ทุกจุดติดตั้งแน่น ไม่หลวม</li>
     </ol>
-    <button class="btn-primary" style="width:100%" onclick="closeCalibModal()">✅ เข้าใจแล้ว เริ่มติดตาม</button>
+    <div style="background:var(--surface2);border:1px solid var(--brd);border-radius:8px;padding:8px 10px;margin-bottom:6px">
+      <div style="font-size:.64rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">ค่าดิบปัจจุบัน (จะถูกตั้งเป็น 0°)</div>
+      <div id="calibPreview" class="font-mono" style="font-size:.74rem;color:var(--text2)">—</div>
+    </div>
+    <div id="calibMsg" style="font-size:.74rem;min-height:18px;margin-bottom:8px"></div>
+    <button class="btn-primary" style="width:100%;margin-bottom:8px" onclick="runCalibration()">🎯 Calibrate — ตั้งค่าปัจจุบันเป็น 0°</button>
+    <button class="btn-primary" style="width:100%;background:var(--surface2);color:var(--text2)" onclick="closeCalibModal(false)">ข้ามไปก่อน</button>
   </div>
 </div>
 
@@ -1004,7 +1018,8 @@ body{
         <div class="card">
           <div class="card-title">
             🛏️ <span data-th="ท่านอน MPU6050" data-en="Posture MPU6050">ท่านอน MPU6050</span>
-            <span class="ml-auto" id="postureLiveBadge" style="font-size:.68rem;color:var(--gnd);font-family:'IBM Plex Mono',monospace">● OFFLINE</span>
+            <button class="calib-btn ml-auto" onclick="openCalibModal()" title="ตั้งค่าท่าตั้งต้นใหม่ (zero องศา)">🎯 Calibrate</button>
+            <span id="postureLiveBadge" style="font-size:.68rem;color:var(--gnd);font-family:'IBM Plex Mono',monospace;margin-left:8px">● OFFLINE</span>
           </div>
 
           <!-- ภาพประกอบท่านอน: มุมมองบนเตียง สะโพกแนบหมอนกางขา -->
@@ -1690,6 +1705,131 @@ function updatePostureDot(id, status) {
   if (pillow && id === 'dotHip') { pillow.setAttribute('fill', color); pillow.setAttribute('stroke', color); }
 }
 
+// เรนเดอร์ badge + จุดสถานะจากค่าดิบ โดยลบ calibration offset ออกก่อน
+// (จุดเดียวที่ apply offset → live และ mock เรียกใช้ร่วมกัน)
+function applyPostureData(hxRaw, hyRaw, alRaw, arRaw) {
+  const thresh = parseFloat(localStorage.getItem('thresh_angle') || 30);
+  const hx = Math.abs((parseFloat(hxRaw) || 0) - calibOffsets.hipX);
+  const hy = Math.abs((parseFloat(hyRaw) || 0) - calibOffsets.hipY);
+  const al = Math.abs((parseFloat(alRaw) || 0) - calibOffsets.ankL);
+  const ar = Math.abs((parseFloat(arRaw) || 0) - calibOffsets.ankR);
+  const hxS = updateAngleBadge('badgeHipX', hx, thresh);
+  const hyS = updateAngleBadge('badgeHipY', hy, thresh);
+  updatePostureDot('dotHip', worseStatus(hxS, hyS));
+  updatePostureDot('dotAnkL', updateAngleBadge('badgeAnkL', al, thresh));
+  updatePostureDot('dotAnkR', updateAngleBadge('badgeAnkR', ar, thresh));
+}
+
+// ═══════════════════════════════════════════
+// CALIBRATION (software zero-offset ต่อผู้ป่วย)
+// ═══════════════════════════════════════════
+function currentPatient() { return localStorage.getItem('patientName') || 'ผู้ป่วย'; }
+
+// โชว์ค่าดิบสดที่กำลังจะถูกตั้งเป็นศูนย์ ในหน้าต่าง calibrate
+function updateCalibPreview() {
+  const el = document.getElementById('calibPreview');
+  if (!el) return;
+  const d = lastGasData;
+  if (!d) { el.textContent = '— ยังไม่มีข้อมูลสดจากอุปกรณ์ กรุณารอเชื่อมต่อ —'; el.style.color = 'var(--warn)'; return; }
+  const f = x => (parseFloat(x) || 0).toFixed(1) + '°';
+  el.textContent = `Hip X ${f(d.hipAngleX)} · Hip Y ${f(d.hipAngleY)} · L ${f(d.ankLAngleX)} · R ${f(d.ankRAngleX)}`;
+  el.style.color = 'var(--text2)';
+}
+
+function openCalibModal() {
+  const modal = document.getElementById('calibModal');
+  if (!modal) return;
+  const nm = document.getElementById('calibPatientName');
+  if (nm) nm.textContent = currentPatient();
+  const msg = document.getElementById('calibMsg');
+  if (msg) msg.textContent = '';
+  updateCalibPreview();
+  modal.classList.remove('hidden');
+}
+
+// เด้งอัตโนมัติเฉพาะครั้งแรกของผู้ป่วยแต่ละคน (ยังไม่เคย calibrate)
+function maybeShowCalibModal() {
+  if (localStorage.getItem('calibPatient') === currentPatient()) return; // calibrate แล้ว
+  if (calibDismissedSession) return;                                     // เพิ่งกดข้ามใน session นี้
+  const modal = document.getElementById('calibModal');
+  if (!modal || !modal.classList.contains('hidden')) return;            // เปิดอยู่แล้ว
+  openCalibModal();
+}
+
+function closeCalibModal(done) {
+  if (!done) calibDismissedSession = true; // กดข้าม → ไม่เด้งซ้ำจนกว่าจะ reload
+  const modal = document.getElementById('calibModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// จับค่าดิบปัจจุบันเป็น offset → ท่าตั้งต้นอ่านได้ ~0°
+function runCalibration() {
+  const msg = document.getElementById('calibMsg');
+  const d = lastGasData;
+  if (!d) {
+    if (msg) { msg.textContent = '⚠ ยังไม่มีข้อมูลสดจากอุปกรณ์ กรุณารอสักครู่แล้วลองใหม่'; msg.style.color = 'var(--warn)'; }
+    return;
+  }
+  calibOffsets = {
+    hipX: parseFloat(d.hipAngleX)  || 0,
+    hipY: parseFloat(d.hipAngleY)  || 0,
+    ankL: parseFloat(d.ankLAngleX) || 0,
+    ankR: parseFloat(d.ankRAngleX) || 0,
+  };
+  const patient = currentPatient();
+  localStorage.setItem('calibOffsets', JSON.stringify(calibOffsets));
+  localStorage.setItem('calibPatient', patient);
+  calibDismissedSession = false;
+  pushCalibToGAS(patient);                                       // เก็บที่ Config sheet → จำข้ามเครื่อง
+  applyPostureData(d.hipAngleX, d.hipAngleY, d.ankLAngleX, d.ankRAngleX); // refresh ให้อ่าน ~0 ทันที
+  closeCalibModal(true);
+}
+
+// เก็บ calibration ที่ Config sheet ผ่าน pushConfig (persist ข้ามเบราว์เซอร์/เครื่อง)
+async function pushCalibToGAS(patient) {
+  if (!gasUrl) return;
+  const cfg = {
+    calibHipX:    String(calibOffsets.hipX),
+    calibHipY:    String(calibOffsets.hipY),
+    calibAnkL:    String(calibOffsets.ankL),
+    calibAnkR:    String(calibOffsets.ankR),
+    calibPatient: patient,
+    calibAt:      new Date().toISOString(),
+  };
+  // อัปเดต cache ในเครื่องด้วย เพื่อไม่ให้ config fetch รอบถัดไป (ที่อาจมาก่อน sheet เขียนเสร็จ) ลบ offset ทิ้ง
+  try {
+    const cc = JSON.parse(localStorage.getItem('cachedConfig') || '{}');
+    Object.assign(cc, cfg);
+    localStorage.setItem('cachedConfig', JSON.stringify(cc));
+  } catch(e) { /* ignore */ }
+  try {
+    await fetch(gasUrl, { method: 'POST', body: JSON.stringify({ action: 'pushConfig', config: cfg }), redirect: 'follow' });
+  } catch(e) { console.warn('pushCalibToGAS failed:', e); }
+}
+
+// โหลด calibration จาก config — apply เฉพาะเมื่อเป็นของผู้ป่วยคนปัจจุบัน
+function applyCalibFromConfig(cfg) {
+  const cfgPatient = String(cfg.calibPatient || '');
+  const cur = currentPatient();
+  if (cfgPatient === cur && cfgPatient !== '') {
+    // backend มี calibration ของผู้ป่วยคนนี้ → ใช้เป็นค่าหลัก
+    calibOffsets = {
+      hipX: parseFloat(cfg.calibHipX) || 0,
+      hipY: parseFloat(cfg.calibHipY) || 0,
+      ankL: parseFloat(cfg.calibAnkL) || 0,
+      ankR: parseFloat(cfg.calibAnkR) || 0,
+    };
+    localStorage.setItem('calibPatient', cfgPatient);
+    localStorage.setItem('calibOffsets', JSON.stringify(calibOffsets));
+  } else if (cfgPatient !== '' && cfgPatient !== cur) {
+    // backend calibrate ให้ผู้ป่วยคนอื่น → คนปัจจุบันยังไม่ calibrate → ล้าง offset
+    calibOffsets = { hipX:0, hipY:0, ankL:0, ankR:0 };
+    if (localStorage.getItem('calibPatient') !== cur) localStorage.removeItem('calibPatient');
+    localStorage.setItem('calibOffsets', JSON.stringify(calibOffsets));
+  }
+  // cfgPatient === '' (backend ยังไม่มีข้อมูล/ยังไม่ commit) → คงค่า local ไว้ กัน race clobber calibration ที่เพิ่งทำ
+}
+
 function updateConnBanner(mode) {
   const safe = id => document.getElementById(id);
   const banner = safe('connBanner');
@@ -1725,22 +1865,6 @@ function updateConnBanner(mode) {
     if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '● LIVE'; safe('postureLiveBadge').style.color = 'var(--ok)'; }
     maybeShowCalibModal();
   }
-}
-
-// ── First-connect calibration instructions ──────────────────
-// โชว์ครั้งแรกที่เชื่อมต่อ Live กับผู้ป่วยแต่ละคน (เทียบชื่อผู้ป่วยที่ตั้งไว้ใน Settings)
-// เพื่อกันไม่ให้ค่ามุมสะโพก/ข้อเท้าที่วัดได้คลาดเคลื่อนจากตำแหน่งเซนเซอร์ที่ยังไม่ได้ตั้งศูนย์
-function maybeShowCalibModal() {
-  const patient = localStorage.getItem('patientName') || 'ผู้ป่วย';
-  if (localStorage.getItem('calibDoneFor') === patient) return;
-  const modal = document.getElementById('calibModal');
-  if (!modal || !modal.classList.contains('hidden')) return; // เปิดอยู่แล้ว หรือไม่มี element
-  document.getElementById('calibPatientName').textContent = patient;
-  modal.classList.remove('hidden');
-}
-function closeCalibModal() {
-  localStorage.setItem('calibDoneFor', localStorage.getItem('patientName') || 'ผู้ป่วย');
-  document.getElementById('calibModal').classList.add('hidden');
 }
 
 function setOfflineUI() {
@@ -2102,6 +2226,16 @@ let gasUrl = localStorage.getItem('gasUrl') || '';
 let useRealData = localStorage.getItem('useRealData') === 'true';
 let lastGasData = null;
 
+// ── Sensor calibration (software zero-offset) ──────────────
+// ค่าดิบจากเซนเซอร์จะถูกลบด้วย offset นี้ก่อนแสดงผล → ตอน calibrate
+// จะจับค่าปัจจุบันเป็น offset ทำให้ท่าตั้งต้นอ่านได้ ~0° ทุกจุด
+let calibOffsets = { hipX:0, hipY:0, ankL:0, ankR:0 };
+let calibDismissedSession = false;
+try {
+  const c = JSON.parse(localStorage.getItem('calibOffsets') || 'null');
+  if (c && typeof c === 'object') calibOffsets = { hipX:+c.hipX||0, hipY:+c.hipY||0, ankL:+c.ankL||0, ankR:+c.ankR||0 };
+} catch(e) { /* ignore */ }
+
 // Load GAS URL into input field
 document.addEventListener('DOMContentLoaded', () => {
   const inp = document.getElementById('inpGas');
@@ -2265,19 +2399,8 @@ function updateDashboard(d) {
   if (safe('chrgPill'))   safe('chrgPill').classList.toggle('hidden', !charging);
   if (safe('chrgBanner')) safe('chrgBanner').classList.toggle('hidden', !charging);
 
-  // ── Hip Sensor ──
-  const hx = parseFloat(d.hipAngleX) || 0;
-  const hy = parseFloat(d.hipAngleY) || 0;
-  const thresh = parseFloat(localStorage.getItem('thresh_angle')||30);
-  const hxStatus = updateAngleBadge('badgeHipX', Math.abs(hx), thresh);
-  const hyStatus = updateAngleBadge('badgeHipY', Math.abs(hy), thresh);
-  updatePostureDot('dotHip', worseStatus(hxStatus, hyStatus));
-
-  // ── Ankle Sensor ──
-  const al = Math.abs(parseFloat(d.ankLAngleX) || 0);
-  const ar = Math.abs(parseFloat(d.ankRAngleX) || 0);
-  updatePostureDot('dotAnkL', updateAngleBadge('badgeAnkL', al, thresh));
-  updatePostureDot('dotAnkR', updateAngleBadge('badgeAnkR', ar, thresh));
+  // ── Posture Sensors (Hip + Ankle) — ลบ calibration offset ก่อนแสดง ──
+  applyPostureData(d.hipAngleX, d.hipAngleY, d.ankLAngleX, d.ankRAngleX);
 
   // ── FSR ──
   const fh = parseInt(d.fsrL) || parseInt(d.fsrHip) || 0;
@@ -2320,6 +2443,10 @@ function updateDashboard(d) {
   // ── Push to chart buffer + bed card ──
   pushChartData(d);
   updateBedFromGAS(d);
+
+  // อัปเดตค่าดิบสดในหน้าต่าง calibrate ถ้าเปิดค้างอยู่
+  const cm = safe('calibModal');
+  if (cm && !cm.classList.contains('hidden')) updateCalibPreview();
 }
 
 function updateLive() {
@@ -2362,13 +2489,7 @@ function updateLive() {
   const hy = +(5 +Math.random()*12).toFixed(1);
   const al = +(25+Math.random()*15).toFixed(1);
   const ar = +(4 +Math.random()*8 ).toFixed(1);
-
-  const thresh = parseFloat(localStorage.getItem('thresh_angle')||30);
-  const hxStatus = updateAngleBadge('badgeHipX',hx,thresh);
-  const hyStatus = updateAngleBadge('badgeHipY',hy,thresh);
-  updatePostureDot('dotHip', worseStatus(hxStatus, hyStatus));
-  updatePostureDot('dotAnkL', updateAngleBadge('badgeAnkL',al,thresh));
-  updatePostureDot('dotAnkR', updateAngleBadge('badgeAnkR',ar,thresh));
+  applyPostureData(hx, hy, al, ar);
 
   const fh = Math.floor(800+Math.random()*1200);
   const fa = Math.floor(200+Math.random()*800);
@@ -2454,6 +2575,8 @@ function applyConfig(cfg) {
     battAlertOn = cfg.battAlertOn === 'true' || cfg.battAlertOn === true;
     localStorage.setItem('battAlertOn', String(battAlertOn));
   }
+  // Calibration offset (apply เฉพาะของผู้ป่วยคนปัจจุบัน)
+  if (cfg.calibPatient !== undefined) applyCalibFromConfig(cfg);
   // Refresh UI
   loadThresh();
   loadLineSettings();
@@ -2571,7 +2694,13 @@ function savePatientName() {
   const val  = safe('inpPatient')?.value.trim() || 'ผู้ป่วย';
   const prevPatient = localStorage.getItem('patientName') || 'ผู้ป่วย';
   localStorage.setItem('patientName', val);
-  if (val !== prevPatient) localStorage.removeItem('calibDoneFor'); // ผู้ป่วยเปลี่ยน ต้อง calibrate ใหม่
+  if (val !== prevPatient) {
+    // ผู้ป่วยเปลี่ยน → ล้าง calibration เดิม (offset คนก่อนใช้กับคนใหม่ไม่ได้) และเด้งเตือน calibrate ใหม่
+    calibOffsets = { hipX:0, hipY:0, ankL:0, ankR:0 };
+    localStorage.setItem('calibOffsets', JSON.stringify(calibOffsets));
+    localStorage.removeItem('calibPatient');
+    calibDismissedSession = false;
+  }
   if (bedData[0]) { bedData[0].patient = val; renderBeds(); }
   const msg = safe('adminSaveMsg');
   if (msg) { msg.textContent = '✅ บันทึกชื่อผู้ป่วยแล้ว: ' + val; msg.style.color = 'var(--ok)'; }

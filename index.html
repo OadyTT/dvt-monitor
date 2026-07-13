@@ -1617,7 +1617,9 @@ let isCharging = false;
 let isFetching    = false;
 let lastFetchTime = null;
 let fetchError    = false;
+let dataStale     = false; // ข้อมูลใน Sheet เก่า/ค้าง = อุปกรณ์หยุดส่ง (ไม่ใช่ online จริง)
 let nextFetchIn   = 0; // countdown seconds to next fetch
+const STALE_SEC   = 120; // เกินนี้ถือว่าขาดการเชื่อมต่อ (อุปกรณ์ส่งทุก ~30 วิ)
 
 // Config cache
 let cachedConfig  = {};
@@ -2345,6 +2347,7 @@ function tickCountdown() {
     if (safe('connMode')) safe('connMode').textContent = '⟳ กำลังโหลด...';
     return;
   }
+  if (dataStale) return; // คงป้าย STALE/NO DATA ไว้ ไม่ทับด้วย countdown
   const label = fetchError ? 'ERROR · ลองใน ' : 'LIVE · อัปเดตใน ';
   if (safe('connMode')) safe('connMode').textContent = label + nextFetchIn + 's';
 }
@@ -2353,14 +2356,26 @@ async function fetchGASData() {
   if (!gasUrl) return;
   isFetching  = true;
   fetchError  = false;
+  dataStale   = false;
   setFetchingUI(true);
   try {
     const res  = await fetch(gasUrl + '?action=getData', { method: 'GET', redirect: 'follow' });
     const data = await res.json();
-    if (data && data.status === 'ok') {
-      lastGasData   = data;
+    if (data && data.status === 'ok' && !data.error) {
       lastFetchTime = new Date();
-      updateDashboard(data);
+      const ageSec  = parseInt(data.ageSec);
+      dataStale     = !isNaN(ageSec) && ageSec >= 0 && ageSec > STALE_SEC;
+      lastGasData   = data;
+      updateDashboard(data, dataStale);       // แสดงค่าล่าสุดที่บันทึกไว้เสมอ
+      if (dataStale) setDisconnectedUI(       // แต่ถ้าค้าง → ทับด้วยสถานะ "ขาดการเชื่อมต่อ"
+        'ขาดการเชื่อมต่อ — อุปกรณ์ไม่ส่งข้อมูล',
+        'ข้อมูลล่าสุดค้างมา ' + fmtAge(ageSec) + ' (ปกติส่งทุก 30 วิ) — แสดงค่าล่าสุดที่บันทึกไว้',
+        'STALE · ' + fmtAge(ageSec));
+    } else if (data && data.status === 'ok' && data.error) {
+      // เชื่อมต่อ GAS ได้ แต่ยังไม่มีข้อมูลเซนเซอร์เลย
+      dataStale = true;
+      setDisconnectedUI('ยังไม่มีข้อมูลจากอุปกรณ์',
+        'เชื่อมต่อ GAS สำเร็จ แต่ยังไม่มีการบันทึกข้อมูลเซนเซอร์', 'NO DATA');
     } else {
       console.warn('[GAS] response:', data);
       setFetchErrorUI(data?.error || 'GAS ตอบกลับผิดปกติ');
@@ -2371,13 +2386,41 @@ async function fetchGASData() {
   } finally {
     isFetching  = false;
     nextFetchIn = 30;
-    if (!fetchError) setFetchingUI(false);
+    if (!fetchError && !dataStale) setFetchingUI(false);
+    else { const sp = document.getElementById('fetchSpinner'); if (sp) sp.style.display = 'none'; }
   }
 }
 
-function updateDashboard(d) {
+// จัดรูปแบบอายุข้อมูลเป็นข้อความอ่านง่าย
+function fmtAge(sec) {
+  if (!isFinite(sec) || sec < 0) return '—';
+  if (sec < 60)   return sec + ' วินาที';
+  const m = Math.floor(sec / 60);
+  if (m < 60)     return m + ' นาที';
+  const h = Math.floor(m / 60);
+  return h + ' ชม. ' + (m % 60) + ' นาที';
+}
+
+// แสดงสถานะ "ขาดการเชื่อมต่อ / ข้อมูลค้าง" (ยังโชว์ค่าล่าสุดในการ์ดไว้)
+function setDisconnectedUI(title, sub, modeLabel) {
   const safe = id => document.getElementById(id);
-  updateConnBanner('live'); // ตั้ง banner เป็น live (spinner/timestamp จัดการโดย setFetchingUI)
+  if (safe('connBanner'))   safe('connBanner').className   = 'conn-banner conn-error';
+  if (safe('connDot'))      safe('connDot').className      = 'conn-dot error';
+  if (safe('connTitle'))    safe('connTitle').textContent  = title;
+  if (safe('connSub'))      safe('connSub').textContent    = sub;
+  if (safe('connMode'))     safe('connMode').textContent   = modeLabel;
+  if (safe('scConn'))       safe('scConn').className        = 'stat-card danger';
+  if (safe('svConnStatus')) { safe('svConnStatus').textContent = 'Offline'; safe('svConnStatus').style.color = 'var(--danger)'; }
+  if (safe('svConnSub'))    safe('svConnSub').textContent  = sub;
+  if (safe('postureLiveBadge')) { safe('postureLiveBadge').textContent = '● OFFLINE'; safe('postureLiveBadge').style.color = 'var(--danger)'; }
+  const t = lastFetchTime ? lastFetchTime.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '--:--:--';
+  if (safe('lastUpdate')) safe('lastUpdate').textContent = t;
+  const sp = safe('fetchSpinner'); if (sp) sp.style.display = 'none';
+}
+
+function updateDashboard(d, stale) {
+  const safe = id => document.getElementById(id);
+  if (!stale) updateConnBanner('live'); // ตั้ง banner เป็น live (ถ้าค้าง ปล่อยให้ setDisconnectedUI จัดการ + ไม่เด้ง calibrate)
 
   // ── Battery ──
   const bv = parseFloat(d.battVolt) || 0;

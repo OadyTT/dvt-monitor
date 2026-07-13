@@ -1094,13 +1094,20 @@ body{
       <!-- Row 2: Motors | Battery -->
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">⚙️ <span data-th="มอเตอร์ AH024 PWM (เตือนกระดกข้อเท้า)" data-en="AH024 PWM Motor (Ankle Pump Reminder)">มอเตอร์ AH024 PWM (เตือนกระดกข้อเท้า)</span></div>
+          <div class="card-title">🔔 <span data-th="การสั่นเตือนให้กระดกข้อเท้า" data-en="Ankle Pump Vibration Reminder">การสั่นเตือนให้กระดกข้อเท้า</span></div>
+          <div class="text-sm" style="margin:-6px 0 12px" data-th="อุปกรณ์จะสั่นที่ข้อเท้าเพื่อกระตุ้นให้ผู้ป่วยกระดกเท้า เมื่อไม่ขยับตามเวลาที่กำหนด" data-en="The device vibrates at the ankle to prompt the patient to pump when inactive too long">อุปกรณ์จะสั่นที่ข้อเท้าเพื่อกระตุ้นให้ผู้ป่วยกระดกเท้า เมื่อไม่ขยับตามเวลาที่กำหนด</div>
           <div class="prog-row">
-            <div class="prog-label"><span data-th="มอเตอร์ข้อเท้าซ้าย" data-en="Ankle Motor L">มอเตอร์ข้อเท้าซ้าย</span><span class="font-mono" id="vMotAnkL">--/255</span></div>
+            <div class="prog-label">
+              <span data-th="ข้อเท้าซ้าย" data-en="Left Ankle">ข้อเท้าซ้าย</span>
+              <span class="sensor-item-badge s-offline" id="vMotAnkL">—</span>
+            </div>
             <div class="prog-track"><div class="prog-fill" id="pMotAnkL" style="width:0%;background:var(--motor)"></div></div>
           </div>
           <div class="prog-row">
-            <div class="prog-label"><span data-th="มอเตอร์ข้อเท้าขวา" data-en="Ankle Motor R">มอเตอร์ข้อเท้าขวา</span><span class="font-mono" id="vMotAnkR">--/255</span></div>
+            <div class="prog-label">
+              <span data-th="ข้อเท้าขวา" data-en="Right Ankle">ข้อเท้าขวา</span>
+              <span class="sensor-item-badge s-offline" id="vMotAnkR">—</span>
+            </div>
             <div class="prog-track"><div class="prog-fill" id="pMotAnkR" style="width:0%;background:var(--motor)"></div></div>
           </div>
         </div>
@@ -1297,8 +1304,8 @@ body{
           </div>
           <div class="setting-row">
             <div class="setting-info">
-              <div class="setting-label" data-th="PWM มอเตอร์เตือนกระดกข้อเท้า" data-en="Ankle Pump Reminder Motor PWM">PWM มอเตอร์เตือนกระดกข้อเท้า</div>
-              <div class="setting-desc" data-th="0-255 (AH024 PWM, Ankle L/R)" data-en="0-255 (AH024 PWM, Ankle L/R)">0-255 (AH024 PWM, Ankle L/R)</div>
+              <div class="setting-label" data-th="ความแรงการสั่นเตือน (มอเตอร์)" data-en="Vibration Reminder Strength">ความแรงการสั่นเตือน (มอเตอร์)</div>
+              <div class="setting-desc" data-th="ยิ่งมากยิ่งสั่นแรง · 0-255 (มอเตอร์ AH024 ข้อเท้า ซ้าย/ขวา)" data-en="Higher = stronger vibration · 0-255 (AH024 ankle motor L/R)">ยิ่งมากยิ่งสั่นแรง · 0-255 (มอเตอร์ AH024 ข้อเท้า ซ้าย/ขวา)</div>
             </div>
             <input class="input-field" value="200" id="inpPwm" style="width:80px" type="number">
           </div>
@@ -1694,6 +1701,18 @@ const randArr  = (mn,mx,n=30)=>Array.from({length:n},()=>+(Math.random()*(mx-mn)
 // ═══════════════════════════════════════════
 // SHARED HELPERS
 // ═══════════════════════════════════════════
+// สถานะมอเตอร์สั่นเตือน — แสดงเป็นข้อความเข้าใจง่าย (ไม่โชว์ค่า PWM ดิบ)
+function setMotorStatus(badgeId, barId, active, pwm) {
+  const badge = document.getElementById(badgeId);
+  const bar   = document.getElementById(barId);
+  const pct   = Math.round((parseInt(pwm) || 0) / 255 * 100);
+  if (badge) {
+    if (active) { badge.textContent = '📳 กำลังสั่นเตือน · แรง ' + pct + '%'; badge.className = 'sensor-item-badge s-warn'; }
+    else        { badge.textContent = '🔕 ปกติ — ไม่ต้องเตือน';              badge.className = 'sensor-item-badge s-ok';   }
+  }
+  if (bar) { bar.style.width = (active ? pct : 0) + '%'; bar.style.background = active ? 'var(--warn)' : 'var(--motor)'; }
+}
+
 function angleStatus(val, thresh) {
   if (val > thresh)            return 'danger';
   if (val > thresh * 0.8)      return 'warn';
@@ -1893,7 +1912,7 @@ function setOfflineUI() {
   const safe = id => document.getElementById(id);
   ['vFsrHip','vFsrAnk'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
   ['vPumpL','vPumpR','vPumpTotal'].forEach(id => { if(safe(id)) safe(id).textContent = '--'; });
-  ['vMotAnkL','vMotAnkR'].forEach(id => { if(safe(id)) safe(id).textContent = '--/255'; });
+  ['vMotAnkL','vMotAnkR'].forEach(id => { const el=safe(id); if(el){ el.textContent='—'; el.className='sensor-item-badge s-offline'; } });
   if (safe('svBatt'))  { safe('svBatt').textContent = '--%'; safe('svBatt').style.color = 'var(--gnd)'; }
   if (safe('svBattV')) safe('svBattV').textContent = '--V';
   if (safe('vBattPct')) safe('vBattPct').textContent = '--%';
@@ -2493,10 +2512,8 @@ function updateDashboard(d, stale) {
   const motR    = d.motAnkR === true || d.motAnkR === 'TRUE';
   const motLPwm = motL ? (parseInt(d.motAnkLPwm) || 0) : 0;
   const motRPwm = motR ? (parseInt(d.motAnkRPwm) || 0) : 0;
-  if (safe('vMotAnkL')) safe('vMotAnkL').textContent = motLPwm+'/255';
-  if (safe('vMotAnkR')) safe('vMotAnkR').textContent = motRPwm+'/255';
-  if (safe('pMotAnkL')) { safe('pMotAnkL').style.width=(motLPwm/255*100)+'%'; safe('pMotAnkL').style.background = motL?'var(--warn)':'var(--motor)'; }
-  if (safe('pMotAnkR')) { safe('pMotAnkR').style.width=(motRPwm/255*100)+'%'; safe('pMotAnkR').style.background = motR?'var(--warn)':'var(--motor)'; }
+  setMotorStatus('vMotAnkL', 'pMotAnkL', motL, motLPwm);
+  setMotorStatus('vMotAnkR', 'pMotAnkR', motR, motRPwm);
 
   // ── Alert status → stat cards ──
   const isAlert = d.alert === true || d.alert === 'TRUE';
@@ -2564,10 +2581,8 @@ function updateLive() {
   if (safe('sFsrAnk')) { safe('sFsrAnk').textContent = fa>500?'มีน้ำหนักกด':'ไม่มีน้ำหนักกด'; safe('sFsrAnk').className = 'sensor-item-badge '+(fa>500?'s-ok':'s-danger'); }
 
   const mL = Math.random()>.8?200:0, mR = Math.random()>.8?150:0;
-  if (safe('vMotAnkL')) safe('vMotAnkL').textContent = mL+'/255';
-  if (safe('vMotAnkR')) safe('vMotAnkR').textContent = mR+'/255';
-  if (safe('pMotAnkL')) safe('pMotAnkL').style.width = (mL/255*100)+'%';
-  if (safe('pMotAnkR')) safe('pMotAnkR').style.width = (mR/255*100)+'%';
+  setMotorStatus('vMotAnkL', 'pMotAnkL', mL>0, mL);
+  setMotorStatus('vMotAnkR', 'pMotAnkR', mR>0, mR);
 
   // ── Update beds + stat cards + charts ──
   const fsrT       = parseInt(localStorage.getItem('thresh_fsr')||500);

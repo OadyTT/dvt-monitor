@@ -373,16 +373,20 @@ body{
 .stat-card-row .stat-value{font-size:1.05rem;line-height:1.1;white-space:nowrap}
 .stat-card-row .stat-sub,.stat-card-row .stat-unit{margin-top:0;font-size:.66rem;white-space:nowrap}
 
-/* ── Dashboard header: title + สถานะระบบ banner + 4 stat cards บรรทัดเดียว (laptop) ── */
+/* ── Dashboard header: title + สถานะระบบ banner + 4 stat boxes บรรทัดเดียว (laptop) ── */
 .dash-header{
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+  display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;margin-bottom:14px;
 }
-.dash-title-block{flex:0 0 auto}
-.dash-title-block .page-title{margin-bottom:2px}
+.dash-title-block{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center}
+.dash-title-block .page-title{
+  margin-bottom:2px;
+  font-size:2rem;font-weight:800;letter-spacing:-.01em;
+  background:none;-webkit-text-fill-color:currentColor;color:var(--text);
+}
 .dash-title-block .page-subtitle{margin-bottom:0}
 .dash-header .conn-banner{flex:1 1 240px;margin-bottom:0;min-width:0}
 .dash-stats{display:flex;gap:10px;flex:1 1 460px;flex-wrap:wrap}
-.dash-stats .stat-card{flex:1 1 130px;min-width:120px}
+.dash-stats .stat-card{flex:1 1 130px;min-width:120px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center}
 
 /* ═══════════════════════════════════════════
    SENSOR GAUGE
@@ -925,39 +929,31 @@ body{
           </div>
         </div>
 
-        <!-- Stat cards (สถานะระบบ ย้ายไปขวาสุด) -->
+        <!-- Stat cards — square box (สถานะระบบ ขวาสุด) -->
         <div class="dash-stats">
           <!-- Alerts -->
-          <div class="stat-card stat-card-row" id="scAlert">
+          <div class="stat-card" id="scAlert">
             <div class="stat-label" data-th="แจ้งเตือนตอนนี้" data-en="Active Alerts">แจ้งเตือนตอนนี้</div>
-            <div class="stat-vals">
-              <div class="stat-value" id="svAlert" style="color:var(--gnd)">--</div>
-              <div class="stat-unit" data-th="แจ้งเตือน" data-en="alerts">แจ้งเตือน</div>
-            </div>
+            <div class="stat-value" id="svAlert" style="color:var(--gnd)">--</div>
+            <div class="stat-unit" data-th="แจ้งเตือน" data-en="alerts">แจ้งเตือน</div>
           </div>
           <!-- Battery -->
-          <div class="stat-card stat-card-row" id="scBatt">
+          <div class="stat-card" id="scBatt">
             <div class="stat-label" data-th="แบตเตอรี่" data-en="Battery">แบตเตอรี่</div>
-            <div class="stat-vals">
-              <div class="stat-value" id="svBatt" style="color:var(--gnd)">--%</div>
-              <div class="stat-sub font-mono" id="svBattV">--V</div>
-            </div>
+            <div class="stat-value" id="svBatt" style="color:var(--gnd)">--%</div>
+            <div class="stat-sub font-mono" id="svBattV">--V</div>
           </div>
           <!-- Pump progress -->
-          <div class="stat-card stat-card-row" id="scPump">
+          <div class="stat-card" id="scPump">
             <div class="stat-label">กระดกข้อเท้าวันนี้</div>
-            <div class="stat-vals">
-              <div class="stat-value" id="svPumpStat" style="color:var(--gnd)">--</div>
-              <div class="stat-sub"   id="svPumpGoalStat">เป้า -- ครั้ง</div>
-            </div>
+            <div class="stat-value" id="svPumpStat" style="color:var(--gnd)">--</div>
+            <div class="stat-sub"   id="svPumpGoalStat">เป้า -- ครั้ง</div>
           </div>
           <!-- Connection (ขวาสุด) -->
-          <div class="stat-card stat-card-row" id="scConn">
+          <div class="stat-card" id="scConn">
             <div class="stat-label">สถานะระบบ</div>
-            <div class="stat-vals">
-              <div class="stat-value" id="svConnStatus" style="color:var(--gnd)">Offline</div>
-              <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
-            </div>
+            <div class="stat-value" id="svConnStatus" style="font-size:1.15rem;color:var(--gnd)">Offline</div>
+            <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
           </div>
         </div>
       </div>
@@ -1091,36 +1087,23 @@ body{
         </div>
       </div>
 
-      <!-- Row 2: Motors | Battery -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title">🔔 <span data-th="การสั่นเตือนให้กระดกข้อเท้า" data-en="Ankle Pump Vibration Reminder">การสั่นเตือนให้กระดกข้อเท้า</span></div>
-          <div class="text-sm" style="margin:-6px 0 12px" data-th="อุปกรณ์จะสั่นที่ข้อเท้าเพื่อกระตุ้นให้ผู้ป่วยกระดกเท้า เมื่อไม่ขยับตามเวลาที่กำหนด" data-en="The device vibrates at the ankle to prompt the patient to pump when inactive too long">อุปกรณ์จะสั่นที่ข้อเท้าเพื่อกระตุ้นให้ผู้ป่วยกระดกเท้า เมื่อไม่ขยับตามเวลาที่กำหนด</div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span data-th="ข้อเท้าซ้าย" data-en="Left Ankle">ข้อเท้าซ้าย</span>
-              <span class="sensor-item-badge s-offline" id="vMotAnkL">—</span>
-            </div>
-            <div class="prog-track"><div class="prog-fill" id="pMotAnkL" style="width:0%;background:var(--motor)"></div></div>
+      <!-- Row 2: Motors (เต็มความกว้าง) -->
+      <div class="card">
+        <div class="card-title">🔔 <span data-th="การสั่นเตือนให้กระดกข้อเท้า" data-en="Ankle Pump Vibration Reminder">การสั่นเตือนให้กระดกข้อเท้า</span></div>
+        <div class="text-sm" style="margin:-6px 0 12px" data-th="อุปกรณ์จะสั่นที่ข้อเท้าเพื่อกระตุ้นให้ผู้ป่วยกระดกเท้า เมื่อไม่ขยับตามเวลาที่กำหนด" data-en="The device vibrates at the ankle to prompt the patient to pump when inactive too long">อุปกรณ์จะสั่นที่ข้อเท้าเพื่อกระตุ้นให้ผู้ป่วยกระดกเท้า เมื่อไม่ขยับตามเวลาที่กำหนด</div>
+        <div class="prog-row">
+          <div class="prog-label">
+            <span data-th="ข้อเท้าซ้าย" data-en="Left Ankle">ข้อเท้าซ้าย</span>
+            <span class="sensor-item-badge s-offline" id="vMotAnkL">—</span>
           </div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span data-th="ข้อเท้าขวา" data-en="Right Ankle">ข้อเท้าขวา</span>
-              <span class="sensor-item-badge s-offline" id="vMotAnkR">—</span>
-            </div>
-            <div class="prog-track"><div class="prog-fill" id="pMotAnkR" style="width:0%;background:var(--motor)"></div></div>
-          </div>
+          <div class="prog-track"><div class="prog-fill" id="pMotAnkL" style="width:0%;background:var(--motor)"></div></div>
         </div>
-        <div class="card">
-          <div class="card-title">🔋 <span data-th="แบตเตอรี่ INA219" data-en="Battery INA219">แบตเตอรี่ INA219</span></div>
-          <div class="prog-row">
-            <div class="prog-label">
-              <span id="battLabel" data-th="ระดับแบตเตอรี่" data-en="Battery Level">ระดับแบตเตอรี่</span>
-              <span class="font-mono" id="vBattPct">--%</span>
-            </div>
-            <div class="prog-track"><div class="prog-fill" id="pBatt" style="width:0%;background:var(--ok)"></div></div>
+        <div class="prog-row">
+          <div class="prog-label">
+            <span data-th="ข้อเท้าขวา" data-en="Right Ankle">ข้อเท้าขวา</span>
+            <span class="sensor-item-badge s-offline" id="vMotAnkR">—</span>
           </div>
-          <div class="text-sm" id="battInfo" style="margin-top:4px">--V · --mA</div>
+          <div class="prog-track"><div class="prog-fill" id="pMotAnkR" style="width:0%;background:var(--motor)"></div></div>
         </div>
       </div>
 

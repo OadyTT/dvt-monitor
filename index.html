@@ -302,12 +302,19 @@ body{
   .stat-card-row{padding:9px 12px}
   .stat-card-row .stat-label{font-size:.68rem}
   .stat-card-row .stat-value{font-size:.95rem}
+  /* Dashboard header ยุบเป็นแนวตั้ง: ชื่อ → สถานะระบบ → stat cards (2 คอลัมน์) */
+  .dash-header{gap:8px;margin-bottom:10px}
+  .dash-title-block{flex:1 1 100%}
+  .dash-header .conn-banner{flex:1 1 100%}
+  .dash-stats{flex:1 1 100%;gap:8px}
+  .dash-stats .stat-card{flex:1 1 44%;min-width:130px}
 }
 
 /* จอมือถือแคบมาก: ให้ label/value ของ stat-card-row ตกลงมาคนละบรรทัดแทนการบีบจนล้น */
 @media(max-width:420px){
   .stat-card-row{flex-direction:column;align-items:flex-start;gap:2px}
   .stat-card-row .stat-vals{margin-left:0}
+  .dash-stats .stat-card{flex:1 1 100%}
 }
 
 /* Desktop: nav-overlay always hidden */
@@ -365,6 +372,17 @@ body{
 .stat-card-row .stat-vals{display:flex;align-items:baseline;gap:7px;margin-left:auto}
 .stat-card-row .stat-value{font-size:1.05rem;line-height:1.1;white-space:nowrap}
 .stat-card-row .stat-sub,.stat-card-row .stat-unit{margin-top:0;font-size:.66rem;white-space:nowrap}
+
+/* ── Dashboard header: title + สถานะระบบ banner + 4 stat cards บรรทัดเดียว (laptop) ── */
+.dash-header{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+}
+.dash-title-block{flex:0 0 auto}
+.dash-title-block .page-title{margin-bottom:2px}
+.dash-title-block .page-subtitle{margin-bottom:0}
+.dash-header .conn-banner{flex:1 1 240px;margin-bottom:0;min-width:0}
+.dash-stats{display:flex;gap:10px;flex:1 1 460px;flex-wrap:wrap}
+.dash-stats .stat-card{flex:1 1 130px;min-width:120px}
 
 /* ═══════════════════════════════════════════
    SENSOR GAUGE
@@ -883,26 +901,63 @@ body{
     <!-- ─────── DASHBOARD ─────── -->
     <div class="page active" id="page-dashboard">
 
-      <!-- Page header -->
-      <div class="inline-flex mb12">
-        <div>
+      <!-- Page header — ชื่อหน้า + สถานะระบบ + stat cards บรรทัดเดียวกัน (laptop) -->
+      <div class="dash-header">
+
+        <div class="dash-title-block">
           <div class="page-title" data-th="แดชบอร์ด" data-en="Dashboard">แดชบอร์ด</div>
           <div class="page-subtitle" data-th="ภาพรวมระบบ Smart HIP DVT" data-en="Smart HIP DVT Overview">ภาพรวมระบบ Smart HIP DVT</div>
         </div>
-      </div>
 
-      <!-- Connection status banner -->
-      <div id="connBanner" class="conn-banner conn-offline">
-        <div class="conn-dot offline" id="connDot"></div>
-        <div style="flex:1;min-width:0">
-          <div class="conn-title" id="connTitle">ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์</div>
-          <div class="conn-sub"   id="connSub">ไปที่ Settings เพื่อใส่ GAS URL</div>
+        <!-- Connection status banner -->
+        <div id="connBanner" class="conn-banner conn-offline">
+          <div class="conn-dot offline" id="connDot"></div>
+          <div style="flex:1;min-width:0">
+            <div class="conn-title" id="connTitle">ออฟไลน์ — ไม่ได้เชื่อมต่ออุปกรณ์</div>
+            <div class="conn-sub"   id="connSub">ไปที่ Settings เพื่อใส่ GAS URL</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+            <div class="fetch-spinner" id="fetchSpinner"></div>
+            <div style="text-align:right">
+              <div id="lastUpdate" style="font-size:.72rem;color:var(--text2)">--:--:--</div>
+              <div id="connMode"   style="font-size:.62rem;color:var(--text2);margin-top:1px;font-family:'IBM Plex Mono',monospace">—</div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-          <div class="fetch-spinner" id="fetchSpinner"></div>
-          <div style="text-align:right">
-            <div id="lastUpdate" style="font-size:.72rem;color:var(--text2)">--:--:--</div>
-            <div id="connMode"   style="font-size:.62rem;color:var(--text2);margin-top:1px;font-family:'IBM Plex Mono',monospace">—</div>
+
+        <!-- Stat cards -->
+        <div class="dash-stats">
+          <!-- Connection -->
+          <div class="stat-card stat-card-row" id="scConn">
+            <div class="stat-label">สถานะระบบ</div>
+            <div class="stat-vals">
+              <div class="stat-value" id="svConnStatus" style="color:var(--gnd)">Offline</div>
+              <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
+            </div>
+          </div>
+          <!-- Alerts -->
+          <div class="stat-card stat-card-row" id="scAlert">
+            <div class="stat-label" data-th="แจ้งเตือนตอนนี้" data-en="Active Alerts">แจ้งเตือนตอนนี้</div>
+            <div class="stat-vals">
+              <div class="stat-value" id="svAlert" style="color:var(--gnd)">--</div>
+              <div class="stat-unit" data-th="แจ้งเตือน" data-en="alerts">แจ้งเตือน</div>
+            </div>
+          </div>
+          <!-- Battery -->
+          <div class="stat-card stat-card-row" id="scBatt">
+            <div class="stat-label" data-th="แบตเตอรี่" data-en="Battery">แบตเตอรี่</div>
+            <div class="stat-vals">
+              <div class="stat-value" id="svBatt" style="color:var(--gnd)">--%</div>
+              <div class="stat-sub font-mono" id="svBattV">--V</div>
+            </div>
+          </div>
+          <!-- Pump progress -->
+          <div class="stat-card stat-card-row" id="scPump">
+            <div class="stat-label">กระดกข้อเท้าวันนี้</div>
+            <div class="stat-vals">
+              <div class="stat-value" id="svPumpStat" style="color:var(--gnd)">--</div>
+              <div class="stat-sub"   id="svPumpGoalStat">เป้า -- ครั้ง</div>
+            </div>
           </div>
         </div>
       </div>
@@ -917,41 +972,6 @@ body{
         <div class="ml-auto font-mono fw600" style="color:var(--charging)" id="chrgPct">--%</div>
       </div>
 
-      <!-- Stat cards row -->
-      <div class="grid-4 mb12">
-        <!-- Connection -->
-        <div class="stat-card stat-card-row" id="scConn">
-          <div class="stat-label">สถานะระบบ</div>
-          <div class="stat-vals">
-            <div class="stat-value" id="svConnStatus" style="color:var(--gnd)">Offline</div>
-            <div class="stat-sub"   id="svConnSub">ไม่มีข้อมูล</div>
-          </div>
-        </div>
-        <!-- Alerts -->
-        <div class="stat-card stat-card-row" id="scAlert">
-          <div class="stat-label" data-th="แจ้งเตือนตอนนี้" data-en="Active Alerts">แจ้งเตือนตอนนี้</div>
-          <div class="stat-vals">
-            <div class="stat-value" id="svAlert" style="color:var(--gnd)">--</div>
-            <div class="stat-unit" data-th="แจ้งเตือน" data-en="alerts">แจ้งเตือน</div>
-          </div>
-        </div>
-        <!-- Battery -->
-        <div class="stat-card stat-card-row" id="scBatt">
-          <div class="stat-label" data-th="แบตเตอรี่" data-en="Battery">แบตเตอรี่</div>
-          <div class="stat-vals">
-            <div class="stat-value" id="svBatt" style="color:var(--gnd)">--%</div>
-            <div class="stat-sub font-mono" id="svBattV">--V</div>
-          </div>
-        </div>
-        <!-- Pump progress -->
-        <div class="stat-card stat-card-row" id="scPump">
-          <div class="stat-label">กระดกข้อเท้าวันนี้</div>
-          <div class="stat-vals">
-            <div class="stat-value" id="svPumpStat" style="color:var(--gnd)">--</div>
-            <div class="stat-sub"   id="svPumpGoalStat">เป้า -- ครั้ง</div>
-          </div>
-        </div>
-      </div>
       <!-- hidden compat -->
       <span id="svOk" style="display:none">1</span>
 

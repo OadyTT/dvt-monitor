@@ -1003,6 +1003,9 @@ body{
               <span><span id="vPumpCurrent">0</span> ครั้ง</span>
               <span>เป้า <span id="vPumpGoal">300</span> ครั้ง/วัน</span>
             </div>
+            <div style="font-size:.68rem;color:var(--text2);line-height:1.5;margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)"
+                 data-th="นับ 1 ครั้ง = กระดกเท้าขึ้นเกินมุมที่ตั้งไว้ (Settings › มุม Pump ขึ้น) แล้วผ่อนกลับ ถ้านับได้น้อยกว่าที่ทำจริง = มุมตั้งไว้สูงไป (ลดค่าลง) · ถ้านับเกิน = ตั้งต่ำไปจนสั่นเล็กน้อยก็นับ (เพิ่มค่าขึ้น)"
+                 data-en="1 count = foot dorsiflexes past the set angle (Settings › Pump Up angle) then relaxes back. Counting less than actual = angle set too high (lower it) · Counting more = set too low so small jitter counts (raise it)">นับ 1 ครั้ง = กระดกเท้าขึ้นเกินมุมที่ตั้งไว้ (Settings › มุม Pump ขึ้น) แล้วผ่อนกลับ ถ้านับได้น้อยกว่าที่ทำจริง = มุมตั้งไว้สูงไป (ลดค่าลง) · ถ้านับเกิน = ตั้งต่ำไปจนสั่นเล็กน้อยก็นับ (เพิ่มค่าขึ้น)</span>
           </div>
 
           <!-- FSR pillows -->
@@ -1128,6 +1131,17 @@ body{
         <div class="card">
           <div class="card-title" data-th="มุมข้อเท้า (Ankle Angle)" data-en="Ankle Angle">มุมข้อเท้า (Ankle Angle)</div>
           <div class="chart-wrap"><canvas id="chartAnkle"></canvas></div>
+          <!-- คำอธิบายกราฟข้อเท้า -->
+          <div style="font-size:.72rem;color:var(--text2);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)">
+            <div style="margin-bottom:4px">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f85149;margin-right:5px"></span>
+              <b style="color:#f85149">เส้นแดง = ข้อเท้าซ้าย</b> ·
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#39d353;margin:0 5px 0 8px"></span>
+              <b style="color:#39d353">เส้นเขียว = ข้อเท้าขวา</b>
+            </div>
+            <span data-th="เส้นคือ &quot;มุมเอียงของข้อเท้า&quot; (องศา) ที่วัดได้ตอนนั้น — เวลากระดกเท้าขึ้น-ลง เส้นจะขยับขึ้น-ลงตาม ยิ่งกระดกแรง เส้นยิ่งเด้งสูง เป็นแค่ภาพแนวโน้มการเคลื่อนไหว ไม่ใช่ตัวนับจำนวนครั้ง (ตัวนับคำนวณในอุปกรณ์แล้วส่งมาโชว์ที่การ์ด &quot;กระดกข้อเท้า&quot;) · กราฟอัปเดตทุก ~1 นาที จึงไม่ได้เห็นทุกจังหวะที่กระดก"
+                  data-en="Each line is the ankle's tilt angle (degrees) at that moment — it swings up/down as you pump your foot; bigger pumps = higher swing. It shows the motion trend, not the pump count (counting is done on-device and shown on the 'Ankle Pump' card). The chart updates ~every 1 min, so it won't show every single pump.">เส้นคือ "มุมเอียงของข้อเท้า" (องศา) ที่วัดได้ตอนนั้น — เวลากระดกเท้าขึ้น-ลง เส้นจะขยับขึ้น-ลงตาม ยิ่งกระดกแรง เส้นยิ่งเด้งสูง เป็นแค่ภาพแนวโน้มการเคลื่อนไหว ไม่ใช่ตัวนับจำนวนครั้ง (ตัวนับคำนวณในอุปกรณ์แล้วส่งมาโชว์ที่การ์ด "กระดกข้อเท้า") · กราฟอัปเดตทุก ~1 นาที จึงไม่ได้เห็นทุกจังหวะที่กระดก</span>
+          </div>
         </div>
       </div>
       <div class="card">

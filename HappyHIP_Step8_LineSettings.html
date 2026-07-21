@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Happy HIP — ตั้งค่าแจ้งเตือน LINE</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080D14;--panel:#111B29;--panel2:#0E1622;--panel3:#16202F;
+  --line:#21314A;--line2:#19263A;--ink:#EAF2FB;--ink2:#9DB0C9;--ink3:#637791;
+  --cyan:#36D8E8;--cyan-dk:#0D8E9F;--mint:#5CE2A8;--mint-dk:#1FA070;
+  --amber:#F6B845;--red:#FF6B6B;--violet:#8FA0FF;--mono:'IBM Plex Mono',monospace;
+  --line-green:#06C755;
+}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.top{background:var(--panel);border-bottom:1px solid var(--line);padding:15px 30px;display:flex;
+  align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:11px}
+.mark{width:36px;height:36px;border-radius:10px;background:var(--line-green);display:flex;align-items:center;justify-content:center;font-size:18px}
+.bt{font-family:'Space Grotesk';font-size:15px;font-weight:700}.bt .ac{color:var(--cyan)}
+.bs{font-size:10.5px;color:var(--ink3);font-family:var(--mono)}
+.conn{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink3)}.dot.on{background:var(--mint)}
+.wrap{max-width:720px;margin:0 auto;padding:24px 24px 60px}
+.gate{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
+.gate h3{font-size:14px;margin-bottom:10px}
+.gate input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--ink);font-family:var(--mono);font-size:12px;margin-bottom:10px}
+.pagehead{margin-bottom:20px}
+.pagehead h1{font-family:'Space Grotesk';font-size:23px;font-weight:700}
+.pagehead p{font-size:12.5px;color:var(--ink2);margin-top:5px}
+
+/* quota gauge */
+.quota{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
+.quota h2{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.quota h2 .month{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:400}
+.gauge{height:26px;background:var(--panel3);border-radius:13px;overflow:hidden;position:relative}
+.gauge i{display:block;height:100%;border-radius:13px;transition:width .5s;background:linear-gradient(90deg,var(--mint),var(--mint-dk))}
+.gauge i.warn{background:linear-gradient(90deg,var(--amber),#C98A12)}
+.gauge i.crit{background:linear-gradient(90deg,var(--red),#B33)}
+.gauge .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#06222A}
+.qmeta{display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px;color:var(--ink3);font-family:var(--mono)}
+.qwarn{margin-top:12px;font-size:12px;padding:10px 13px;border-radius:9px;display:none}
+.qwarn.show{display:block}
+.qwarn.amber{background:rgba(246,184,69,.09);border:1px solid rgba(246,184,69,.3);color:var(--amber)}
+.qwarn.red{background:rgba(255,107,107,.09);border:1px solid rgba(255,107,107,.3);color:var(--red)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 22px;margin-bottom:18px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--line2)}
+.row:last-child{border-bottom:none}
+.row .info{flex:1;padding-right:16px}
+.row .info .t{font-size:14px;font-weight:500}
+.row .info .d{font-size:11.5px;color:var(--ink3);margin-top:3px;line-height:1.5}
+.row .info .badge{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 7px;border-radius:9px;margin-left:7px;vertical-align:middle}
+.badge.crit{background:rgba(255,107,107,.14);color:var(--red)}
+.badge.med{background:rgba(246,184,69,.14);color:var(--amber)}
+.badge.low{background:rgba(99,119,145,.18);color:var(--ink3)}
+/* toggle */
+.sw{width:48px;height:27px;border-radius:14px;background:var(--panel3);border:1px solid var(--line);position:relative;cursor:pointer;flex-shrink:0;transition:.15s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:var(--ink3);transition:.15s}
+.sw.on{background:rgba(6,199,85,.25);border-color:var(--line-green)}
+.sw.on::after{left:23px;background:var(--line-green)}
+.sw.master.on{background:rgba(54,216,232,.22);border-color:var(--cyan)}
+.sw.master.on::after{background:var(--cyan)}
+.sw.disabled{opacity:.35;pointer-events:none}
+
+.hd2{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:22px 0 8px 4px}
+.quiet{display:flex;gap:12px;align-items:center;padding:15px 0}
+.quiet select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--ink);font-family:var(--mono);font-size:13px}
+.quiet .lbl{font-size:13px;color:var(--ink2)}
+.savebar{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:18px 0 4px;margin-top:8px}
+.btn{width:100%;background:var(--cyan);color:#06222A;border:none;padding:13px;border-radius:10px;cursor:pointer;font-family:'IBM Plex Sans Thai';font-size:14px;font-weight:600}
+.btn:disabled{opacity:.5}
+.msg{text-align:center;font-size:12.5px;margin-top:10px;min-height:16px}
+.msg.ok{color:var(--mint)}.msg.err{color:var(--red)}
+.info-box{background:rgba(6,199,85,.06);border:1px solid rgba(6,199,85,.25);border-radius:10px;padding:13px 15px;font-size:12px;color:var(--ink2);margin-bottom:18px;line-height:1.6}
+.info-box b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand"><div class="mark">💬</div>
+    <div><div class="bt">Happy HIP <span class="ac">DVT</span></div><div class="bs">LINE NOTIFICATION SETTINGS</div></div>
+  </div>
+  <div class="conn"><span class="dot" id="dot"></span><span id="connTxt">—</span></div>
+</div>
+<div class="wrap">
+  <div class="gate" id="gate" style="display:none">
+    <h3>🔗 ตั้งค่า GAS URL</h3>
+    <input id="gasInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <button class="btn" onclick="saveGas()">เชื่อมต่อ</button>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="pagehead">
+      <h1>ตั้งค่าแจ้งเตือน LINE</h1>
+      <p>เปิด/ปิดการแจ้งเตือนแต่ละประเภท เพื่อคุมโควตา LINE ฟรี (300 ข้อความ/เดือน)</p>
+    </div>
+
+    <div class="info-box">
+      💡 <b>LINE ฟรีนับ 300 ข้อความ/เดือน แบบต่อผู้รับ</b> — ส่ง 1 แจ้งเตือนให้พยาบาล 3 คน = 3 ข้อความ · ปิดประเภทที่ไม่จำเป็นเพื่อประหยัดโควตาให้แจ้งเตือนวิกฤต · ระบบสำรอง 15% ไว้ให้แจ้งเตือนวิกฤตเสมอ
+    </div>
+
+    <!-- QUOTA GAUGE -->
+    <div class="quota">
+      <h2><span>📊 โควตาเดือนนี้</span><span class="month" id="qMonth">—</span></h2>
+      <div class="gauge"><i id="qBar" style="width:0%"></i><div class="txt" id="qTxt">— / —</div></div>
+      <div class="qmeta"><span id="qLeft">เหลือ — ข้อความ</span><span id="qReserve">สำรองวิกฤต 15%</span></div>
+      <div class="qwarn" id="qWarn"></div>
+    </div>
+
+    <!-- MASTER -->
+    <div class="card">
+      <div class="row">
+        <div class="info">
+          <div class="t">แจ้งเตือน LINE ทั้งหมด</div>
+          <div class="d">สวิตช์หลัก — ปิดแล้วไม่ส่ง LINE เลยทุกประเภท (จอ/เสียงข้างเตียงยังทำงาน)</div>
+        </div>
+        <div class="sw master" id="sw_master" onclick="toggle('master')"></div>
+      </div>
+    </div>
+
+    <div class="hd2">ประเภทการแจ้งเตือน</div>
+    <div class="card" id="catCard">
+      <div class="row">
+        <div class="info">
+          <div class="t">มุมสะโพกเกินเกณฑ์ <span class="badge crit">วิกฤต</span></div>
+          <div class="d">ท่านอนผิด/ขายกออกจากหมอน — เสี่ยงข้อสะโพกเคลื่อน · แนะนำเปิดเสมอ</div>
+        </div>
+        <div class="sw" id="sw_hipAlert" onclick="toggle('hipAlert')"></div>
+      </div>
+      <div class="row">
+        <div class="info">
+          <div class="t">ไฟดับ / เน็ตหลุด <span class="badge med">ปานกลาง</span></div>
+          <div class="d">แจ้งเมื่อระบบกลับมา + ยืนยัน sync ข้อมูลย้อนหลัง (ส่งไม่เกิน 1 ครั้ง/5 นาที)</div>
+        </div>
+        <div class="sw" id="sw_outage" onclick="toggle('outage')"></div>
+      </div>
+      <div class="row">
+        <div class="info">
+          <div class="t">Node ขาดการเชื่อมต่อ <span class="badge med">ปานกลาง</span></div>
+          <div class="d">อุปกรณ์หลุด/แบตหมด (ส่งไม่เกิน 1 ครั้ง/30 นาที ต่อ node)</div>
+        </div>
+        <div class="sw" id="sw_offline" onclick="toggle('offline')"></div>
+      </div>
+      <div class="row">
+        <div class="info">
+          <div class="t">แบตเตอรี่ต่ำ <span class="badge low">ต่ำ</span></div>
+          <div class="d">เตือนเปลี่ยนแบต — ประหยัดโควตา แนะนำปิด (ดูที่จอ/เว็บแทน) · ถ้าเปิด ส่ง 1 ครั้ง/6 ชม.</div>
+        </div>
+        <div class="sw" id="sw_lowBatt" onclick="toggle('lowBatt')"></div>
+      </div>
+    </div>
+
+    <div class="hd2">ช่วงเวลาเงียบ (Quiet Hours) — วิกฤตยังส่ง</div>
+    <div class="card">
+      <div class="quiet">
+        <span class="lbl">งดแจ้งเตือนทั่วไปตั้งแต่</span>
+        <select id="qStart"></select>
+        <span class="lbl">ถึง</span>
+        <select id="qEnd"></select>
+      </div>
+    </div>
+
+    <div class="savebar">
+      <button class="btn" id="saveBtn" onclick="save()">💾 บันทึกการตั้งค่า</button>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let GAS="", state={master:true,hipAlert:true,outage:true,offline:true,lowBatt:false,qStart:-1,qEnd:-1};
+
+window.onload=()=>{
+  const g=localStorage.getItem('hh_gas');
+  // populate hour selects
+  const mk=(sel,val)=>{let o='<option value="-1">ปิด</option>';for(let h=0;h<24;h++)o+=`<option value="${h}" ${h==val?'selected':''}>${String(h).padStart(2,'0')}:00</option>`;sel.innerHTML=o;};
+  if(g){GAS=g; document.getElementById('main').style.display='block'; mk(document.getElementById('qStart'),-1); mk(document.getElementById('qEnd'),-1); loadStatus();}
+  else document.getElementById('gate').style.display='block';
+};
+function saveGas(){const v=document.getElementById('gasInput').value.trim();if(!v.includes('/exec')){alert('GAS URL ไม่ถูกต้อง');return;}localStorage.setItem('hh_gas',v);location.reload();}
+
+async function loadStatus(){
+  try{
+    const r=await fetch(GAS+'?action=getQuota'); const d=await r.json();
+    document.getElementById('dot').className='dot on';
+    document.getElementById('connTxt').textContent='เชื่อมต่อแล้ว';
+    // quota gauge
+    const used=d.used||0, cap=d.cap||300, pct=Math.min(100,Math.round(used/cap*100));
+    const bar=document.getElementById('qBar');
+    bar.style.width=pct+'%';
+    bar.className=pct>=100?'crit':pct>=85?'warn':'';
+    document.getElementById('qTxt').textContent=used+' / '+cap;
+    document.getElementById('qMonth').textContent=d.month||'';
+    document.getElementById('qLeft').textContent='เหลือ '+Math.max(0,cap-used)+' ข้อความ';
+    const w=document.getElementById('qWarn');
+    if(pct>=100){w.className='qwarn red show';w.textContent='🔴 เต็มโควตาแล้ว — ส่งเฉพาะแจ้งเตือนวิกฤตจนต้นเดือนหน้า';}
+    else if(pct>=85){w.className='qwarn amber show';w.textContent='🟡 ใกล้เต็ม — การแจ้งเตือนทั่วไปจะหยุด เหลือเฉพาะวิกฤต';}
+    else w.className='qwarn';
+    // toggles
+    const t=d.toggles||{};
+    state.master=(t.master||'true')!=='false';
+    state.hipAlert=(t.hipAlert||'true')!=='false';
+    state.outage=(t.outage||'true')!=='false';
+    state.offline=(t.offline||'true')!=='false';
+    state.lowBatt=(t.lowBatt||'false')!=='false';
+    state.qStart=parseInt(d.quietStart||'-1'); state.qEnd=parseInt(d.quietEnd||'-1');
+    document.getElementById('qStart').value=state.qStart;
+    document.getElementById('qEnd').value=state.qEnd;
+    renderToggles();
+  }catch(e){
+    document.getElementById('connTxt').textContent='เชื่อมต่อไม่ได้';
+    renderToggles();
+  }
+}
+function renderToggles(){
+  ['master','hipAlert','outage','offline','lowBatt'].forEach(k=>{
+    document.getElementById('sw_'+k).classList.toggle('on',state[k]);
+  });
+  // master off = greyout categories
+  document.getElementById('catCard').querySelectorAll('.sw').forEach(s=>{
+    s.classList.toggle('disabled',!state.master);
+  });
+}
+function toggle(k){
+  state[k]=!state[k];
+  if(k==='master') renderToggles(); else document.getElementById('sw_'+k).classList.toggle('on',state[k]);
+  if(k==='master') renderToggles();
+}
+async function save(){
+  const btn=document.getElementById('saveBtn'), msg=document.getElementById('msg');
+  btn.disabled=true; msg.textContent='กำลังบันทึก...'; msg.className='msg';
+  const cfg={
+    lineAlertOn:String(state.master),
+    notifyHipAlert:String(state.hipAlert),
+    notifyOutage:String(state.outage),
+    notifyOffline:String(state.offline),
+    notifyLowBatt:String(state.lowBatt),
+    lineQuietStart:String(document.getElementById('qStart').value),
+    lineQuietEnd:String(document.getElementById('qEnd').value),
+  };
+  try{
+    await fetch(GAS,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'pushConfig',config:cfg})});
+    msg.textContent='✅ บันทึกแล้ว — มีผลกับการแจ้งเตือนครั้งถัดไปทันที'; msg.className='msg ok';
+    setTimeout(loadStatus,800);
+  }catch(e){ msg.textContent='ผิดพลาด: '+e.message; msg.className='msg err'; }
+  btn.disabled=false;
+}
+</script>
+</body>
+</html>

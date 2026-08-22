@@ -3,7 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Happy HIP — ลงทะเบียนรับแจ้งเตือน</title>
+<title>Happy HIP DVT Monitor — ลงทะเบียนรับแจ้งเตือน</title>
+<!--
+  Happy HIP DVT Monitor · liff.html v1.1 (2026-08-22)
+  CHANGELOG
+  v1.1  + Rename: <title> was missing "DVT Monitor" (carry-forward TODO from
+          MasterSummary §9) — logo-title in body was already correct.
+        + Fixed dead branch in doRegister(): status 'pending' was being
+          caught by the 'already_registered' check above it and shown the
+          wrong panel (stAlready = "คุณลงทะเบียนแล้ว") instead of
+          stSuccess ("ส่งคำขอสำเร็จ! รอ Admin อนุมัติ"). The 'pending'
+          clause in the third branch was unreachable dead code.
+  v1.0  — original Phase 2 LIFF registration (unchanged otherwise; GAS_URL,
+          LIFF_ID, LINE OA ID all verified consistent with project memory).
+-->
+
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -305,9 +319,9 @@ async function doRegister() {
 
     if (data.status === 'approved') {
       show('stApproved');
-    } else if (data.status === 'already_registered' || data.status === 'pending') {
-      show(data.status === 'approved' ? 'stApproved' : 'stAlready');
-    } else if (data.status === 'ok' || data.status === 'pending') {
+    } else if (data.status === 'already_registered') {
+      show('stAlready');
+    } else if (data.status === 'pending' || data.status === 'ok') {
       show('stSuccess');
     } else {
       throw new Error(data.message || 'GAS error');

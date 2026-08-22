@@ -8,6 +8,44 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!--
+  ═══════════════════════════════════════════════════════════════
+  Happy HIP DVT Monitor · Web App v2.0.0 (Phase 2)
+  ═══════════════════════════════════════════════════════════════
+  CHANGELOG
+  v2.0.0 (2026-08-22)
+    + Ported from index_Phase1.html (v4.10.6, GAS-polling architecture)
+      onto the Phase 2 Firebase-Auth + RTDB-realtime multi-hospital base
+      (formerly "Web Viewer v1.0").
+    + Report tab: Chart.js bar chart + summary + table, per-bed, via GAS
+      (?action=getReport&days=N&bed=BED_ID)
+    + Alert Log tab: live Firebase listener on
+      hospitals/{h}/beds/{b}/alerts, ack action
+    + Calibration tab: writes hospitals/{h}/beds/{b}/commands/calibrateHip
+      — REQUIRES gateway firmware update to consume this path (currently
+      the gateway only responds to the on-device long-press trigger).
+      See "ℹ️ ยังไม่ทำงานจริง" badge in-app.
+    + Admin tab: add hospital / add bed (ported from v1.0 addBed),
+      user role list — REQUIRES Firebase security rules to permit
+      superadmin read of `users/` (not yet confirmed in place).
+    + LINE FAB (ported from Phase 1), links to /liff.html
+    OPEN ITEMS (see in-app ℹ️ badges — do not treat as done):
+    - GAS getReport must accept &bed= param — unverified against
+      current Code_v5.gs; if it ignores the param, Report will show
+      combined/whichever data GAS already scopes to.
+    - Firebase rules for hospitals/{h}/beds/{b}/commands and /alerts
+      must be added (see rules block in comments below).
+    - Gateway firmware: no listener yet for commands/calibrateHip.
+  v1.0 — original minimal Firebase viewer (Dashboard only)
+  ═══════════════════════════════════════════════════════════════
+  SUGGESTED FIREBASE RULES ADDITION (apply in Firebase console):
+  "hospitals": { "$h": { "beds": { "$b": {
+    "alerts":   { ".read":"auth!=null", ".write":"auth!=null" },
+    "commands": { ".read":"auth!=null", ".write":"auth!=null" }
+  }}}}
+  ═══════════════════════════════════════════════════════════════
+-->
 <style>
 :root{
   --bg:#070b10; --bg2:#0c1018; --surface:#111820; --surface2:#162030;
@@ -17,7 +55,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;min-height:100vh}
-.wrap{max-width:1200px;margin:0 auto;padding:16px 16px 60px}
+.wrap{max-width:1200px;margin:0 auto;padding:16px 16px 90px}
 
 /* login */
 .login{max-width:400px;margin:12vh auto;background:var(--surface);border:1px solid var(--brd);border-radius:16px;padding:28px}
@@ -31,15 +69,26 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',san
 .btn:hover{filter:brightness(1.15)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#06222a;width:100%;padding:12px}
 .btn.sm{padding:6px 12px;font-size:.78rem}
+.btn.danger{background:#2a1214;border-color:#5c2328;color:var(--danger)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 .err{color:var(--danger);font-size:.78rem;margin-top:10px;min-height:1em}
 
 /* topbar */
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid var(--brd);margin-bottom:18px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid var(--brd);margin-bottom:0}
 .brand{font-size:1rem;font-weight:700}
 .brand small{display:block;font-family:var(--mono);font-size:9px;color:var(--dim);font-weight:400;letter-spacing:.07em}
 .spacer{margin-left:auto}
 .badge{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:999px;border:1px solid #274c33;color:var(--ok);background:var(--surface)}
+.badge.info{border-color:#3d3413;color:var(--warn);background:var(--surface)}
 select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);border-radius:8px;color:var(--text);font-size:.82rem}
+
+/* tabs */
+.tabs{display:flex;gap:6px;padding:12px 0 18px;flex-wrap:wrap;border-bottom:1px solid var(--brd);margin-bottom:18px}
+.tab{font-family:'IBM Plex Sans Thai',sans-serif;font-size:.82rem;padding:8px 14px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text2);cursor:pointer}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface2);border-color:var(--brd);color:var(--accent)}
+.view{display:none}
+.view.active{display:block}
 
 /* bed grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
@@ -76,6 +125,54 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .empty{text-align:center;color:var(--dim);padding:50px 20px;font-size:.9rem}
 .foot{margin-top:26px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim)}
 .hide{display:none!important}
+
+/* card / panel */
+.panel{background:var(--surface);border:1px solid var(--brd);border-radius:14px;padding:18px;margin-bottom:16px}
+.panel h2{font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel h2 .spacer{margin-left:auto}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+
+/* report summary cards */
+.sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.sumcard{background:var(--bg2);border-radius:10px;padding:12px 14px}
+.sumcard .lbl{font-size:.68rem;color:var(--text2);margin-bottom:4px}
+.sumcard .val{font-family:var(--mono);font-size:1.4rem;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--brd)}
+th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+.chartwrap{height:280px;margin-bottom:16px}
+
+/* alert list */
+.alertrow{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--brd)}
+.alertrow:last-child{border-bottom:none}
+.alertdot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.alertdot.crit{background:var(--danger)}
+.alertdot.warn{background:var(--warn)}
+.alertdot.info{background:var(--accent)}
+.alertbody{flex:1;min-width:0}
+.alertmsg{font-size:.86rem}
+.alertmeta{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:3px}
+.acked{opacity:.5}
+.pillbtn{font-size:.7rem;padding:4px 10px;border-radius:999px;border:1px solid var(--brd);background:var(--surface2);color:var(--text2);cursor:pointer}
+.pillbtn:hover{color:var(--text)}
+
+/* calibration */
+.calibcard{background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.calibcard .name{font-weight:600;flex:1;min-width:120px}
+.calibstatus{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.infonote{font-size:.78rem;color:var(--warn);background:#1a1600;border:1px solid #3d3413;border-radius:9px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
+
+/* admin */
+.userrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--brd);font-size:.83rem}
+.userrow:last-child{border-bottom:none}
+.userrow .role{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--dim);background:var(--bg2);padding:3px 9px;border-radius:999px}
+
+/* LINE FAB */
+.line-fab{position:fixed;right:20px;bottom:20px;z-index:200}
+.line-fab-btn{width:54px;height:54px;border-radius:50%;background:#06C755;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(6,199,85,.4);text-decoration:none;transition:transform .15s}
+.line-fab-btn:hover{transform:scale(1.06)}
+.line-fab-tooltip{position:absolute;right:64px;bottom:14px;background:var(--surface);border:1px solid var(--brd);padding:6px 10px;border-radius:8px;font-size:.72rem;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.line-fab:hover .line-fab-tooltip{opacity:1}
 </style>
 </head>
 <body>
@@ -98,34 +195,123 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
     <div class="spacer"></div>
     <select id="selHosp" class="hide" onchange="onHospChange()"></select>
     <span class="badge" id="roleBadge">—</span>
-    <button class="btn sm" id="btnAddBed" onclick="addBed()">＋ เพิ่มเตียง</button>
     <button class="btn sm" onclick="doLogout()">ออก</button>
   </div>
 
-  <div id="detailWrap"></div>
-  <div class="grid" id="bedGrid"></div>
-  <div class="empty hide" id="emptyMsg">ยังไม่มีเตียงในโรงพยาบาลนี้ — กด “＋ เพิ่มเตียง” เพื่อเริ่ม</div>
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 แดชบอร์ด</button>
+    <button class="tab" data-tab="report" onclick="switchTab('report')">📄 รายงาน</button>
+    <button class="tab" data-tab="alerts" onclick="switchTab('alerts')">🔔 บันทึกแจ้งเตือน</button>
+    <button class="tab" data-tab="calib" onclick="switchTab('calib')">🎯 สอบเทียบ</button>
+    <button class="tab hide" id="tabAdminBtn" data-tab="admin" onclick="switchTab('admin')">⚙️ ผู้ดูแลระบบ</button>
+  </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web Viewer v1.0 · NIA SID-10/2569</div>
+  <!-- ── Dashboard ── -->
+  <div class="view active" id="view-dashboard">
+    <div id="detailWrap"></div>
+    <div class="grid" id="bedGrid"></div>
+    <div class="empty hide" id="emptyMsg">ยังไม่มีเตียงในโรงพยาบาลนี้<span id="emptyAddHint"> — กด “＋ เพิ่มเตียง” ในแท็บผู้ดูแลระบบเพื่อเริ่ม</span></div>
+  </div>
+
+  <!-- ── Report ── -->
+  <div class="view" id="view-report">
+    <div class="panel">
+      <h2>📄 รายงานการทำ Ankle Pump
+        <div class="spacer"></div>
+        <select id="rptBedSel" onchange="loadReport()"></select>
+      </h2>
+      <div class="row">
+        <button class="btn sm" id="rpt7" onclick="setReportDays(7)">7 วัน</button>
+        <button class="btn sm" id="rpt14" onclick="setReportDays(14)">14 วัน</button>
+        <button class="btn sm" id="rpt30" onclick="setReportDays(30)">30 วัน</button>
+      </div>
+      <div class="infonote" id="reportNote">ℹ️ ข้อมูลรายงานดึงจาก GAS/Google Sheets (ประวัติย้อนหลัง) ไม่ใช่ Firebase real-time — หากยังไม่เห็นข้อมูล ให้ตรวจว่า GAS endpoint รองรับพารามิเตอร์ <code>bed</code> สำหรับ multi-bed แล้วหรือยัง</div>
+      <div class="sumgrid">
+        <div class="sumcard"><div class="lbl">Pump รวม</div><div class="val" id="rptTotalPump">0</div></div>
+        <div class="sumcard"><div class="lbl">เฉลี่ย/วัน</div><div class="val" id="rptAvgPump">0</div></div>
+        <div class="sumcard"><div class="lbl">วันที่ครบเป้า</div><div class="val" id="rptGoalDays">0</div></div>
+        <div class="sumcard"><div class="lbl">แจ้งเตือนรวม</div><div class="val" id="rptTotalAlerts">0</div></div>
+      </div>
+      <div class="chartwrap"><canvas id="chartReport"></canvas></div>
+      <table>
+        <thead><tr><th>วันที่</th><th>ซ้าย</th><th>ขวา</th><th>รวม</th><th>เป้าหมาย</th><th>แจ้งเตือน</th></tr></thead>
+        <tbody id="reportTbody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--dim)">เลือกเตียงเพื่อดูรายงาน</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Alerts ── -->
+  <div class="view" id="view-alerts">
+    <div class="panel">
+      <h2>🔔 บันทึกแจ้งเตือนล่าสุด<div class="spacer"></div>
+        <span class="badge" id="alertCount">0 รายการ</span></h2>
+      <div class="infonote">ℹ️ ดึงจาก <code>hospitals/{รพ.}/beds/{เตียง}/alerts</code> ใน Firebase (50 รายการล่าสุด/เตียง) — ต้องเพิ่ม path นี้ในฝั่ง gateway/GAS ถ้ายังไม่มีการเขียนแจ้งเตือนเข้า Firebase</div>
+      <div id="alertList"></div>
+      <div class="empty hide" id="alertsEmpty">ยังไม่มีแจ้งเตือน</div>
+    </div>
+  </div>
+
+  <!-- ── Calibration ── -->
+  <div class="view" id="view-calib">
+    <div class="panel">
+      <h2>🎯 สอบเทียบมุมสะโพก (HIP Calibration)</h2>
+      <div class="infonote">⚠️ <b>ยังไม่ทำงานจริงฝั่งฮาร์ดแวร์</b> — ปุ่มนี้เขียนคำสั่งไปที่ <code>commands/calibrateHip</code> ใน Firebase แต่ gateway firmware ปัจจุบันรับคำสั่งสอบเทียบได้เฉพาะการ long-press ที่ชิป “P” บนจอ gateway เท่านั้น ต้องเพิ่ม ESP-NOW downlink listener ที่ subscribe path นี้ก่อนใช้งานจริงได้ · ระหว่างสอบเทียบต้องให้เตียง/หมอนอยู่นิ่ง (stationary guard)</div>
+      <div id="calibList"></div>
+    </div>
+  </div>
+
+  <!-- ── Admin ── -->
+  <div class="view" id="view-admin">
+    <div class="panel">
+      <h2>🏥 โรงพยาบาล<div class="spacer"></div>
+        <button class="btn sm" onclick="addHospital()">＋ เพิ่มโรงพยาบาล</button></h2>
+      <div id="hospList"></div>
+    </div>
+    <div class="panel">
+      <h2>🛏️ เตียงในโรงพยาบาลนี้<div class="spacer"></div>
+        <button class="btn sm" onclick="addBed()">＋ เพิ่มเตียง</button></h2>
+      <div id="adminBedList"></div>
+    </div>
+    <div class="panel">
+      <h2>👤 ผู้ใช้งาน</h2>
+      <div class="infonote">ℹ️ การสร้าง/แก้สิทธิ์ผู้ใช้จริงต้องทำผ่าน Firebase Console หรือ Cloud Function (Admin SDK) — เว็บฝั่ง client เขียนสิทธิ์ผู้ใช้อื่นเองไม่ได้โดยตรงด้วยเหตุผลด้านความปลอดภัย รายการด้านล่างเป็นมุมมองอ่านอย่างเดียว และต้องมี Firebase rule อนุญาต superadmin อ่าน <code>users/</code> ทั้งหมดก่อนจึงจะเห็นข้อมูลจริง</div>
+      <div id="userList"></div>
+    </div>
+  </div>
+
+  <div class="foot">Happy HIP DVT Monitor · Web App v2.0.0 (Phase 2) · NIA SID-10/2569</div>
+</div>
+
+<!-- LINE FAB -->
+<div class="line-fab hide" id="lineFab">
+  <div class="line-fab-tooltip">รับแจ้งเตือน LINE OA</div>
+  <a class="line-fab-btn" href="/liff.html" target="_blank" title="ลงทะเบียนรับแจ้งเตือน LINE">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+      <path d="M12 2C6.48 2 2 6.03 2 11c0 3.18 1.63 5.99 4.16 7.73-.18.65-.66 2.37-.75 2.74-.11.44.16.44.34.32.14-.09 2.17-1.47 3.05-2.07.38.05.77.08 1.17.08 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
+    </svg>
+  </a>
 </div>
 
 <script>
 "use strict";
 // ═══════════ config ═══════════
-// แทนที่ 2 ค่านี้ด้วยของ project จริง (Setup Guide §4)
 const FB_CONFIG = {
   apiKey:      "AIzaSyBdxM1VVim70ZFFAh-HL6lg5X3XI7Jm4Mk",
   databaseURL: "https://happy-hip-dvt-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzsuSDNOCQZr9ocP7xoFnTzkY_IUN-7nve7ewlj0Wm0LKOFs6ubhZ-xkQuzx1bAUqK3Bw/exec";
 const STALE_MS = 15000;          // ไม่มีข้อมูลเกิน 15 วิ = ขาดสัญญาณ
+const ALERTS_PER_BED = 50;
 
 const $ = id => document.getElementById(id);
-let db=null, myRole=null, myHosp=null, curHosp=null;
+let db=null, myRole=null, myHosp=null, curHosp=null, myUid=null;
 let hospitals={}, beds={}, bedRef=null, selectedBed=null;
+let activeTab='dashboard';
 
 // ═══════════ auth ═══════════
 function canWriteConfig(){ return ['superadmin','admin','staff'].includes(myRole); }
 function canManageBeds(){ return ['superadmin','admin'].includes(myRole); }
+function isSuperadmin(){ return myRole==='superadmin'; }
 
 async function doLogin(){
   const email=$('inEmail').value.trim(), pass=$('inPass').value;
@@ -135,6 +321,7 @@ async function doLogin(){
   try{
     if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
     const cred=await firebase.auth().signInWithEmailAndPassword(email,pass);
+    myUid=cred.user.uid;
     db=firebase.database();
     const me=await db.ref('users/'+cred.user.uid).get();
     if(!me.exists()){
@@ -154,8 +341,9 @@ function doLogout(){ if(typeof firebase!=='undefined'&&firebase.apps.length) fir
 async function startApp(){
   $('loginView').classList.add('hide');
   $('appView').classList.remove('hide');
+  $('lineFab').classList.remove('hide');
   $('roleBadge').textContent = myRole.toUpperCase() + (myHosp? ' · '+myHosp : ' · ทุก รพ.');
-  if(!canManageBeds()) $('btnAddBed').classList.add('hide');
+  if(canManageBeds()) $('tabAdminBtn').classList.remove('hide');
 
   if(myRole==='superadmin'){
     const snap=await db.ref('hospitals').get();
@@ -175,10 +363,30 @@ async function startApp(){
     if(snap.exists()) $('roleBadge').textContent = myRole.toUpperCase()+' · '+(snap.val().label||curHosp);
   }
   watchBeds();
+  setReportDays(7);
 }
-function onHospChange(){ curHosp=$('selHosp').value; selectedBed=null; watchBeds(); }
+function onHospChange(){
+  curHosp=$('selHosp').value; selectedBed=null;
+  watchBeds();
+  if(activeTab==='report') loadReport();
+  if(activeTab==='alerts') watchAlerts();
+  if(activeTab==='calib') renderCalibList();
+  if(activeTab==='admin') renderAdmin();
+}
 
-// ═══════════ live subscription ═══════════
+// ═══════════ tabs ═══════════
+function switchTab(name){
+  activeTab=name;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $('view-'+name).classList.add('active');
+  if(name==='report') loadReport();
+  if(name==='alerts') watchAlerts();
+  if(name==='calib') renderCalibList();
+  if(name==='admin') renderAdmin();
+}
+
+// ═══════════ live subscription (dashboard) ═══════════
 function watchBeds(){
   if(bedRef) bedRef.off();
   beds={}; $('bedGrid').innerHTML=''; $('detailWrap').innerHTML='';
@@ -186,13 +394,14 @@ function watchBeds(){
   bedRef.on('value', snap=>{
     beds = snap.exists()? snap.val() : {};
     renderAll(beds);
+    populateReportBedSelect();
   }, err=>{
     $('emptyMsg').textContent='อ่านข้อมูลไม่ได้: '+err.message;
     $('emptyMsg').classList.remove('hide');
   });
 }
 
-// ═══════════ render (pure — testable) ═══════════
+// ═══════════ render (dashboard) ═══════════
 function agoText(ts){
   if(!ts) return 'ไม่เคยมีข้อมูล';
   const d=Date.now()-ts;
@@ -266,7 +475,7 @@ function renderDetail(bid,data){
 }
 function closeDetail(){ selectedBed=null; renderAll(beds); }
 
-// ═══════════ writes ═══════════
+// ═══════════ writes (dashboard config) ═══════════
 async function toggleCfg(bid,key){
   if(!canWriteConfig()) return;
   const cur=(beds[bid]&&beds[bid].config&&beds[bid].config[key])||false;
@@ -286,11 +495,264 @@ async function addBed(){
     await db.ref('hospitals/'+curHosp+'/beds/'+id+'/config').set({
       pumpTargetDaily:300,hipThreshold:30,vibrationEnabled:true,audioEnabled:true,
       reminderIntervalMin:60,quietHours:"22:00-06:00"});
+    renderAdmin();
   }catch(e){ alert('เพิ่มเตียงไม่สำเร็จ: '+e.message); }
 }
 
-// refresh relative timestamps once per second
-setInterval(()=>{ if(Object.keys(beds).length) renderAll(beds); },1000);
+// refresh relative timestamps once per second (dashboard only)
+setInterval(()=>{ if(activeTab==='dashboard' && Object.keys(beds).length) renderAll(beds); },1000);
+
+// ═══════════════════════════════════════════
+// REPORT TAB (ported from Phase 1, adapted per-bed / multi-hospital)
+// ═══════════════════════════════════════════
+let reportDays = 7;
+let chartReportInst = null;
+
+function populateReportBedSelect(){
+  const sel=$('rptBedSel');
+  const prev=sel.value;
+  sel.innerHTML='';
+  Object.keys(beds||{}).sort().forEach(bid=>{
+    const o=document.createElement('option');
+    o.value=bid; o.textContent=(beds[bid].meta&&beds[bid].meta.label)||bid;
+    sel.appendChild(o);
+  });
+  if(prev && beds[prev]) sel.value=prev;
+}
+function setReportDays(d){
+  reportDays=d;
+  ['rpt7','rpt14','rpt30'].forEach(id=>$(id).classList.remove('primary'));
+  const btn=$('rpt'+d); if(btn) btn.classList.add('primary');
+  if(activeTab==='report') loadReport();
+}
+async function loadReport(){
+  const bedSel=$('rptBedSel');
+  if(!bedSel.value){ populateReportBedSelect(); }
+  const bedId=bedSel.value;
+  const tbody=$('reportTbody');
+  if(!bedId){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--dim)">ยังไม่มีเตียงในโรงพยาบาลนี้</td></tr>';
+    return;
+  }
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px">กำลังโหลด…</td></tr>';
+  try{
+    const url=GAS_URL+'?action=getReport&days='+reportDays+'&bed='+encodeURIComponent(bedId)+'&hospital='+encodeURIComponent(curHosp);
+    const r=await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const json=await r.json();
+    if(!json.rows) throw new Error('ไม่มีข้อมูล (ตรวจสอบว่า GAS รองรับพารามิเตอร์ bed/hospital แล้วหรือยัง)');
+    renderReport(json.rows);
+  }catch(err){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:20px">โหลดไม่สำเร็จ: '+err.message+'</td></tr>';
+  }
+}
+function renderReport(rows){
+  const bedId=$('rptBedSel').value;
+  const cfg=(beds[bedId]&&beds[bedId].config)||{};
+  const pumpGoal=cfg.pumpTargetDaily||300;
+  const tbody=$('reportTbody');
+
+  if(!rows || rows.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:20px">ไม่มีข้อมูลในช่วงนี้</td></tr>';
+    $('rptTotalPump').textContent='0'; $('rptAvgPump').textContent='0';
+    $('rptGoalDays').textContent='0'; $('rptTotalAlerts').textContent='0';
+    if(chartReportInst){ chartReportInst.destroy(); chartReportInst=null; }
+    return;
+  }
+
+  const totalPump=rows.reduce((s,r)=>s+(r.pumpTotal||0),0);
+  const avgPump=rows.length>0? Math.round(totalPump/rows.length):0;
+  const goalDays=rows.filter(r=>(r.pumpTotal||0)>=pumpGoal).length;
+  const totalAlerts=rows.reduce((s,r)=>s+(r.alerts||0),0);
+
+  $('rptTotalPump').textContent=totalPump.toLocaleString();
+  $('rptAvgPump').textContent=avgPump.toLocaleString();
+  $('rptGoalDays').textContent=goalDays;
+  $('rptTotalAlerts').textContent=totalAlerts;
+
+  tbody.innerHTML=rows.map(r=>{
+    const reached=(r.pumpTotal||0)>=pumpGoal;
+    const goalBadge=reached
+      ? '<span style="color:var(--ok)">✅ ครบ</span>'
+      : '<span style="color:var(--warn)">'+(r.pumpTotal||0)+'/'+pumpGoal+'</span>';
+    const alertBadge=(r.alerts||0)>0
+      ? '<span style="color:var(--danger)">'+r.alerts+' 🔔</span>'
+      : '<span style="color:var(--dim)">-</span>';
+    return '<tr><td>'+r.date+'</td><td>'+(r.pumpL||0)+'</td><td>'+(r.pumpR||0)+'</td>'+
+      '<td><strong>'+(r.pumpTotal||0)+'</strong></td><td>'+goalBadge+'</td><td>'+alertBadge+'</td></tr>';
+  }).join('');
+
+  const labels=[...rows].reverse().map(r=>String(r.date).slice(5));
+  const dataL=[...rows].reverse().map(r=>r.pumpL||0);
+  const dataR=[...rows].reverse().map(r=>r.pumpR||0);
+  const goalLine=labels.map(()=>pumpGoal);
+
+  if(chartReportInst){ chartReportInst.destroy(); chartReportInst=null; }
+  const ctx=$('chartReport').getContext('2d');
+  chartReportInst=new Chart(ctx,{
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'ซ้าย (L)', data:dataL, backgroundColor:'rgba(56,189,248,0.7)', borderRadius:4, order:2 },
+      { label:'ขวา (R)', data:dataR, backgroundColor:'rgba(251,146,60,0.7)', borderRadius:4, order:2 },
+      { label:'เป้าหมาย', data:goalLine, type:'line', borderColor:'rgba(74,222,128,0.8)',
+        borderWidth:2, borderDash:[6,3], pointRadius:0, fill:false, order:1 },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#9ca3af' } } },
+      scales:{
+        x:{ stacked:true, ticks:{ color:'#9ca3af' }, grid:{ color:'rgba(255,255,255,0.05)' } },
+        y:{ stacked:true, beginAtZero:true, ticks:{ color:'#9ca3af' }, grid:{ color:'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// ALERT LOG TAB — Firebase hospitals/{h}/beds/{b}/alerts
+// ═══════════════════════════════════════════
+let alertRefs=[]; // active .on() listeners to detach on hospital change
+let alertsByBed={}; // bedId -> array of {id,...}
+
+function watchAlerts(){
+  alertRefs.forEach(r=>r.off());
+  alertRefs=[]; alertsByBed={};
+  const bedIds=Object.keys(beds||{});
+  if(!bedIds.length){ renderAlertList(); return; }
+  bedIds.forEach(bid=>{
+    const ref=db.ref('hospitals/'+curHosp+'/beds/'+bid+'/alerts').orderByChild('ts').limitToLast(ALERTS_PER_BED);
+    ref.on('value', snap=>{
+      const val=snap.exists()? snap.val() : {};
+      alertsByBed[bid]=Object.keys(val).map(id=>Object.assign({id,bedId:bid},val[id]));
+      renderAlertList();
+    }, err=>{ /* path may not exist yet — non-fatal, tab shows empty state */ });
+    alertRefs.push(ref);
+  });
+}
+function renderAlertList(){
+  const all=Object.values(alertsByBed).flat().sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,150);
+  $('alertCount').textContent=all.length+' รายการ';
+  $('alertsEmpty').classList.toggle('hide', all.length>0);
+  const list=$('alertList');
+  list.innerHTML=all.map(a=>{
+    const label=(beds[a.bedId]&&beds[a.bedId].meta&&beds[a.bedId].meta.label)||a.bedId;
+    const lvl=a.level||'info';
+    const dotClass= lvl==='critical'||lvl==='crit' ? 'crit' : (lvl==='warn'||lvl==='warning' ? 'warn' : 'info');
+    const when=a.ts? new Date(a.ts).toLocaleString('th-TH') : '—';
+    return '<div class="alertrow'+(a.acked?' acked':'')+'">'+
+      '<div class="alertdot '+dotClass+'"></div>'+
+      '<div class="alertbody">'+
+        '<div class="alertmsg">'+escapeHtml(a.message||a.msg||'(ไม่มีข้อความ)')+'</div>'+
+        '<div class="alertmeta">'+label+' · '+when+(a.acked?' · รับทราบแล้ว':'')+'</div>'+
+      '</div>'+
+      (a.acked? '' : '<button class="pillbtn" onclick="ackAlert(\''+a.bedId+'\',\''+a.id+'\')">รับทราบ</button>')+
+    '</div>';
+  }).join('');
+}
+async function ackAlert(bedId,alertId){
+  try{
+    await db.ref('hospitals/'+curHosp+'/beds/'+bedId+'/alerts/'+alertId).update({
+      acked:true, ackedBy:myUid, ackedAt:Date.now()
+    });
+  }catch(e){ alert('รับทราบไม่สำเร็จ: '+e.message); }
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ═══════════════════════════════════════════
+// CALIBRATION TAB
+// ═══════════════════════════════════════════
+function renderCalibList(){
+  const w=$('calibList');
+  const bedIds=Object.keys(beds||{}).sort();
+  if(!bedIds.length){ w.innerHTML='<div class="empty">ยังไม่มีเตียง</div>'; return; }
+  w.innerHTML=bedIds.map(bid=>{
+    const meta=beds[bid].meta||{};
+    const cmd=(beds[bid].commands&&beds[bid].commands.calibrateHip)||null;
+    const statusTxt = cmd
+      ? ('ขอล่าสุด: '+new Date(cmd.requestedAt).toLocaleString('th-TH')+' · สถานะ: '+(cmd.status||'pending'))
+      : 'ยังไม่เคยขอสอบเทียบผ่านเว็บ';
+    return '<div class="calibcard"><div class="name">🛏️ '+(meta.label||bid)+'</div>'+
+      '<div class="calibstatus">'+statusTxt+'</div>'+
+      '<button class="btn sm" '+(canWriteConfig()?'':'disabled')+' onclick="requestCalibration(\''+bid+'\')">ขอสอบเทียบ</button></div>';
+  }).join('');
+}
+async function requestCalibration(bedId){
+  if(!canWriteConfig()) return;
+  if(!confirm('ยืนยันขอสอบเทียบมุมสะโพกเตียง '+bedId+'?\nต้องให้หมอน/เตียงอยู่นิ่งระหว่างสอบเทียบ\n\n(หมายเหตุ: ต้องอัปเดต gateway firmware ให้รับคำสั่งนี้ก่อน จึงจะมีผลจริง)')) return;
+  try{
+    await db.ref('hospitals/'+curHosp+'/beds/'+bedId+'/commands/calibrateHip').set({
+      requestedAt:Date.now(), requestedBy:myUid, status:'pending'
+    });
+    renderCalibList();
+  }catch(e){ alert('ส่งคำสั่งไม่สำเร็จ: '+e.message); }
+}
+
+// ═══════════════════════════════════════════
+// ADMIN TAB
+// ═══════════════════════════════════════════
+async function renderAdmin(){
+  if(!canManageBeds()) return;
+  await renderHospList();
+  renderAdminBedList();
+  await renderUserList();
+}
+async function renderHospList(){
+  const w=$('hospList');
+  if(!isSuperadmin()){
+    const meta=(hospitals[curHosp]&&hospitals[curHosp].meta) || (await db.ref('hospitals/'+curHosp+'/meta').get()).val() || {};
+    w.innerHTML='<div class="userrow">🏥 '+(meta.label||curHosp)+'<span class="role">รพ.ของคุณ</span></div>';
+    return;
+  }
+  const snap=await db.ref('hospitals').get();
+  hospitals=snap.exists()? snap.val() : {};
+  const ids=Object.keys(hospitals);
+  w.innerHTML = ids.length? ids.map(id=>{
+    const label=(hospitals[id].meta&&hospitals[id].meta.label)||id;
+    const bedCount=Object.keys(hospitals[id].beds||{}).length;
+    return '<div class="userrow">🏥 '+label+' <span style="color:var(--dim);font-family:var(--mono);font-size:11px">('+id+')</span>'+
+      '<span class="role">'+bedCount+' เตียง</span></div>';
+  }).join('') : '<div class="empty">ยังไม่มีโรงพยาบาล</div>';
+}
+async function addHospital(){
+  if(!isSuperadmin()){ alert('เฉพาะ superadmin เท่านั้นที่เพิ่มโรงพยาบาลได้'); return; }
+  const label=prompt('ชื่อโรงพยาบาล (แสดงผล) เช่น โรงพยาบาลหัวหิน');
+  if(!label) return;
+  const id=label.trim().toUpperCase().replace(/[.#$\[\]\/\s]/g,'-');
+  try{
+    await db.ref('hospitals/'+id+'/meta').set({label:label.trim(), createdAt:Date.now()});
+    const sel=$('selHosp');
+    const o=document.createElement('option'); o.value=id; o.textContent=label.trim(); sel.appendChild(o);
+    renderAdmin();
+  }catch(e){ alert('เพิ่มโรงพยาบาลไม่สำเร็จ: '+e.message); }
+}
+function renderAdminBedList(){
+  const w=$('adminBedList');
+  const ids=Object.keys(beds||{}).sort();
+  w.innerHTML = ids.length? ids.map(bid=>{
+    const meta=beds[bid].meta||{};
+    return '<div class="userrow">🛏️ '+(meta.label||bid)+
+      '<span class="role">'+(meta.active===false?'ปิดใช้งาน':'ใช้งานอยู่')+'</span></div>';
+  }).join('') : '<div class="empty">ยังไม่มีเตียง — กด “＋ เพิ่มเตียง”</div>';
+}
+async function renderUserList(){
+  const w=$('userList');
+  try{
+    const snap=await db.ref('users').get();
+    if(!snap.exists()){ w.innerHTML='<div class="empty">ไม่มีข้อมูลผู้ใช้ หรือยังไม่มีสิทธิ์อ่าน</div>'; return; }
+    const users=snap.val();
+    const rows=Object.keys(users)
+      .map(uid=>Object.assign({uid},users[uid]))
+      .filter(u=> isSuperadmin() || u.hospitalId===curHosp);
+    w.innerHTML = rows.length? rows.map(u=>
+      '<div class="userrow">'+(u.displayName||u.email||u.uid.slice(0,8))+
+      '<span class="role">'+(u.role||'-')+(u.hospitalId?' · '+u.hospitalId:' · ทุก รพ.')+'</span></div>'
+    ).join('') : '<div class="empty">ไม่มีผู้ใช้ในโรงพยาบาลนี้</div>';
+  }catch(e){
+    w.innerHTML='<div class="empty">อ่านรายชื่อผู้ใช้ไม่ได้: '+e.message+' (ต้องเพิ่ม Firebase rule ให้ superadmin อ่าน users/ ได้)</div>';
+  }
+}
 </script>
 </body>
 </html>

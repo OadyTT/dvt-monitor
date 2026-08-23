@@ -317,7 +317,14 @@ async function startApp(){
   if(isSuperadmin()) $('addHospBtn').classList.remove('hide');
 
   if(isSuperadmin()){
-    const snap = await db.ref('hospitals').get();
+    let snap;
+    try{
+      snap = await db.ref('hospitals').get();
+    }catch(err){
+      $('emptyMsg').textContent='อ่านรายชื่อโรงพยาบาลไม่ได้ (สิทธิ์/rules): '+err.message;
+      $('emptyMsg').classList.remove('hide');
+      return;
+    }
     hospitalsList = snap.exists()? snap.val() : {};
     const sel=$('selHosp'); sel.innerHTML=''; sel.classList.remove('hide');
     const ids=Object.keys(hospitalsList);
@@ -626,7 +633,11 @@ async function renderHospList(){
       '<button class="btn sm" onclick="saveHospMeta()">บันทึก</button></div>';
     return;
   }
-  const snap=await db.ref('hospitals').get();
+  const snap=await db.ref('hospitals').get().catch(err=>{
+    w.innerHTML='<div class="empty">อ่านรายชื่อโรงพยาบาลไม่ได้: '+err.message+'</div>';
+    return null;
+  });
+  if(!snap) return;
   hospitalsList=snap.exists()?snap.val():{};
   const ids=Object.keys(hospitalsList);
   w.innerHTML=ids.length?ids.map(id=>{

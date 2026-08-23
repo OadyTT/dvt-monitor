@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Happy HIP DVT Monitor — สรุปการทำงานเมื่อไม่มี WiFi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --ink:#1a2733;
+    --ink-soft:#4a5a68;
+    --line:#dde4ea;
+    --paper:#ffffff;
+    --bg:#f4f7f9;
+    --teal:#0f6d68;
+    --teal-bg:#eaf5f3;
+    --amber:#a05a00;
+    --amber-bg:#fdf3e3;
+    --red:#a3283a;
+    --red-bg:#fbeaec;
+    --navy:#16324a;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Noto Sans Thai','Noto Sans',sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.6;
+  }
+  .page{
+    max-width:800px;
+    margin:0 auto;
+    background:var(--paper);
+    padding:48px 56px 40px;
+  }
+
+  /* header */
+  .brand{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:3px solid var(--navy);
+    padding-bottom:16px;
+    margin-bottom:6px;
+  }
+  .brand-name{
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:.04em;
+    color:var(--navy);
+    text-transform:uppercase;
+  }
+  .brand-sub{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .doc-date{
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:right;
+  }
+
+  h1{
+    font-size:23px;
+    font-weight:700;
+    color:var(--navy);
+    margin:22px 0 6px;
+    line-height:1.35;
+  }
+  .subtitle{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-bottom:26px;
+  }
+
+  .lede{
+    background:var(--teal-bg);
+    border-left:4px solid var(--teal);
+    padding:14px 18px;
+    border-radius:4px;
+    font-size:14.5px;
+    color:#0a4a46;
+    margin-bottom:28px;
+  }
+  .lede b{color:var(--teal);}
+
+  h2{
+    font-size:15px;
+    font-weight:700;
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .sec{margin-bottom:26px;}
+
+  .tag{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;height:22px;
+    border-radius:50%;
+    font-size:13px;
+    font-weight:700;
+    color:#fff;
+    flex:none;
+  }
+  .tag.ok{background:var(--teal);}
+  .tag.no{background:var(--red);}
+  .tag.warn{background:var(--amber);}
+
+  ul.check{list-style:none;margin:0;padding:0;}
+  ul.check li{
+    position:relative;
+    padding:8px 0 8px 26px;
+    font-size:13.5px;
+    border-bottom:1px solid var(--line);
+  }
+  ul.check li:last-child{border-bottom:none;}
+  ul.check.ok li::before{content:"✓";position:absolute;left:0;top:8px;color:var(--teal);font-weight:700;}
+  ul.check.no li::before{content:"✕";position:absolute;left:0;top:8px;color:var(--red);font-weight:700;}
+  .check li b{color:var(--navy);}
+  .check li .note{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px;}
+
+  .box{
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:18px 20px;
+  }
+  .box.ok{background:var(--teal-bg);border-color:#cfe8e4;}
+  .box.no{background:var(--red-bg);border-color:#f2cfd4;}
+
+  .impact{
+    background:var(--amber-bg);
+    border:1px solid #f1dcb0;
+    border-radius:8px;
+    padding:18px 20px;
+    font-size:13.5px;
+  }
+  .impact h2{color:var(--amber);}
+  .impact p{margin:0 0 10px;}
+  .impact p:last-child{margin-bottom:0;}
+
+  .reco{
+    background:var(--navy);
+    color:#fff;
+    border-radius:8px;
+    padding:20px 22px;
+    margin-top:26px;
+  }
+  .reco h2{color:#fff;margin-bottom:8px;}
+  .reco p{margin:0;font-size:13.5px;color:#d8e2ea;}
+  .reco b{color:#fff;}
+
+  .grid2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+
+  footer{
+    margin-top:36px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+    font-size:10.5px;
+    color:#8b98a3;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  @media print{
+    body{background:#fff;}
+    .page{padding:20px 8px 0; max-width:100%;}
+    .box, .impact, .reco{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    @page{margin:14mm;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="brand">
+    <div>
+      <div class="brand-name">Happy HIP DVT Monitor</div>
+      <div class="brand-sub">หมอนอัจฉริยะเพื่อการฟื้นฟูผู้ป่วยหลังผ่าตัดข้อสะโพกเทียม</div>
+    </div>
+    <div class="doc-date">เอกสารแจ้งทีมพยาบาล<br>สำหรับหน่วยงาน / ฝ่าย IT โรงพยาบาล</div>
+  </div>
+
+  <h1>ถ้าโรงพยาบาลไม่อนุญาตให้ต่อ Wi-Fi<br>ระบบยังใช้งานได้หรือไม่?</h1>
+  <div class="subtitle">สรุปสิ่งที่ยังทำงานได้ปกติ และสิ่งที่จะหายไป เมื่ออุปกรณ์ที่เตียงไม่มีการเชื่อมต่ออินเทอร์เน็ต</div>
+
+  <div class="lede">
+    <b>สรุปสั้น:</b> ใช้งานได้ครับ — การตรวจจับท่านอนผิดและแจ้งเตือนที่ตัวเตียงเป็นระบบที่ออกแบบให้ทำงาน
+    ได้อย่างสมบูรณ์โดยไม่ต้องพึ่งอินเทอร์เน็ตเลย เชื่อมต่อกันเองระหว่างหมอนและจอที่เตียงโดยตรง
+    (ไม่ผ่านเครือข่ายโรงพยาบาล) สิ่งที่จะหายไปคือฟีเจอร์ "แจ้งเตือนทางไกล" เท่านั้น
+  </div>
+
+  <div class="sec">
+    <h2><span class="tag ok">✓</span> ยังทำงานได้ปกติ — ไม่ต้องมี Wi-Fi เลย</h2>
+    <div class="box ok">
+      <ul class="check ok">
+        <li><b>ตรวจจับท่านอน/มุมสะโพกผิดปกติ</b> และ <b>นับจำนวนครั้งกระดกข้อเท้า (ankle pump)</b> แบบเรียลไทม์</li>
+        <li><b>หน้าจอแจ้งเตือนเต็มจอ (สีแดง) พร้อมเสียงเตือน</b> ที่ตัวเครื่องข้างเตียง</li>
+        <li><b>ปุ่มปิดเสียง / รับทราบ</b> ที่หน้าจอ ใช้งานได้ตามปกติ</li>
+        <li><b>มอเตอร์สั่นเตือนที่ข้อเท้า</b> (ankle node) ทำงานตามค่าที่ตั้งไว้</li>
+        <li><b>แจ้งเตือนกรณีอุปกรณ์หลุดการเชื่อมต่อ</b> (node ไม่ส่งสัญญาณ)<span class="note">พร้อมข้อความแนะนำตรวจสายอากาศ/แบตเตอรี่</span></li>
+        <li><b>ปรับเทียบตำแหน่งหมอน (Recalibrate)</b> ผ่านหน้าจอสัมผัส<span class="note">สื่อสารกันเองระหว่างอุปกรณ์ ไม่ผ่านอินเทอร์เน็ต</span></li>
+        <li><b>นาฬิกาบนจอเดินต่อได้ตามปกติ</b><span class="note">ใช้ชิปนาฬิกาในตัวเครื่อง เก็บเวลาไว้ได้แม้ไม่มีเน็ต</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2><span class="tag no">✕</span> ใช้งานไม่ได้ — ต้องมีอินเทอร์เน็ต</h2>
+    <div class="box no">
+      <ul class="check no">
+        <li><b>แจ้งเตือนผ่าน LINE ไปยังมือถือพยาบาล</b><span class="note">พยาบาลจะไม่ได้รับข้อความแจ้งเตือนแบบทางไกลอีกต่อไป</span></li>
+        <li><b>หน้าจอภาพรวมผ่านเว็บ</b> (ดูหลายเตียงพร้อมกัน, กราฟ, รายงานย้อนหลัง)</li>
+        <li><b>การตรวจสอบ/ปรับตั้งค่าจากเครื่องอื่นระยะไกล</b><span class="note">ต้องเสียบ USB ที่ตัวเครื่องโดยตรงแทน</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="impact">
+    <h2><span class="tag warn">!</span> ผลกระทบต่อการทำงานที่ควรทราบ</h2>
+    <p>
+      ผลกระทบหลักคือการ<b>สูญเสียการแจ้งเตือนทางไกลผ่าน LINE</b> — พยาบาลจะไม่ทราบว่ามีการแจ้งเตือนเกิดขึ้น
+      จนกว่าจะได้ยินเสียง หรือเห็นจอที่ตัวเตียงด้วยตนเอง
+    </p>
+    <p>
+      สำหรับวอร์ดที่มีหลายเตียงและพยาบาลไม่ได้อยู่ใกล้ตลอดเวลา จุดนี้อาจส่งผลต่อความเร็วในการตอบสนอง
+      ต่อการแจ้งเตือน จึงควรพิจารณาร่วมกับทีมงานก่อนตัดสินใจปิดการเชื่อมต่อ Wi-Fi ของอุปกรณ์ทั้งหมด
+    </p>
+  </div>
+
+  <div class="reco">
+    <h2>ข้อเสนอแนะ</h2>
+    <p>
+      หากข้อกังวลหลักของโรงพยาบาลคือความปลอดภัยของเครือข่าย IT สามารถขอเชื่อมต่อผ่าน
+      <b>Wi-Fi แยกวงจร (Guest Wi-Fi / Isolated VLAN)</b> ที่ไม่แตะระบบ HIS/EMR หลักของโรงพยาบาลได้
+      วิธีนี้ยังคงความปลอดภัยของเครือข่ายหลักไว้ครบ ในขณะที่อุปกรณ์ยังสามารถส่งแจ้งเตือนผ่าน LINE
+      ไปยังมือถือพยาบาลได้ตามปกติ — เป็นทางเลือกที่แนะนำให้พิจารณาก่อนปิดการเชื่อมต่อทั้งหมด
+    </p>
+  </div>
+
+  <footer>
+    <span>Happy HIP DVT Monitor — เอกสารสรุปสำหรับทีมพยาบาล</span>
+    <span>NIA Grant SID-10/2569 · Rajabhat Kanchanaburi University</span>
+  </footer>
+
+</div>
+</body>
+</html>

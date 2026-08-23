@@ -243,6 +243,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
       <h2>🛏️ เตียงในโรงพยาบาลนี้<div class="spacer"></div>
         <button class="btn sm" onclick="addBed()">＋ เพิ่มเตียง</button></h2>
       <div id="adminBedList"></div>
+      <div id="bedEditWrap"></div>
     </div>
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
@@ -617,6 +618,8 @@ async function requestCalibration(bedId){
 // ═══════════════════════════════════════════
 // ADMIN TAB
 // ═══════════════════════════════════════════
+let editingBedId=null;
+
 async function renderAdmin(){
   if(!canWriteMeta()) return;
   await renderHospList();
@@ -644,7 +647,10 @@ async function renderHospList(){
     const name=(hospitalsList[id].meta&&hospitalsList[id].meta.name)||id;
     const bedCount=Object.keys(hospitalsList[id].beds||{}).length;
     return '<div class="userrow">🏥 '+name+' <span style="color:var(--dim);font-family:var(--mono);font-size:11px">('+id+')</span>'+
-      '<span class="role">'+bedCount+' เตียง</span></div>';
+      '<span class="role">'+bedCount+' เตียง</span>'+
+      '<button class="btn sm" style="margin-left:8px" onclick="renameHospital(\''+id+'\')">แก้ชื่อ</button>'+
+      '<button class="btn sm" style="margin-left:6px;color:var(--danger)" onclick="deleteHospital(\''+id+'\',\''+bedCount+'\')">ลบ</button>'+
+      '</div>';
   }).join(''):'<div class="empty">ยังไม่มีโรงพยาบาล</div>';
 }
 async function saveHospMeta(){
@@ -652,6 +658,28 @@ async function saveHospMeta(){
   if(!name) return;
   try{ await db.ref('hospitals/'+curHid+'/meta/name').set(name); alert('บันทึกแล้ว'); }
   catch(e){ alert('บันทึกไม่สำเร็จ: '+e.message); }
+}
+async function renameHospital(hid){
+  if(!isSuperadmin()) return;
+  const cur=(hospitalsList[hid]&&hospitalsList[hid].meta&&hospitalsList[hid].meta.name)||hid;
+  const name=prompt('ชื่อใหม่ของโรงพยาบาล',cur);
+  if(!name) return;
+  try{ await db.ref('hospitals/'+hid+'/meta/name').set(name.trim()); renderAdmin(); }
+  catch(e){ alert('แก้ไม่สำเร็จ: '+e.message); }
+}
+async function deleteHospital(hid,bedCount){
+  if(!isSuperadmin()){ alert('เฉพาะ superadmin เท่านั้นที่ลบโรงพยาบาลได้'); return; }
+  const warn = Number(bedCount)>0
+    ? '⚠️ โรงพยาบาลนี้มี '+bedCount+' เตียง — ข้อมูลทั้งหมด (ประวัติ, การตั้งค่า, แจ้งเตือน) จะถูกลบถาวรไปด้วย ไม่สามารถกู้คืนได้\n\n'
+    : '';
+  const typed = prompt(warn+'พิมพ์รหัส "'+hid+'" เพื่อยืนยันการลบโรงพยาบาลนี้ถาวร');
+  if(typed !== hid){ if(typed!==null) alert('พิมพ์ไม่ตรง ยกเลิกการลบ'); return; }
+  try{
+    await db.ref('hospitals/'+hid).remove();
+    if(curHid===hid){ curHid=null; }
+    renderAdmin();
+    await startApp(); // refresh hospital selector + dashboard since curHid may have changed
+  }catch(e){ alert('ลบไม่สำเร็จ: '+e.message); }
 }
 async function addHospital(){
   if(!isSuperadmin()){ alert('เฉพาะ superadmin เท่านั้น'); return; }
@@ -664,14 +692,20 @@ async function addHospital(){
     renderAdmin();
   }catch(e){ alert('เพิ่มไม่สำเร็จ: '+e.message); }
 }
+
 function renderAdminBedList(){
   const w=$('adminBedList');
   const ids=Object.keys(beds||{}).sort();
   w.innerHTML=ids.length?ids.map(bid=>{
     const cfg=beds[bid].config||{}, meta=beds[bid].meta||{};
     return '<div class="userrow">🛏️ '+(cfg.bedLabel||bid)+(meta.ward?' · '+meta.ward:'')+
-      '<span class="role">'+bid+'</span></div>';
+      '<span class="role">'+bid+'</span>'+
+      '<button class="btn sm" style="margin-left:8px" onclick="toggleBedEditor(\''+bid+'\')">แก้ไข</button>'+
+      '<button class="btn sm" style="margin-left:6px;color:var(--danger)" onclick="deleteBed(\''+bid+'\')">ลบ</button>'+
+      '</div>';
   }).join(''):'<div class="empty">ยังไม่มีเตียง — กด “＋ เพิ่มเตียง”</div>';
+  $('bedEditWrap').innerHTML='';
+  editingBedId=null;
 }
 async function addBed(){
   if(!canWriteMeta()) return;
@@ -690,6 +724,108 @@ async function addBed(){
     });
     renderAdmin();
   }catch(e){ alert('เพิ่มเตียงไม่สำเร็จ: '+e.message); }
+}
+async function deleteBed(bid){
+  if(!canWriteMeta()) return;
+  const cfg=beds[bid]&&beds[bid].config||{};
+  const typed=prompt('⚠️ ข้อมูลทั้งหมดของเตียงนี้ (ประวัติ, แจ้งเตือน, การตั้งค่า) จะถูกลบถาวร\n\nพิมพ์รหัส "'+bid+'" เพื่อยืนยัน');
+  if(typed !== bid){ if(typed!==null) alert('พิมพ์ไม่ตรง ยกเลิกการลบ'); return; }
+  try{
+    await db.ref('hospitals/'+curHid+'/beds/'+bid).remove();
+    if(selectedBed===bid) selectedBed=null;
+    renderAdminBedList();
+  }catch(e){ alert('ลบไม่สำเร็จ: '+e.message); }
+}
+
+// ── bed editor: config + meta, with plain-Thai explanations per field ──
+function toggleBedEditor(bid){
+  if(editingBedId===bid){ editingBedId=null; $('bedEditWrap').innerHTML=''; return; }
+  editingBedId=bid;
+  renderBedEditor(bid);
+}
+function renderBedEditor(bid){
+  const cfg=(beds[bid]&&beds[bid].config)||{};
+  const meta=(beds[bid]&&beds[bid].meta)||{};
+  const macs=meta.nodeMacs||{};
+  const approachOpts=[['','— ไม่ระบุ —'],['anterior','ด้านหน้า (Anterior)'],['posterior','ด้านหลัง (Posterior)'],['lateral','ด้านข้าง (Lateral)']];
+  $('bedEditWrap').innerHTML=
+    '<div class="panel" style="margin-top:14px;border-color:var(--accent)">'+
+    '<h2>✏️ แก้ไขเตียง '+bid+'<button class="btn sm" style="margin-left:auto" onclick="toggleBedEditor(\''+bid+'\')">ปิด</button></h2>'+
+
+    '<div style="font-size:.82rem;font-weight:600;color:var(--accent);margin-bottom:8px">การตั้งค่าเตียง (config)</div>'+
+    field('ชื่อเตียงที่แสดงบนจอ/เว็บ','beBedLabel',cfg.bedLabel||'','text','ข้อความสั้นๆ ที่จะขึ้นแทน BED-XX บนหน้าจอ')+
+    field('ชื่อวอร์ด/หอผู้ป่วย (config)','beWardLabel',cfg.wardLabel||'','text','ใช้แสดงผลในเว็บเท่านั้น')+
+    field('เป้าหมาย Pump ต่อข้าง/วัน','bePumpTarget',cfg.pumpTargetPerSide!=null?cfg.pumpTargetPerSide:150,'number','จำนวนครั้งกระดกข้อเท้าต่อข้างที่ตั้งเป็นเป้าหมายต่อวัน (0-2000) — เว็บจะคูณ 2 เป็นเป้ารวมซ้าย+ขวาเอง')+
+    field('มุมสะโพกที่เริ่มเตือน (องศา)','beHipThresh',cfg.hipThresholdDeg!=null?cfg.hipThresholdDeg:60,'number','ถ้ามุมสะโพกเกินค่านี้ ระบบจะเริ่มแจ้งเตือน (30-120)')+
+    field('ความถี่เตือนซ้ำ (นาที)','beRemind',cfg.reminderIntervalMin!=null?cfg.reminderIntervalMin:60,'number','ถ้ายังไม่กระดกข้อเท้า จะเตือนซ้ำทุกกี่นาที (5-480)')+
+    '<div class="row">'+
+      field('ปิดเสียงเตือน ตั้งแต่ชม.','beQhStart',cfg.quietHoursStart!=null?cfg.quietHoursStart:22,'number','0-23, เช่น 22 = 4 ทุ่ม',true)+
+      field('ถึงชม.','beQhEnd',cfg.quietHoursEnd!=null?cfg.quietHoursEnd:6,'number','0-23, เช่น 6 = 6 โมงเช้า',true)+
+    '</div>'+
+
+    '<div style="font-size:.82rem;font-weight:600;color:var(--accent);margin:16px 0 8px">ข้อมูลเคส/ฮาร์ดแวร์ (meta)</div>'+
+    '<div class="infonote" style="margin-bottom:12px">ℹ️ กลุ่มนี้แยกคนละที่เก็บข้อมูลจากด้านบน (คนละ node ใน Firebase) และแก้ได้เฉพาะ admin/superadmin เท่านั้น (staff แก้ไม่ได้)</div>'+
+    field('แผนก/วอร์ด (meta — แยกจาก "ชื่อวอร์ด" ด้านบน)','beMetaWard',meta.ward||'','text','ยังไม่ยืนยันว่าใช้แสดงผลที่ไหน อาจซ้ำกับ config ด้านบน')+
+    field('วันที่ผ่าตัด','beSurgDate',meta.surgeryDate||'','date','รูปแบบ YYYY-MM-DD')+
+    '<div class="fg" style="margin-bottom:12px"><label style="color:var(--text2);font-size:.75rem;display:block;margin-bottom:5px">วิธีผ่าตัด (Approach)</label>'+
+      '<select id="beApproach" class="txtin" style="width:100%">'+
+      approachOpts.map(o=>'<option value="'+o[0]+'"'+(meta.approach===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+
+      '</select></div>'+
+    field('MAC โหนด HIP','beMacHip',macs.hip||'','text','รูปแบบ XX:XX:XX:XX:XX:XX (ตัวพิมพ์ใหญ่)')+
+    field('MAC โหนด ข้อเท้าซ้าย (ankleL)','beMacL',macs.ankleL||'','text','รูปแบบ XX:XX:XX:XX:XX:XX')+
+    field('MAC โหนด ข้อเท้าขวา (ankleR)','beMacR',macs.ankleR||'','text','รูปแบบ XX:XX:XX:XX:XX:XX')+
+
+    '<div class="row" style="margin-top:14px">'+
+      '<button class="btn primary" style="width:auto;padding:10px 24px" onclick="saveBedEditor(\''+bid+'\')">บันทึกทั้งหมด</button>'+
+    '</div>'+
+    '</div>';
+}
+function field(label,id,val,type,help,inline){
+  const w=inline?'style="flex:1;min-width:120px"':'';
+  const maxlen = {beBedLabel:40, beWardLabel:60, beMetaWard:60}[id];
+  return '<div class="fg" '+w+'><label>'+label+'</label>'+
+    '<input id="'+id+'" class="txtin" type="'+type+'" value="'+String(val).replace(/"/g,'&quot;')+'"'+
+    (maxlen?' maxlength="'+maxlen+'"':'')+'>'+
+    (help?'<div style="font-size:.7rem;color:var(--dim);margin-top:3px">'+help+'</div>':'')+
+    '</div>';
+}
+async function saveBedEditor(bid){
+  const macRe=/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+  const macHip=$('beMacHip').value.trim(), macL=$('beMacL').value.trim(), macR=$('beMacR').value.trim();
+  for(const m of [macHip,macL,macR]){
+    if(m && !macRe.test(m)){ alert('รูปแบบ MAC ไม่ถูกต้อง ต้องเป็น XX:XX:XX:XX:XX:XX เช่น 90:70:69:0B:DE:90'); return; }
+  }
+  const surgDate=$('beSurgDate').value.trim();
+  if(surgDate && !/^\d{4}-\d{2}-\d{2}$/.test(surgDate)){ alert('วันที่ผ่าตัดต้องเป็นรูปแบบ YYYY-MM-DD'); return; }
+
+  const configUpdate={
+    bedLabel: $('beBedLabel').value.trim(),
+    wardLabel: $('beWardLabel').value.trim(),
+    pumpTargetPerSide: Number($('bePumpTarget').value)||0,
+    hipThresholdDeg: Number($('beHipThresh').value)||60,
+    reminderIntervalMin: Number($('beRemind').value)||60,
+    quietHoursStart: Number($('beQhStart').value)||0,
+    quietHoursEnd: Number($('beQhEnd').value)||0,
+  };
+  const metaUpdate={};
+  if(canWriteMeta()){
+    metaUpdate.ward=$('beMetaWard').value.trim();
+    if(surgDate) metaUpdate.surgeryDate=surgDate;
+    const approach=$('beApproach').value;
+    if(approach) metaUpdate.approach=approach;
+    metaUpdate.nodeMacs={};
+    if(macHip) metaUpdate.nodeMacs.hip=macHip.toUpperCase();
+    if(macL) metaUpdate.nodeMacs.ankleL=macL.toUpperCase();
+    if(macR) metaUpdate.nodeMacs.ankleR=macR.toUpperCase();
+  }
+
+  try{
+    await db.ref('hospitals/'+curHid+'/beds/'+bid+'/config').update(configUpdate);
+    if(canWriteMeta()) await db.ref('hospitals/'+curHid+'/beds/'+bid+'/meta').update(metaUpdate);
+    alert('บันทึกแล้ว');
+    editingBedId=null;
+    $('bedEditWrap').innerHTML='';
+  }catch(e){ alert('บันทึกไม่สำเร็จ: '+e.message); }
 }
 </script>
 </body>

@@ -240,7 +240,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
       <div id="hospList"></div>
     </div>
     <div class="panel">
-      <h2>🛏️ เตียงในโรงพยาบาลนี้<div class="spacer"></div>
+      <h2>🛏️ เตียงในโรงพยาบาลนี้ <span id="curHospLabel" style="color:var(--accent);font-weight:400"></span><div class="spacer"></div>
         <button class="btn sm" onclick="addBed()">＋ เพิ่มเตียง</button></h2>
       <div id="adminBedList"></div>
       <div id="bedEditWrap"></div>
@@ -624,6 +624,21 @@ async function renderAdmin(){
   if(!canWriteMeta()) return;
   await renderHospList();
   renderAdminBedList();
+  await renderCurHospLabel();
+}
+async function renderCurHospLabel(){
+  const el=$('curHospLabel');
+  if(!curHid){ el.textContent=''; return; }
+  let name=curHid;
+  if(isSuperadmin() && hospitalsList[curHid] && hospitalsList[curHid].meta){
+    name=hospitalsList[curHid].meta.name||curHid;
+  }else{
+    try{
+      const snap=await db.ref('hospitals/'+curHid+'/meta/name').get();
+      if(snap.exists()) name=snap.val();
+    }catch(e){ /* fall back to hid */ }
+  }
+  el.textContent='('+name+')';
 }
 async function renderHospList(){
   const w=$('hospList');

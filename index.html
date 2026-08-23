@@ -701,7 +701,7 @@ function renderAdminBedList(){
     return '<div class="userrow">🛏️ '+(cfg.bedLabel||bid)+(meta.ward?' · '+meta.ward:'')+
       '<span class="role">'+bid+'</span>'+
       '<button class="btn sm" style="margin-left:8px" onclick="toggleBedEditor(\''+bid+'\')">แก้ไข</button>'+
-      '<button class="btn sm" style="margin-left:6px;color:var(--danger)" onclick="deleteBed(\''+bid+'\')">ลบ</button>'+
+      (isSuperadmin()?'<button class="btn sm" style="margin-left:6px;color:var(--danger)" onclick="deleteBed(\''+bid+'\')">ลบ</button>':'')+
       '</div>';
   }).join(''):'<div class="empty">ยังไม่มีเตียง — กด “＋ เพิ่มเตียง”</div>';
   $('bedEditWrap').innerHTML='';
@@ -726,7 +726,7 @@ async function addBed(){
   }catch(e){ alert('เพิ่มเตียงไม่สำเร็จ: '+e.message); }
 }
 async function deleteBed(bid){
-  if(!canWriteMeta()) return;
+  if(!isSuperadmin()){ alert('เฉพาะ superadmin เท่านั้นที่ลบเตียงได้ — admin แก้ไขได้แต่ลบไม่ได้ (ป้องกันสิทธิ์เขียนข้อมูล live/แจ้งเตือนหลุดไปโดยไม่ตั้งใจ)'); return; }
   const cfg=beds[bid]&&beds[bid].config||{};
   const typed=prompt('⚠️ ข้อมูลทั้งหมดของเตียงนี้ (ประวัติ, แจ้งเตือน, การตั้งค่า) จะถูกลบถาวร\n\nพิมพ์รหัส "'+bid+'" เพื่อยืนยัน');
   if(typed !== bid){ if(typed!==null) alert('พิมพ์ไม่ตรง ยกเลิกการลบ'); return; }

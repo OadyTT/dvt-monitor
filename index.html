@@ -70,6 +70,13 @@
   --ok:#3fb950; --warn:#e3b341; --danger:#f85149; --accent:#39d0d8;
   --mono:'IBM Plex Mono',monospace;
 }
+body.light{
+  --bg:#f4f6f9; --bg2:#e9edf3; --surface:#ffffff; --surface2:#eef1f6;
+  --brd:#d6dde6; --text:#16202c; --text2:#4b5a6b; --dim:#8494a3;
+  --ok:#1a8a3d; --warn:#a06a00; --danger:#c62828; --accent:#0b8794;
+}
+body.light .infonote{ background:#fff8e1; }
+body.light .calibstatus{ color:var(--text2); }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;min-height:100vh}
 .wrap{max-width:1200px;margin:0 auto;padding:16px 16px 90px}
@@ -174,6 +181,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
   <div class="fg"><label>PIN</label><input id="inPin" type="password" inputmode="numeric" autocomplete="current-password"></div>
   <button class="btn primary" onclick="doLogin()">เข้าสู่ระบบ</button>
   <div class="err" id="loginErr"></div>
+  <button class="btn sm" style="width:100%;margin-top:10px" onclick="toggleTheme()" id="themeToggleBtnLogin">☀️ โหมดสว่าง</button>
 </div>
 
 <div class="wrap hide" id="appView">
@@ -183,6 +191,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
     <div class="spacer"></div>
     <select id="selHosp" class="hide" onchange="onHospChange()"></select>
     <span class="badge" id="roleBadge">—</span>
+    <button class="btn sm" id="themeToggleBtn" onclick="toggleTheme()" title="สลับโหมดสว่าง/มืด">☀️</button>
     <button class="btn sm" onclick="doLogout()">ออก</button>
   </div>
 
@@ -275,6 +284,25 @@ const $ = id => document.getElementById(id);
 let db=null, myRole=null, myHid=null, myName=null, myUid=null;
 let curHid=null, hospitalsList={}, beds={}, bedsRef=null, selectedBed=null;
 let activeTab='dashboard';
+
+// ═══════════ theme (local UI preference only, not synced anywhere) ═══════════
+function applyTheme(light){
+  document.body.classList.toggle('light', light);
+  const icon = light ? '🌙' : '☀️';
+  const label = light ? '🌙 โหมดมืด' : '☀️ โหมดสว่าง';
+  const b1=$('themeToggleBtn'); if(b1) b1.textContent=icon;
+  const b2=$('themeToggleBtnLogin'); if(b2) b2.textContent=label;
+}
+function toggleTheme(){
+  const light = !document.body.classList.contains('light');
+  try{ localStorage.setItem('hh_theme', light?'light':'dark'); }catch(e){ /* storage may be blocked, non-fatal */ }
+  applyTheme(light);
+}
+(function initTheme(){
+  let saved=null;
+  try{ saved = localStorage.getItem('hh_theme'); }catch(e){ /* ignore */ }
+  applyTheme(saved==='light');
+})();
 
 function canWriteConfig(){ return myRole==='admin' || myRole==='staff' || myRole==='superadmin'; }
 function canWriteMeta(){ return myRole==='admin' || myRole==='superadmin'; }

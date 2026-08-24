@@ -456,16 +456,34 @@ function renderAll(data){
   });
   renderDetail(selectedBed && data[selectedBed] ? selectedBed : null, data);
 }
-function nodeBlock(name,n){
+function nodeBlock(name,n,pumpCount,testCmdKey,bid){
   n=n||{};
   const online = n.lastSeen && (Date.now()-n.lastSeen < STALE_MS);
+  const pumpRow = pumpCount!=null
+    ? '<div class="kv"><span>กระดกวันนี้</span><b style="color:var(--accent)">'+pumpCount+' ครั้ง</b></div>'
+    : '';
+  const testBtn = (testCmdKey && canWriteMeta())
+    ? '<div style="margin-top:8px"><button class="btn sm" onclick="requestTestCommand(\''+bid+'\',\''+testCmdKey+'\',\''+name+'\')">🔔 '+(testCmdKey==='testAudio'?'ทดสอบเสียงที่หัวเตียง':'ทดสอบการสั่น')+'</button></div>'
+    : '';
   return '<div><div class="kv"><span><b style="color:var(--text2)">'+name+'</b></span>'+
     '<b style="color:'+(online?'var(--ok)':'var(--danger)')+'">'+(online?'เชื่อมต่อ':'ขาดการเชื่อมต่อ')+'</b></div>'+
+    pumpRow+
     '<div class="kv"><span>แบตเตอรี่</span><b>'+(n.batteryV!=null?n.batteryV.toFixed(2)+'V':'—')+
       (n.batteryBand!=null?' (band '+n.batteryBand+')':'')+'</b></div>'+
     '<div class="kv"><span>สัญญาณ</span><b>'+(n.rssi!=null?n.rssi+' dBm':'—')+'</b></div>'+
     '<div class="kv"><span>เห็นล่าสุด</span><b>'+fmtAge(n.lastSeen)+'</b></div>'+
-    '<div class="kv"><span>status</span><b>'+(n.status!=null?n.status:'—')+'</b></div></div>';
+    '<div class="kv"><span>status</span><b>'+(n.status!=null?n.status:'—')+'</b></div>'+
+    testBtn+
+    '</div>';
+}
+async function requestTestCommand(bedId,cmdKey,label){
+  if(!canWriteMeta()) return;
+  try{
+    await db.ref('hospitals/'+curHid+'/beds/'+bedId+'/commands/'+cmdKey).set({
+      requestedAt: Date.now(), requestedBy: myUid, status: 'pending'
+    });
+    alert('ส่งคำสั่งทดสอบ ('+label+') แล้ว — รอดูว่าอุปกรณ์สั่น/ส่งเสียงจริงไหม (ยังไม่ยืนยันว่า firmware รับคำสั่งนี้แล้วหรือยัง)');
+  }catch(e){ alert('ส่งคำสั่งไม่สำเร็จ: '+e.message); }
 }
 function renderDetail(bid,data){
   const w=$('detailWrap');
@@ -488,10 +506,11 @@ function renderDetail(bid,data){
     '<div class="detail"><h2><span class="dot '+(fresh?'on':'off')+'"></span>'+
       (cfg.bedLabel||bid)+'<button class="btn sm" style="margin-left:auto" onclick="closeDetail()">ปิด</button></h2>'+
     alertHtml+
+    (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">⚠️ ปุ่มทดสอบสั่น/เสียงด้านล่าง เขียนคำสั่งเข้า Firebase ได้แล้ว แต่ยังไม่ยืนยันว่า gateway firmware มี listener รับคำสั่งนี้จริงหรือยัง (เหมือนปุ่มสอบเทียบ)</div>':'')+
     '<div class="three">'+
-      nodeBlock('HIP', nodes.hip)+
-      nodeBlock('ข้อเท้าซ้าย', nodes.ankleL)+
-      nodeBlock('ข้อเท้าขวา', nodes.ankleR)+
+      nodeBlock('HIP', nodes.hip, null, 'testAudio', bid)+
+      nodeBlock('ข้อเท้าซ้าย', nodes.ankleL, live.pumpL, 'testVibrateAnkleL', bid)+
+      nodeBlock('ข้อเท้าขวา', nodes.ankleR, live.pumpR, 'testVibrateAnkleR', bid)+
     '</div>'+
     '<div class="kv"><span>มุมสะโพก (pitch / roll)</span><b>'+
       (fresh?(live.hipPitch||0).toFixed(1)+'° / '+(live.hipRoll||0).toFixed(1)+'°':'—')+'</b></div>'+

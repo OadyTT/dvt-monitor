@@ -11,9 +11,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.4.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.4.1 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.4.1 (2026-08-27)
+    FIXED: the calibration tab never updated itself, so a command
+    that had already succeeded kept showing "รอ gateway".
+    The gateway log proved the round trip was complete — executing
+    calibrateHip, CALIBRATE sent over ESP-NOW, "done (published)",
+    cloud fail=0 — while the page still showed the request as
+    outstanding. The data was arriving; the DOM was not being
+    redrawn.
+    Cause: bedsRef.on('value') called renderAll() and
+    populateReportBedSelect() but never renderCalibList(), and the
+    1 s interval was gated on activeTab==='dashboard'. So the
+    calibration list was painted once, on tab switch, and then
+    frozen. That also explains why it looked correct "sometimes":
+    switching tabs or reloading repainted it with whatever the
+    truth was at that instant.
+    - The live subscription now repaints the calibration list too.
+    - The 1 s interval covers the calib tab, because two of the
+      pill's states are time-based — a request crosses into
+      "ไม่ตอบสนอง" at 10 minutes with no new data arriving, so a
+      repaint has to be driven by the clock, not only by Firebase.
+    Worth stating plainly: nothing was ever wrong with the command
+    pipeline here. A stale view of a working system is its own
+    class of bug, and on a ward it is a dangerous one — it invites
+    someone to press a button a second time because the first
+    appeared to do nothing.
+
   v3.4.0 (2026-08-27)
     Gateway firmware v3.21.0 reads config/ for the first time. Every
     field in this editor has been written to Firebase correctly and
@@ -439,7 +465,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.4.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.4.1 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -588,6 +614,10 @@ function watchBeds(){
     beds = snap.exists()? snap.val() : {};
     renderAll(beds);
     populateReportBedSelect();
+    // The calibration list reads the same beds object for its status pills,
+    // so it has to be repainted here too — without this it stays frozen on
+    // whatever was true when the tab was last opened.
+    if(activeTab==='calib') renderCalibList();
   }, err=>{
     $('emptyMsg').textContent='อ่านข้อมูลไม่ได้: '+err.message;
     $('emptyMsg').classList.remove('hide');
@@ -837,7 +867,14 @@ async function ackAllAlerts(bid){
   }catch(e){ alert('รับทราบไม่สำเร็จ: '+e.message); }
 }
 
-setInterval(()=>{ if(activeTab==='dashboard' && Object.keys(beds).length) renderAll(beds); },1000);
+setInterval(()=>{
+  if(!Object.keys(beds).length) return;
+  if(activeTab==='dashboard') renderAll(beds);
+  // Also the calib tab: cmdPill() flips a waiting request to "ไม่ตอบสนอง"
+  // purely on elapsed time, and no Firebase event fires when that happens —
+  // if the gateway is offline, nothing arrives to trigger a repaint at all.
+  else if(activeTab==='calib') renderCalibList();
+},1000);
 
 // ═══════════════════════════════════════════
 // REPORT TAB — via GAS (Code_v7.gs getReport, bed-filtered)

@@ -11,9 +11,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.1.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.2.0 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.2.0 (2026-08-27)
+    Visual-polish pass, no data/schema changes (deadline extended,
+    room to do this properly instead of the minimal-risk-only
+    approach used through v3.1.0):
+    - Refined color tokens: deeper navy ink + teal/amber/red triad
+      chosen for real clinical meaning, not decoration (light theme
+      is what's actually used in practice — every screenshot this
+      session was light mode, so it got the real attention).
+    - Signature element: a pulse-ring animation on the "online" dot
+      (pure CSS, hangs off the existing .dot.on selector, no markup
+      change) — a live-vitals motif appropriate to a DVT monitor,
+      the one deliberate flourish on the page. Respects
+      prefers-reduced-motion.
+    - .bed cards: soft shadow + hover lift instead of flat
+      border-only, for real depth.
+    - FIXED: several colors were hardcoded for dark mode only and
+      would render wrong/invisible in light mode — .badge border,
+      .kv border, .infonote background+border, the active-alerts
+      banner, and the report chart's grid lines (5% white was
+      essentially invisible on a light background). All now use
+      color-mix() off the semantic tokens (or read the live CSS
+      custom properties, for the Chart.js config) so they can never
+      drift out of sync with the token system or silently break in
+      one theme again.
+    Nothing about data binding, write paths, or auth touched at all.
+
   v3.1.0 (2026-08-26)
     Visual only, no data/schema changes: added pure-CSS donut gauges
     (conic-gradient, gaugeHtml() helper) — one large gauge per bed
@@ -77,15 +103,21 @@
 :root{
   --bg:#070b10; --bg2:#0c1018; --surface:#111820; --surface2:#162030;
   --brd:#1e2d3d; --text:#dce6f2; --text2:#8b9ab0; --dim:#6e7f8f;
-  --ok:#3fb950; --warn:#e3b341; --danger:#f85149; --accent:#39d0d8;
+  --ok:#2fbf96; --warn:#e3b341; --danger:#f85149; --accent:#39d0d8;
   --mono:'IBM Plex Mono',monospace;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.5);
 }
 body.light{
-  --bg:#f4f6f9; --bg2:#e9edf3; --surface:#ffffff; --surface2:#eef1f6;
-  --brd:#d6dde6; --text:#16202c; --text2:#4b5a6b; --dim:#8494a3;
-  --ok:#1a8a3d; --warn:#a06a00; --danger:#c62828; --accent:#0b8794;
+  /* REFINED 2026-08-27, visual-polish pass: deeper navy ink instead of a
+     flat near-black for text (more considered than pure #16202c), and a
+     teal/amber/red triad chosen to carry real clinical meaning (calm=ok,
+     caution=warn, urgent=danger) rather than default red/green/yellow.
+     Structure/class names untouched — this block only. */
+  --bg:#eef1f5; --bg2:#e4e9f0; --surface:#ffffff; --surface2:#f3f6fa;
+  --brd:#dbe2ea; --text:#0f2438; --text2:#526478; --dim:#8798a8;
+  --ok:#0d8f7f; --warn:#b3720a; --danger:#c0392b; --accent:#0d7d8c;
+  --shadow:0 1px 2px rgba(15,36,56,.04), 0 10px 28px -14px rgba(15,36,56,.18);
 }
-body.light .infonote{ background:#fff8e1; }
 body.light .calibstatus{ color:var(--text2); }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;min-height:100vh}
@@ -109,7 +141,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',san
 .brand{font-size:1rem;font-weight:700}
 .brand small{display:block;font-family:var(--mono);font-size:9px;color:var(--dim);font-weight:400;letter-spacing:.07em}
 .spacer{margin-left:auto}
-.badge{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:999px;border:1px solid #274c33;color:var(--ok);background:var(--surface)}
+.badge{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:999px;border:1px solid color-mix(in srgb, var(--ok) 35%, transparent);color:var(--ok);background:var(--surface)}
 select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);border-radius:8px;color:var(--text);font-size:.82rem}
 
 .tabs{display:flex;gap:6px;padding:12px 0 18px;flex-wrap:wrap;border-bottom:1px solid var(--brd);margin-bottom:18px}
@@ -120,12 +152,28 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .view.active{display:block}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
-.bed{background:var(--surface);border:1px solid var(--brd);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s}
-.bed:hover{border-color:var(--accent)}
+.bed{background:var(--surface);border:1px solid var(--brd);border-radius:16px;padding:16px;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;box-shadow:var(--shadow)}
+.bed:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 2px 4px rgba(15,36,56,.06),0 16px 32px -16px rgba(13,141,140,.28)}
 .bed.stale{opacity:.6}
 .bed h3{font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:2px}
-.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--dim)}
-.dot.on{background:var(--ok);box-shadow:0 0 8px #3fb95088}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--dim);position:relative}
+.dot.on{background:var(--ok)}
+/* Signature element: a pulse ring on any "online" dot — a DVT/vitals
+   monitor is fundamentally about a live signal, so this small live-pulse
+   motif (rather than a static dot) is the one deliberate visual flourish
+   on the page. Pure CSS, no JS/markup change needed since it hangs off the
+   existing .dot.on selector. */
+.dot.on::after{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  border:1.5px solid var(--ok);
+  animation:pulse-ring 2.2s cubic-bezier(.25,.6,.4,1) infinite;
+}
+@keyframes pulse-ring{
+  0%{transform:scale(.6);opacity:.85}
+  70%{transform:scale(2.1);opacity:0}
+  100%{transform:scale(2.1);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){ .dot.on::after{animation:none;display:none} }
 .dot.off{background:var(--danger)}
 .bed .ago{font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:12px}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -154,7 +202,7 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 
 .detail{background:var(--surface);border:1px solid var(--brd);border-radius:14px;padding:18px;margin-bottom:16px}
 .detail h2{font-size:1.05rem;margin-bottom:12px;display:flex;align-items:center;gap:10px}
-.kv{display:flex;justify-content:space-between;font-size:.82rem;color:var(--text2);padding:6px 0;border-bottom:1px dashed #16202c}
+.kv{display:flex;justify-content:space-between;font-size:.82rem;color:var(--text2);padding:6px 0;border-bottom:1px dashed var(--brd)}
 .kv b{font-family:var(--mono);color:var(--text);font-weight:600}
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px}
 @media(max-width:800px){.three{grid-template-columns:1fr}}
@@ -185,7 +233,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
 .calibcard{background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .calibcard .name{font-weight:600;flex:1;min-width:120px}
 .calibstatus{font-family:var(--mono);font-size:11px;color:var(--dim)}
-.infonote{font-size:.78rem;color:var(--warn);background:#1a1600;border:1px solid #3d3413;border-radius:9px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
+.infonote{font-size:.78rem;color:var(--warn);background:color-mix(in srgb, var(--warn) 12%, var(--surface));border:1px solid color-mix(in srgb, var(--warn) 35%, transparent);border-radius:9px;padding:10px 12px;margin-bottom:16px;line-height:1.5}
 
 .userrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--brd);font-size:.83rem}
 .userrow:last-child{border-bottom:none}
@@ -282,7 +330,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.1.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.2.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -532,7 +580,7 @@ function renderDetail(bid,data){
   const activeAlerts=Object.keys(alerts).map(id=>Object.assign({id},alerts[id])).filter(a=>a.phase==='active');
   let alertHtml='';
   if(activeAlerts.length){
-    alertHtml='<div class="infonote" style="border-color:#5c2328;color:var(--danger);background:#1a0e0f">'+
+    alertHtml='<div class="infonote" style="border-color:color-mix(in srgb, var(--danger) 40%, transparent);color:var(--danger);background:color-mix(in srgb, var(--danger) 10%, var(--surface))">'+
       activeAlerts.map(a=>'⚠️ '+a.id+' (sev '+a.sev+')'+(a.detail?' — '+a.detail:'')).join('<br>')+
       (canWriteConfig()?'<div style="margin-top:8px"><button class="btn sm" onclick="ackAllAlerts(\''+bid+'\')">รับทราบทั้งหมด</button></div>':'')+
       '</div>';
@@ -655,18 +703,30 @@ function renderReport(rows){
   const goalLine=labels.map(()=>pumpGoal);
   if(chartReportInst){ chartReportInst.destroy(); chartReportInst=null; }
   const ctx=$('chartReport').getContext('2d');
+  /* THEME-AWARE 2026-08-27: grid/tick colors used to be hardcoded for dark
+     mode only (rgba(255,255,255,0.05) grid lines are essentially invisible
+     on the light background every screenshot this session actually used).
+     Reading the live CSS custom properties keeps these in permanent sync
+     with the :root/.light token system above instead of a second hardcoded
+     copy that could silently drift from it. */
+  const cs=getComputedStyle(document.body);
+  const cText2=cs.getPropertyValue('--text2').trim()||'#9ca3af';
+  const cOk=cs.getPropertyValue('--ok').trim()||'#2fbf96';
+  const cWarn=cs.getPropertyValue('--warn').trim()||'#e3b341';
+  const isLight=document.body.classList.contains('light');
+  const cGrid=isLight?'rgba(15,36,56,0.08)':'rgba(255,255,255,0.06)';
   chartReportInst=new Chart(ctx,{
     type:'bar',
     data:{ labels, datasets:[
-      { label:'ซ้าย (L)', data:dataL, backgroundColor:'rgba(56,189,248,0.7)', borderRadius:4, order:2 },
-      { label:'ขวา (R)', data:dataR, backgroundColor:'rgba(251,146,60,0.7)', borderRadius:4, order:2 },
-      { label:'เป้าหมาย', data:goalLine, type:'line', borderColor:'rgba(74,222,128,0.8)', borderWidth:2, borderDash:[6,3], pointRadius:0, fill:false, order:1 },
+      { label:'ซ้าย (L)', data:dataL, backgroundColor:cOk+'b3', borderRadius:4, order:2 },
+      { label:'ขวา (R)', data:dataR, backgroundColor:cWarn+'b3', borderRadius:4, order:2 },
+      { label:'เป้าหมาย', data:goalLine, type:'line', borderColor:cOk, borderWidth:2, borderDash:[6,3], pointRadius:0, fill:false, order:1 },
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ labels:{ color:'#9ca3af' } } },
+      plugins:{ legend:{ labels:{ color:cText2 } } },
       scales:{
-        x:{ stacked:true, ticks:{ color:'#9ca3af' }, grid:{ color:'rgba(255,255,255,0.05)' } },
-        y:{ stacked:true, beginAtZero:true, ticks:{ color:'#9ca3af' }, grid:{ color:'rgba(255,255,255,0.05)' } }
+        x:{ stacked:true, ticks:{ color:cText2 }, grid:{ color:cGrid } },
+        y:{ stacked:true, beginAtZero:true, ticks:{ color:cText2 }, grid:{ color:cGrid } }
       } }
   });
 }

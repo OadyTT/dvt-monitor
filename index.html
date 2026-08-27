@@ -11,9 +11,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.0.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.1.0 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.1.0 (2026-08-26)
+    Visual only, no data/schema changes: added pure-CSS donut gauges
+    (conic-gradient, gaugeHtml() helper) — one large gauge per bed
+    card showing total pump progress, one small gauge per ankle node
+    in the detail view showing that side's individual progress
+    against config.pumpTargetPerSide. Linear .bar strip removed from
+    the bed card (gauge replaces it); .bar CSS class left in place
+    unused in case it's wanted again. Everything else (data binding,
+    write paths, auth) is byte-for-byte the same as v3.0.0 below.
+
   v3.0.0 (2026-08-23)
     FULL REBUILD against the confirmed-real Firebase schema
     (custom-claims rules: auth.token.role/hid, no users/ node).
@@ -126,6 +136,21 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .bar{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-top:7px}
 .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
 .pl{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:5px}
+
+/* Donut gauge — pure CSS via conic-gradient, no chart lib needed. Percentage
+   comes in as an inline custom style (background) set by gaugeHtml() in JS;
+   this class only handles the fixed geometry/hole/label positioning. */
+.gauge{position:relative;width:68px;height:68px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.gauge::before{content:'';position:absolute;inset:7px;border-radius:50%;background:var(--surface)}
+.gauge .gnum{position:relative;z-index:1;font-family:var(--mono);font-weight:700;font-size:.92rem;color:var(--text);line-height:1.1;text-align:center}
+.gauge .gnum small{display:block;font-size:.52rem;font-weight:400;color:var(--dim);margin-top:1px}
+.gauge.sm{width:46px;height:46px}
+.gauge.sm::before{inset:5px}
+.gauge.sm .gnum{font-size:.62rem}
+.gauge.sm .gnum small{font-size:.44rem}
+.cardhead{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.cardhead .metrics{flex:1;margin-bottom:0}
+.nodegauge{display:flex;align-items:center;gap:10px;margin:8px 0}
 
 .detail{background:var(--surface);border:1px solid var(--brd);border-radius:14px;padding:18px;margin-bottom:16px}
 .detail h2{font-size:1.05rem;margin-bottom:12px;display:flex;align-items:center;gap:10px}
@@ -257,7 +282,7 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.0.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.1.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -427,6 +452,13 @@ function fmtAge(ts){
   if(s<3600) return Math.round(s/60)+'m';
   return Math.round(s/3600)+'h';
 }
+function gaugeHtml(pct,label,size){
+  pct=Math.max(0,Math.min(100,pct||0));
+  const color=pct>=100?'var(--ok)':'var(--accent)';
+  const cls='gauge'+(size==='sm'?' sm':'');
+  return '<div class="'+cls+'" style="background:conic-gradient('+color+' '+(pct*3.6)+'deg,var(--bg2) 0)">'+
+    '<span class="gnum">'+Math.round(pct)+'%'+(label?'<small>'+label+'</small>':'')+'</span></div>';
+}
 function renderAll(data){
   const ids=Object.keys(data||{}).sort();
   $('emptyMsg').classList.toggle('hide', ids.length>0);
@@ -443,24 +475,28 @@ function renderAll(data){
     card.innerHTML=
       '<h3><span class="dot '+(fresh?'on':'off')+'"></span>'+label+'</h3>'+
       '<div class="ago">'+agoText(live.ts)+'</div>'+
-      '<div class="metrics">'+
-        '<div class="m"><div class="lbl">มุมสะโพก P/R</div><div class="val">'+
-          (fresh? (live.hipPitch||0).toFixed(0)+'/'+(live.hipRoll||0).toFixed(0) : '—')+'<small>°</small></div></div>'+
-        '<div class="m"><div class="lbl">Pump รวมวันนี้</div><div class="val">'+
-          total+'<small> / '+target+'</small></div></div>'+
+      '<div class="cardhead">'+
+        gaugeHtml(target?total/target*100:0)+
+        '<div class="metrics">'+
+          '<div class="m"><div class="lbl">มุมสะโพก P/R</div><div class="val">'+
+            (fresh? (live.hipPitch||0).toFixed(0)+'/'+(live.hipRoll||0).toFixed(0) : '—')+'<small>°</small></div></div>'+
+          '<div class="m"><div class="lbl">Pump รวมวันนี้</div><div class="val">'+
+            total+'<small> / '+target+'</small></div></div>'+
+        '</div>'+
       '</div>'+
-      '<div class="bar"><i style="width:'+Math.min(100,target?total/target*100:0)+'%"></i></div>'+
       '<div class="pl">ซ้าย '+(live.pumpL||0)+'  ·  ขวา '+(live.pumpR||0)+
         '  ·  FSR '+(live.fsrL||0)+'/'+(live.fsrR||0)+'</div>';
     g.appendChild(card);
   });
   renderDetail(selectedBed && data[selectedBed] ? selectedBed : null, data);
 }
-function nodeBlock(name,n,pumpCount,testCmdKey,bid){
+function nodeBlock(name,n,pumpCount,testCmdKey,bid,target){
   n=n||{};
   const online = n.lastSeen && (Date.now()-n.lastSeen < STALE_MS);
   const pumpRow = pumpCount!=null
-    ? '<div class="kv"><span>กระดกวันนี้</span><b style="color:var(--accent)">'+pumpCount+' ครั้ง</b></div>'
+    ? '<div class="nodegauge">'+gaugeHtml(target?pumpCount/target*100:0,null,'sm')+
+      '<div><div class="kv" style="border:none;padding:0"><span>กระดกวันนี้</span></div>'+
+      '<b style="color:var(--accent);font-size:1.05rem">'+pumpCount+'<span style="color:var(--dim);font-size:.75rem"> / '+(target||'?')+' ครั้ง</span></b></div></div>'
     : '';
   const testBtn = (testCmdKey && canWriteMeta())
     ? '<div style="margin-top:8px"><button class="btn sm" onclick="requestTestCommand(\''+bid+'\',\''+testCmdKey+'\',\''+name+'\')">🔔 '+(testCmdKey==='testAudio'?'ทดสอบเสียงที่หัวเตียง':'ทดสอบการสั่น')+'</button></div>'
@@ -509,8 +545,8 @@ function renderDetail(bid,data){
     (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">⚠️ ปุ่มทดสอบสั่น/เสียงด้านล่าง เขียนคำสั่งเข้า Firebase ได้แล้ว แต่ยังไม่ยืนยันว่า gateway firmware มี listener รับคำสั่งนี้จริงหรือยัง (เหมือนปุ่มสอบเทียบ)</div>':'')+
     '<div class="three">'+
       nodeBlock('HIP', nodes.hip, null, 'testAudio', bid)+
-      nodeBlock('ข้อเท้าซ้าย', nodes.ankleL, live.pumpL, 'testVibrateAnkleL', bid)+
-      nodeBlock('ข้อเท้าขวา', nodes.ankleR, live.pumpR, 'testVibrateAnkleR', bid)+
+      nodeBlock('ข้อเท้าซ้าย', nodes.ankleL, live.pumpL, 'testVibrateAnkleL', bid, cfg.pumpTargetPerSide||150)+
+      nodeBlock('ข้อเท้าขวา', nodes.ankleR, live.pumpR, 'testVibrateAnkleR', bid, cfg.pumpTargetPerSide||150)+
     '</div>'+
     '<div class="kv"><span>มุมสะโพก (pitch / roll)</span><b>'+
       (fresh?(live.hipPitch||0).toFixed(1)+'° / '+(live.hipRoll||0).toFixed(1)+'°':'—')+'</b></div>'+

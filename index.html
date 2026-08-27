@@ -11,9 +11,36 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.5.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.5.1 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.5.1 (2026-08-27)
+    Two displays that were stating things that are not true.
+    1. agoText() labels anything older than STALE_MS as
+       "ขาดสัญญาณ". That is correct for the live-data row, where
+       old data really does mean the link is down. It was also
+       being used for ack.ts and (my fault, v3.3.0) for each
+       alert's raisedTs — where it is simply wrong. An
+       acknowledgement made 49 minutes ago has not lost signal, and
+       "แบตเตอรี่ต่ำ — ข้อเท้าซ้าย · ขาดสัญญาณ · 5 ชม." reads as
+       though a battery warning were a connectivity fault. On a
+       ward that is worse than unhelpful: it points the nurse at
+       the wrong problem. Added agoPlain(), which reports age and
+       nothing else, and used it wherever the timestamp is an
+       EVENT time rather than a freshness measure.
+    2. A node with no cell fitted reads ~0.02 V, and the ankle
+       firmware's ALLOW_NO_CELL_BENCH guard reports the band as
+       NORMAL so bench work is not drowned in false alarms. The web
+       then rendered "0.02V (band 1)" — a number that cannot happen
+       on a running cell-powered node, shown as if it were normal.
+       Now any reading under BATT_IMPLAUSIBLE_V is displayed as
+       unreadable instead of as a value. Deliberately NOT labelled
+       "bench mode": a broken divider wire on a deployed node reads
+       the same way, and calling that "bench" would hide a real
+       fault. It says the reading cannot be trusted, which is the
+       part that is actually known.
+    No firmware, rules or schema change.
+
   v3.5.0 (2026-08-27)
     Added a "กำลังทดสอบ…" state with a live countdown, so pressing a
     test button shows something happening for as long as the thing
@@ -489,7 +516,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.5.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.5.1 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -656,6 +683,25 @@ function agoText(ts){
   if(d<3600000)  return 'ขาดสัญญาณ · '+Math.round(d/60000)+' นาทีที่แล้ว';
   return 'ขาดสัญญาณ · '+Math.round(d/3600000)+' ชม.ที่แล้ว';
 }
+/* Age only, with no verdict attached. For timestamps that mark an EVENT —
+   when an alert was raised, when someone acknowledged — where "ขาดสัญญาณ"
+   would be a claim about the link that this timestamp cannot support.
+   agoText() stays as-is for the live-data row, which is the one place the
+   freshness verdict is genuinely what the reader needs. */
+function agoPlain(ts){
+  if(!ts) return 'ไม่ทราบเวลา';
+  const d=Date.now()-ts;
+  if(d<60000)   return Math.max(0,Math.round(d/1000))+' วิที่แล้ว';
+  if(d<3600000) return Math.round(d/60000)+' นาทีที่แล้ว';
+  if(d<86400000)return Math.round(d/3600000)+' ชม.ที่แล้ว';
+  return Math.round(d/86400000)+' วันที่แล้ว';
+}
+
+/* Below this, a reading cannot be coming from a healthy 14500 cell — the node
+   would not be running at all. Seen when no cell is fitted (USB-powered bench
+   work) or when the divider is not wired/calibrated. */
+const BATT_IMPLAUSIBLE_V = 2.5;
+
 function fmtAge(ts){
   if(!ts) return '—';
   const s=Math.round((Date.now()-ts)/1000);
@@ -780,6 +826,20 @@ function bedCmd(bid,key){
   return (beds[bid]&&beds[bid].commands&&beds[bid].commands[key])||null;
 }
 
+/* Render a node's battery, refusing to present an impossible reading as a
+   value. See BATT_IMPLAUSIBLE_V for why 2.5 V is the line. */
+function battText(n){
+  if(n.batteryV==null) return '—';
+  if(n.batteryV < BATT_IMPLAUSIBLE_V){
+    return '<span style="color:var(--warn)">'+n.batteryV.toFixed(2)+
+           'V · อ่านค่าไม่ได้</span>'+
+           '<div style="font-size:.68rem;color:var(--dim);font-weight:400">'+
+           'ยังไม่ได้ใส่เซลล์ หรือวงจรแบ่งแรงดันยังไม่ต่อ/ยังไม่ปรับค่า</div>';
+  }
+  return n.batteryV.toFixed(2)+'V'+
+         (n.batteryBand!=null?' (band '+n.batteryBand+')':'');
+}
+
 function nodeBlock(name,n,pumpCount,testCmdKey,bid,target){
   n=n||{};
   const online = n.lastSeen && (Date.now()-n.lastSeen < STALE_MS);
@@ -797,8 +857,7 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target){
   return '<div><div class="kv"><span><b style="color:var(--text2)">'+name+'</b></span>'+
     '<b style="color:'+(online?'var(--ok)':'var(--danger)')+'">'+(online?'เชื่อมต่อ':'ขาดการเชื่อมต่อ')+'</b></div>'+
     pumpRow+
-    '<div class="kv"><span>แบตเตอรี่</span><b>'+(n.batteryV!=null?n.batteryV.toFixed(2)+'V':'—')+
-      (n.batteryBand!=null?' (band '+n.batteryBand+')':'')+'</b></div>'+
+    '<div class="kv"><span>แบตเตอรี่</span><b>'+battText(n)+'</b></div>'+
     '<div class="kv"><span>สัญญาณ</span><b>'+(n.rssi!=null?n.rssi+' dBm':'—')+'</b></div>'+
     '<div class="kv"><span>เห็นล่าสุด</span><b>'+fmtAge(n.lastSeen)+'</b></div>'+
     '<div class="kv"><span>status</span><b>'+(n.status!=null?n.status:'—')+'</b></div>'+
@@ -840,7 +899,7 @@ function renderDetail(bid,data){
           '<span class="aname">'+alertLabel(a.id)+'</span>'+
           (a.detail?'<span class="adet">'+a.detail+'</span>':'')+
           '<span class="aspacer"></span>'+
-          '<span class="calibstatus">'+agoText(a.raisedTs)+'</span></div>';
+          '<span class="calibstatus">'+agoPlain(a.raisedTs)+'</span></div>';
       }).join('')+
       (canWriteConfig()
         ? '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
@@ -865,7 +924,7 @@ function renderDetail(bid,data){
     '<div class="kv"><span>แรงกดหมอน ซ้าย/ขวา (FSR)</span><b>'+
       (fresh?(live.fsrL||0)+' / '+(live.fsrR||0):'—')+'</b></div>'+
     '<div class="kv"><span>อัปเดตล่าสุด</span><b>'+agoText(live.ts)+'</b></div>'+
-    (ack.ts?'<div class="kv"><span>รับทราบล่าสุด</span><b>'+(ack.by||'-')+' · '+agoText(ack.ts)+'</b></div>':'')+
+    (ack.ts?'<div class="kv"><span>รับทราบล่าสุด</span><b>'+(ack.by||'-')+' · '+agoPlain(ack.ts)+'</b></div>':'')+
     '<div class="swrow"><div class="sw'+(cfg.vibrationEnabled?' on':'')+ro+'" '+
       (canWriteConfig()?'onclick="toggleCfg(\''+bid+'\',\'vibrationEnabled\')"':'')+'><i></i></div>'+
       'เตือนด้วยการสั่นที่ข้อเท้า</div>'+

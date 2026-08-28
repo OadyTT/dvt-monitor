@@ -11,9 +11,31 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.6.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.7.0 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.7.0 (2026-08-28)
+    The history view from v3.6.0 was complete and told you nothing.
+    Its first real screenful was 74 identical rows of
+    "อุปกรณ์ขาดการเชื่อมต่อ", each with an empty detail and the raw
+    string "no-state-change". Every fact was on screen and the
+    conclusion was not: 74 alerts are not 74 problems, they are ONE
+    node offline all evening, re-checked every few minutes.
+    - Each group now leads with the SPAN (12:20 – 23:39) and how
+      many of the rows were a real change rather than a re-check.
+      Those two numbers are the whole story; the row list is
+      supporting evidence and is now COLLAPSED by default.
+    - Reasons are in Thai (Code_v7.gs v7.3.0). "no-state-change" is
+      not a sentence a nurse should have to decode at 2am.
+    - Severity is shown per group; it was only in the summary
+      object before and never rendered.
+    - Rows logged before gateway v3.24.0 carry no device and no
+      measurement — there was nothing to show, and v3.6.0 showed
+      that as a column of em-dashes with no explanation. The group
+      now says so once, instead of looking broken 74 times.
+    Requires Code_v7.gs v7.3.0 for the span and reason fields; with
+    v7.2.0 it degrades to the v3.6.0 view rather than breaking.
+
   v3.6.0 (2026-08-28)
     1. ALERT HISTORY. The report said "100 แจ้งเตือน" for a day and
        there was no way to open it — the number came from a tally
@@ -478,7 +500,13 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
 .ahist{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
 .ahist h4{font-size:.82rem;font-weight:600;color:var(--accent);margin:0 0 10px}
 .ahsum{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
-  background:color-mix(in srgb, var(--dim) 8%, transparent);margin-bottom:6px;font-size:.82rem}
+  background:color-mix(in srgb, var(--dim) 8%, transparent);margin-bottom:6px;font-size:.82rem;
+  cursor:pointer;user-select:none}
+.ahsum:hover{background:color-mix(in srgb, var(--accent) 10%, transparent)}
+.ahsum .chev{color:var(--dim);font-size:.7rem;width:1em}
+.ahspan{font-family:var(--mono);font-size:.72rem;color:var(--text2)}
+.ahnote{font-size:.72rem;color:var(--dim);padding:2px 10px 8px}
+.ahgroup[hidden]{display:none}
 .ahsum .n{font-family:var(--mono);font-weight:700;font-size:1rem;min-width:2.4em;text-align:right}
 .ahsum .who{color:var(--text2);font-size:.76rem}
 .ahsum .push{margin-left:auto;font-size:.72rem;color:var(--dim);font-family:var(--mono)}
@@ -586,7 +614,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.6.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.7.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1177,31 +1205,59 @@ async function showAlertHistory(dayStr){
     rows.forEach(r=>{
       const k=r.id||'UNKNOWN';
       if(!g[k]) g[k]={id:k,typeLabel:r.typeLabel,roleLabel:r.roleLabel,
-                      total:0,pushed:0,rows:[]};
-      g[k].total++; if(r.pushed) g[k].pushed++;
-      g[k].rows.push(r);
+                      maxSev:0,total:0,pushed:0,episodes:0,rows:[]};
+      const gr=g[k];
+      gr.total++;
+      if(r.pushed) gr.pushed++;
+      // An "episode" is a row that CHANGED the situation. Everything else is
+      // the same condition being re-checked, which is what makes a raw count
+      // so misleading.
+      if(r.pushed||r.reason==='escalate'||r.reason==='recover'||r.reason==='new') gr.episodes++;
+      if((r.sev||0)>gr.maxSev) gr.maxSev=r.sev||0;
+      gr.rows.push(r);
     });
     const groups=Object.values(g).sort((a,b)=>b.total-a.total);
     const pushedTotal=rows.filter(r=>r.pushed).length;
+    const sevPill=['pill','pill warn','pill bad','pill bad'];
+    const sevName=['เฝ้าดู','เตือน','สำคัญ','วิกฤต'];
 
     host.innerHTML='<div class="ahist">'+
       '<h4>แจ้งเตือนของวันที่ '+dayStr+' — '+rows.length+' ครั้ง '+
         '<span class="calibstatus" style="font-weight:400">'+
-        '(ส่ง LINE จริง '+pushedTotal+' ครั้ง ที่เหลือเป็นการเตือนซ้ำของเรื่องเดิม '+
-        'ที่ระบบรวบไว้ไม่ให้รบกวน)</span></h4>'+
-      groups.map(gr=>
-        '<div class="ahsum"><span class="n">'+gr.total+'</span>'+
-          '<span>'+gr.typeLabel+
-            (gr.roleLabel?' <span class="who">— '+gr.roleLabel+'</span>':'')+'</span>'+
-          '<span class="push">LINE '+gr.pushed+'/'+gr.total+'</span></div>'+
-        gr.rows.slice(0,20).map(r=>
-          '<div class="ahrow"><span class="t">'+r.time+'</span>'+
-            '<span class="d">'+(r.detail||'—')+'</span>'+
-            '<span class="s '+(r.pushed?'psh':'sup')+'">'+
-              (r.pushed?'ส่งแล้ว':'รวบ · '+(r.reason||'ซ้ำ'))+'</span></div>').join('')+
-        (gr.rows.length>20?'<div class="ahrow"><span class="t"></span>'+
-          '<span class="d">… อีก '+(gr.rows.length-20)+' ครั้ง</span></div>':'')
-      ).join('')+
+        '(ส่ง LINE จริง '+pushedTotal+' ครั้ง)</span></h4>'+
+      '<div class="ahnote">ตัวเลขรวมคือจำนวน<b>ครั้งที่ระบบตรวจเจอ</b> ไม่ใช่จำนวนปัญหา — '+
+        'เรื่องเดิมที่ยังไม่ได้แก้จะถูกตรวจซ้ำทุกไม่กี่นาที ให้ดูที่ '+
+        '<b>ช่วงเวลา</b> และ <b>จำนวนครั้งที่สถานะเปลี่ยนจริง</b> เป็นหลัก · แตะแถวเพื่อดูรายการ</div>'+
+      groups.map((gr,i)=>{
+        // Rows written before gateway v3.24.0 carry no device and no
+        // measurement. Saying that once beats rendering 74 em-dashes.
+        const legacy = !gr.roleLabel && gr.rows.every(r=>!r.detail);
+        const sp = gr.rows.length>1
+          ? gr.rows[gr.rows.length-1].time.slice(0,5)+' – '+gr.rows[0].time.slice(0,5)
+          : gr.rows[0].time.slice(0,5);
+        return '<div class="ahsum" onclick="var e=document.getElementById(\'ahg'+i+'\');'+
+                 'e.hidden=!e.hidden;this.querySelector(\'.chev\').textContent=e.hidden?\'▸\':\'▾\';">'+
+            '<span class="chev">▸</span>'+
+            '<span class="n">'+gr.total+'</span>'+
+            '<span class="'+sevPill[Math.min(3,gr.maxSev)]+'">'+sevName[Math.min(3,gr.maxSev)]+'</span>'+
+            '<span>'+gr.typeLabel+
+              (gr.roleLabel?' <span class="who">— '+gr.roleLabel+'</span>':'')+'</span>'+
+            '<span class="ahspan">'+sp+'</span>'+
+            '<span class="push">เปลี่ยนสถานะจริง '+gr.episodes+' · LINE '+gr.pushed+'</span></div>'+
+          '<div class="ahgroup" id="ahg'+i+'" hidden>'+
+            (legacy?'<div class="ahnote">รายการชุดนี้บันทึกก่อนอัปเดตเฟิร์มแวร์ v3.24.0 '+
+                    'จึงไม่มีข้อมูลว่าเป็นอุปกรณ์ตัวไหนและไม่มีค่าที่วัดได้ — '+
+                    'รายการหลังจากนี้จะมีครบ</div>':'')+
+            gr.rows.slice(0,25).map(r=>
+              '<div class="ahrow"><span class="t">'+r.time+'</span>'+
+                '<span class="d">'+(r.detail||(r.roleLabel||'—'))+'</span>'+
+                '<span class="s '+(r.pushed?'psh':'sup')+'">'+
+                  (r.pushed?'ส่ง LINE · ':'รวบ · ')+
+                  (r.reasonLabel||r.reason||'ซ้ำ')+'</span></div>').join('')+
+            (gr.rows.length>25?'<div class="ahrow"><span class="t"></span>'+
+              '<span class="d">… อีก '+(gr.rows.length-25)+' ครั้ง ในช่วงเวลาเดียวกัน</span></div>':'')+
+          '</div>';
+      }).join('')+
       '<div style="margin-top:10px"><button class="btn sm" '+
         'onclick="document.getElementById(\'alertHistBox\').style.display=\'none\'">ปิด</button></div>'+
       '</div>';

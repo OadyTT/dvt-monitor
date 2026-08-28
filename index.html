@@ -11,9 +11,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.5.1 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.5.2 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.5.2 (2026-08-28)
+    Gateway v3.22.0 makes the vibration test real, so CMD_BUSY_MS's
+    placeholder for it is now a number that has to be right rather
+    than one that was never used. It said 2500 ms; the firmware
+    buzzes for HH_VIB_TEST_DUR_DS = 6 (600 ms) plus two 32 ms
+    MOTOR_RAMP_MS ramps = 664 ms. Left alone, the chip would have
+    read "กำลังสั่น" for nearly two seconds after the motor had
+    stopped — which teaches whoever is holding the node that the
+    countdown means nothing. Set to 1000 ms: the real event plus a
+    small margin for the gap between the gateway sending the frame
+    and writing ackAt, still ending after the motor rather than
+    before it.
+    This is exactly the drift the v3.5.0 comment warned about, one
+    release later. Both numbers now name each other.
+
   v3.5.1 (2026-08-27)
     Two displays that were stating things that are not true.
     1. agoText() labels anything older than STALE_MS as
@@ -516,7 +531,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.5.1 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.5.2 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -766,16 +781,19 @@ const CMD_EXPIRE_MS = 10*60*1000;
    These mirror firmware constants — keep them in step:
      testAudio          HH_AUDIO_TEST_HOLD_MS in HappyHIP_Gateway.ino (6000)
      calibrateHip       HIP node re-zeroes its baseline over a few samples
-     testVibrateAnkleL/R  not implemented in firmware yet; the gateway answers
-                        "unsupported", so this entry is unused until the ankle
-                        nodes gain a vibrate message type. Listed now so the
-                        number lives next to the others when it does.
+     testVibrateAnkleL/R  HH_VIB_TEST_DUR_DS = 6 (600 ms) in HappyHIP_Gateway
+                        .ino, plus 2x MOTOR_RAMP_MS (32 ms) from the ankle
+                        node's motorService() = 664 ms of actual movement.
+                        1000 ms here leaves margin for the gap between the
+                        gateway sending the frame and writing ackAt, so the
+                        countdown ends just after the motor stops rather
+                        than before it.
    0 or missing = instantaneous, no busy state. */
 const CMD_BUSY_MS = {
   testAudio:          6000,
   calibrateHip:       3000,
-  testVibrateAnkleL:  2500,
-  testVibrateAnkleR:  2500
+  testVibrateAnkleL:  1000,
+  testVibrateAnkleR:  1000
 };
 const CMD_BUSY_LABEL = {
   testAudio:          '🔊 กำลังเล่นเสียง',

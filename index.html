@@ -11,9 +11,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.5.2 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.6.0 (Phase 2 — real schema)
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
+  v3.6.0 (2026-08-28)
+    1. ALERT HISTORY. The report said "100 แจ้งเตือน" for a day and
+       there was no way to open it — the number came from a tally
+       with nothing behind it. The alert count in the report table
+       is now a button; it fetches action=alertHistory (Code_v7.gs
+       v7.2.0) and shows what those alerts actually were, grouped
+       by alert id and then listed with times.
+       The list marks each entry PUSHED or SUPPRESSED and carries
+       the suppression reason, because the first question the
+       breakdown provokes is "100 alerts but my phone buzzed six
+       times — is LINE broken?" It is not: most are de-duplicated
+       repeats of the same unresolved condition, and the answer has
+       to be visible in the same view as the number that raised it.
+       All labels come from GAS already localised. The web
+       deliberately does NOT keep its own copy of the alert-type
+       table — two copies of that mapping is exactly how the
+       POSTURE_HIP / HIP_ANGLE drift happened.
+    2. ACKNOWLEDGED ALERTS ARE NO LONGER HIDDEN. The alert box
+       filtered on phase==='active', so pressing "รับทราบทั้งหมด"
+       made the whole list vanish. That reads as "the problem is
+       gone" when the truthful reading is "someone has seen it and
+       it is still happening" — a low battery does not fix itself
+       by being acknowledged. Acked alerts now stay, dimmed, with a
+       "รับทราบแล้ว" pill; the header counts only the unacked ones
+       so the urgent number is still the urgent number.
+    No firmware, rules or schema change; both halves read data that
+    is already being written.
+
   v3.5.2 (2026-08-28)
     Gateway v3.22.0 makes the vibration test real, so CMD_BUSY_MS's
     placeholder for it is now a number that has to be right rather
@@ -441,6 +469,28 @@ th{color:var(--text2);font-weight:500;font-size:.72rem;text-transform:uppercase;
 .calibcard .calibmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
 
+/* Acked alerts: present but visibly secondary. Dimmed rather than removed —
+   see the v3.6.0 note on why hiding them tells the wrong story. */
+.alertrow.acked{opacity:.55}
+.alertrow.acked .aname{text-decoration:line-through;text-decoration-thickness:1px}
+
+/* Alert-history breakdown, opened from the report's alert count. */
+.ahist{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.ahist h4{font-size:.82rem;font-weight:600;color:var(--accent);margin:0 0 10px}
+.ahsum{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  background:color-mix(in srgb, var(--dim) 8%, transparent);margin-bottom:6px;font-size:.82rem}
+.ahsum .n{font-family:var(--mono);font-weight:700;font-size:1rem;min-width:2.4em;text-align:right}
+.ahsum .who{color:var(--text2);font-size:.76rem}
+.ahsum .push{margin-left:auto;font-size:.72rem;color:var(--dim);font-family:var(--mono)}
+.ahrow{display:flex;gap:10px;font-size:.76rem;padding:4px 10px;border-top:1px dashed var(--line)}
+.ahrow .t{font-family:var(--mono);color:var(--dim);min-width:6.5em}
+.ahrow .d{color:var(--text2)}
+.ahrow .s{margin-left:auto;font-family:var(--mono);font-size:.68rem}
+.ahrow .s.sup{color:var(--dim)}
+.ahrow .s.psh{color:var(--ok)}
+.alertcount{background:none;border:none;padding:0;font:inherit;color:var(--danger);
+  cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+
 .line-fab{position:fixed;right:20px;bottom:20px;z-index:200}
 .line-fab-btn{width:54px;height:54px;border-radius:50%;background:#06C755;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(6,199,85,.4);text-decoration:none;transition:transform .15s}
 .line-fab-btn:hover{transform:scale(1.06)}
@@ -505,6 +555,11 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
         <thead><tr><th>วันที่</th><th>ซ้าย</th><th>ขวา</th><th>รวม</th><th>เป้าหมาย</th><th>แจ้งเตือน</th></tr></thead>
         <tbody id="reportTbody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--dim)">เลือกเตียงเพื่อดูรายงาน</td></tr></tbody>
       </table>
+      <!-- Filled by showAlertHistory() when a day's alert count is clicked.
+           Kept inside the report panel so the breakdown appears directly under
+           the number that prompted it, rather than on a separate screen the
+           reader has to hold the number in their head to reach. -->
+      <div id="alertHistBox" style="display:none"></div>
     </div>
   </div>
 
@@ -531,7 +586,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.5.2 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.6.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -902,20 +957,35 @@ function renderDetail(bid,data){
   const ro=canWriteConfig()?'':' ro';
   const nodes=live.nodes||{};
 
-  const activeAlerts=Object.keys(alerts).map(id=>Object.assign({id},alerts[id])).filter(a=>a.phase==='active');
+  // v3.6.0: acked alerts are KEPT, not filtered out. Acknowledging a low
+  // battery does not charge it; removing the row says the opposite.
+  const allAlerts=Object.keys(alerts).map(id=>Object.assign({id},alerts[id]))
+                        .filter(a=>a.phase==='active'||a.phase==='acked');
+  const activeAlerts=allAlerts.filter(a=>a.phase==='active');
   let alertHtml='';
-  if(activeAlerts.length){
+  if(allAlerts.length){
     // Sort by severity so the thing that matters most is not buried under a
     // pair of low-battery warnings, which is exactly how it read before.
     const sev=[['pill','เฝ้าดู'],['pill warn','เตือน'],['pill bad','สำคัญ'],['pill bad','วิกฤต']];
-    const sorted=[...activeAlerts].sort((a,b)=>(b.sev||0)-(a.sev||0));
+    // Unacked first, then by severity: the row a nurse must act on stays at
+    // the top even when an older, worse alert has already been seen.
+    const sorted=[...allAlerts].sort((a,b)=>{
+      const ap=(a.phase==='active')?0:1, bp=(b.phase==='active')?0:1;
+      return ap!==bp ? ap-bp : (b.sev||0)-(a.sev||0);
+    });
+    const ackedN=allAlerts.length-activeAlerts.length;
     alertHtml='<div class="alertbox">'+
-      '<div class="ahead">⚠️ แจ้งเตือนที่ยังไม่ได้รับทราบ ('+sorted.length+')</div>'+
+      '<div class="ahead">⚠️ แจ้งเตือนที่ยังไม่ได้รับทราบ ('+activeAlerts.length+')'+
+        (ackedN?'<span class="calibstatus" style="font-weight:400;margin-left:6px">'+
+                'และรับทราบแล้วอีก '+ackedN+' รายการ ที่ยังไม่หายไป</span>':'')+'</div>'+
       sorted.map(a=>{
         const s=sev[Math.min(3,Math.max(0,a.sev||0))];
-        return '<div class="alertrow"><span class="'+s[0]+'">'+s[1]+'</span>'+
+        const acked=(a.phase==='acked');
+        return '<div class="alertrow'+(acked?' acked':'')+'">'+
+          '<span class="'+s[0]+'">'+s[1]+'</span>'+
           '<span class="aname">'+alertLabel(a.id)+'</span>'+
           (a.detail?'<span class="adet">'+a.detail+'</span>':'')+
+          (acked?'<span class="pill">✓ รับทราบแล้ว</span>':'')+
           '<span class="aspacer"></span>'+
           '<span class="calibstatus">'+agoPlain(a.raisedTs)+'</span></div>';
       }).join('')+
@@ -1069,6 +1139,79 @@ function todayRowFor(bedId){
   return { date:key, pumpL:L, pumpR:R, pumpTotal:L+R, alerts:0, live:true };
 }
 
+/* ── v3.6.0 · alert history ───────────────────────────────────────────────
+   Fetches Code_v7.gs's action=alertHistory and renders the breakdown behind a
+   day's alert count. Every label arrives already localised from GAS; this
+   file deliberately keeps NO alert-type table of its own, because two copies
+   of that mapping is precisely how POSTURE_HIP and HIP_ANGLE drifted apart
+   between the firmware and the GAS label map. */
+async function showAlertHistory(dayStr){
+  const bedId=$('rptBedSel').value;
+  const host=$('alertHistBox');
+  if(!host) return;
+
+  // How many days back that date is, since the endpoint takes a window, and
+  // the boundary is the ward's calendar day (ICT, no DST) on the GAS side.
+  const today=new Date(); today.setHours(0,0,0,0);
+  const target=new Date(dayStr+'T00:00:00');
+  const days=Math.max(1,Math.round((today-target)/86400000)+1);
+
+  host.style.display='block';
+  host.innerHTML='<div class="ahist"><h4>กำลังโหลดรายละเอียดของวันที่ '+dayStr+' …</h4></div>';
+
+  try{
+    const url=GAS_URL+'?action=alertHistory&bed='+encodeURIComponent(curHid+'/'+bedId)+
+              '&days='+days+'&limit=500';
+    const res=await fetch(url);
+    const data=await res.json();
+    const rows=(data.rows||[]).filter(r=>r.day===dayStr);
+    if(!rows.length){
+      host.innerHTML='<div class="ahist"><h4>แจ้งเตือนของวันที่ '+dayStr+'</h4>'+
+        '<div class="infonote">ไม่พบรายละเอียดของวันนี้ในชีต Alerts — '+
+        'อาจเป็นวันก่อนที่ระบบบันทึกประวัติจะเริ่มทำงาน</div></div>';
+      return;
+    }
+    // Regroup from the filtered rows: data.summary covers the whole window,
+    // not the single day the user clicked on.
+    const g={};
+    rows.forEach(r=>{
+      const k=r.id||'UNKNOWN';
+      if(!g[k]) g[k]={id:k,typeLabel:r.typeLabel,roleLabel:r.roleLabel,
+                      total:0,pushed:0,rows:[]};
+      g[k].total++; if(r.pushed) g[k].pushed++;
+      g[k].rows.push(r);
+    });
+    const groups=Object.values(g).sort((a,b)=>b.total-a.total);
+    const pushedTotal=rows.filter(r=>r.pushed).length;
+
+    host.innerHTML='<div class="ahist">'+
+      '<h4>แจ้งเตือนของวันที่ '+dayStr+' — '+rows.length+' ครั้ง '+
+        '<span class="calibstatus" style="font-weight:400">'+
+        '(ส่ง LINE จริง '+pushedTotal+' ครั้ง ที่เหลือเป็นการเตือนซ้ำของเรื่องเดิม '+
+        'ที่ระบบรวบไว้ไม่ให้รบกวน)</span></h4>'+
+      groups.map(gr=>
+        '<div class="ahsum"><span class="n">'+gr.total+'</span>'+
+          '<span>'+gr.typeLabel+
+            (gr.roleLabel?' <span class="who">— '+gr.roleLabel+'</span>':'')+'</span>'+
+          '<span class="push">LINE '+gr.pushed+'/'+gr.total+'</span></div>'+
+        gr.rows.slice(0,20).map(r=>
+          '<div class="ahrow"><span class="t">'+r.time+'</span>'+
+            '<span class="d">'+(r.detail||'—')+'</span>'+
+            '<span class="s '+(r.pushed?'psh':'sup')+'">'+
+              (r.pushed?'ส่งแล้ว':'รวบ · '+(r.reason||'ซ้ำ'))+'</span></div>').join('')+
+        (gr.rows.length>20?'<div class="ahrow"><span class="t"></span>'+
+          '<span class="d">… อีก '+(gr.rows.length-20)+' ครั้ง</span></div>':'')
+      ).join('')+
+      '<div style="margin-top:10px"><button class="btn sm" '+
+        'onclick="document.getElementById(\'alertHistBox\').style.display=\'none\'">ปิด</button></div>'+
+      '</div>';
+  }catch(e){
+    host.innerHTML='<div class="ahist"><div class="infonote">'+
+      'โหลดประวัติไม่สำเร็จ: '+e.message+
+      ' — ตรวจว่า Code_v7.gs เป็น v7.2.0 ขึ้นไป และ deploy เป็น New Version แล้ว</div></div>';
+  }
+}
+
 function renderReport(rows){
   const bedId=$('rptBedSel').value;
   const cfg=(beds[bedId]&&beds[bedId].config)||{};
@@ -1108,10 +1251,14 @@ function renderReport(rows){
       ? '<span class="pill wait">กำลังนับ '+(r.pumpTotal||0)+'/'+pumpGoal+'</span>'
       : (reached?'<span style="color:var(--ok)">✅ ครบ</span>'
                :'<span style="color:var(--warn)">'+(r.pumpTotal||0)+'/'+pumpGoal+'</span>');
+    // v3.6.0: the count is now openable. A number nobody can drill into is
+    // just a number; the whole point of "100 alerts" is what the 100 were.
     const alertBadge=r.live
       ? '<span style="color:var(--dim)">—</span>'
-      : ((r.alerts||0)>0?'<span style="color:var(--danger)">'+r.alerts+' 🔔</span>'
-                       :'<span style="color:var(--dim)">-</span>');
+      : ((r.alerts||0)>0
+          ? '<button class="alertcount" onclick="showAlertHistory(\''+r.date+'\')">'+
+            r.alerts+' 🔔</button>'
+          : '<span style="color:var(--dim)">-</span>');
     return '<tr'+(r.live?' class="today"':'')+'><td>'+r.date+
       (r.live?' <span class="calibstatus">(วันนี้)</span>':'')+'</td>'+
       '<td>'+(r.pumpL||0)+'</td><td>'+(r.pumpR||0)+'</td>'+

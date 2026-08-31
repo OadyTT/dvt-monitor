@@ -11,7 +11,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.9.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.10.0 (Phase 2 — real schema)
+
+  v3.10.0 (2026-08-30)
+    The web app becomes the PRIMARY alert surface, and LINE becomes
+    the escalation. That is a deliberate reversal, forced by
+    arithmetic: only BATTERY:CRITICAL, DEVICE_OFFLINE and HIP_ANGLE
+    ever cleared the LINE severity floor, and at five beds with three
+    nodes each, battery alone raises ~450 episodes a month against a
+    free tier of 300. Code_v7.gs v7.4.0 therefore takes battery off
+    LINE entirely and sends it as one daily digest per hospital. That
+    only works if the ward can see standing alerts somewhere else,
+    which is this.
+
+    1. NEW "แจ้งเตือน" TAB with a live count badge, aggregating every
+       alert across every bed in the hospital — not per bed, which is
+       what the dashboard already did and which meant an alert on
+       BED-03 was invisible while looking at BED-01.
+
+       "UNREAD" IS phase === 'active', NOT a per-browser flag.
+       The dashboard runs on a nurse-station monitor AND on staff
+       phones at the same time. A localStorage read-flag would let
+       those two disagree about whether anyone had dealt with an
+       alert, which is worse than no badge at all. Deriving the count
+       from the alert's own phase means every screen shows the same
+       number, and pressing รับทราบ anywhere clears it everywhere,
+       because the gateway is the thing that changed state.
+
+       The badge is capped at 99+ and hidden at zero rather than
+       showing a grey "0" — a permanently visible counter stops
+       being read within a shift.
+
+    2. ADMIN → LINE QUOTA panel, reading action=quota. This is the
+       REAL counter (hhquota:YYYYMM). There is a second, older one in
+       the same script ('lineCount_YYYY-MM', reachable at
+       action=getQuota) which nothing feeds any more; wiring the gauge
+       to that would have shown a confident number unrelated to the
+       messages actually sent. Per-category reservations are shown
+       individually because the whole point of v7.4.0 is that HIP_ANGLE
+       cannot be starved by routine offline chatter.
+
+    3. ADMIN → DIGEST SETTINGS, writing through action=setSetting, so
+       the digest hour can be changed from the ward rather than from
+       the Apps Script editor.
+
+    DEGRADES QUIETLY. Items 2 and 3 need Code_v7.gs v7.4.0. Against
+    v7.3.0 the endpoints simply do not exist, so the panel shows one
+    line saying so instead of an error — this file is safe to deploy
+    before or after the GAS update, in either order.
+
   ═══════════════════════════════════════════════════════════════
   CHANGELOG
   v3.9.0 (2026-08-29)
@@ -385,6 +433,17 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .tab{font-family:'IBM Plex Sans Thai',sans-serif;font-size:.82rem;padding:8px 14px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text2);cursor:pointer}
 .tab:hover{color:var(--text)}
 .tab.active{background:var(--surface2);border-color:var(--brd);color:var(--accent)}
+/* Badge sits on the tab itself so a standing alert is visible from whichever
+   tab happens to be open — including from across a nurses' station. */
+.tabbadge{display:inline-block;min-width:18px;padding:1px 5px;margin-left:6px;border-radius:9px;
+  background:var(--danger);color:#fff;font-size:.68rem;font-weight:700;line-height:1.5;text-align:center;
+  vertical-align:middle}
+.tabbadge.warnonly{background:var(--warn);color:#1a1200}
+.qbar{height:9px;border-radius:5px;background:var(--surface2);overflow:hidden;margin:5px 0 2px}
+.qbar>i{display:block;height:100%;background:var(--ok)}
+.qbar>i.warn{background:var(--warn)} .qbar>i.bad{background:var(--danger)}
+.qrow{display:flex;justify-content:space-between;font-size:.76rem;color:var(--text2);gap:10px}
+.abed{font-size:.72rem;color:var(--accent);font-weight:700;margin-right:8px;white-space:nowrap}
 .view{display:none}
 .view.active{display:block}
 
@@ -600,6 +659,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 แดชบอร์ด</button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">📄 รายงาน</button>
     <button class="tab" data-tab="calib" onclick="switchTab('calib')">🎯 สอบเทียบ</button>
+    <button class="tab" data-tab="alerts" onclick="switchTab('alerts')">🔔 แจ้งเตือน<span class="tabbadge hide" id="alertBadge">0</span></button>
     <button class="tab hide" id="tabAdminBtn" data-tab="admin" onclick="switchTab('admin')">⚙️ ผู้ดูแลระบบ</button>
   </div>
 
@@ -648,7 +708,24 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     </div>
   </div>
 
+  <div class="view" id="view-alerts">
+    <div class="card">
+      <h2>🔔 แจ้งเตือนทั้งโรงพยาบาล</h2>
+      <div class="infonote" style="margin-bottom:12px">
+        ℹ️ รายการนี้รวมทุกเตียงในโรงพยาบาลที่เลือกอยู่ · "ยังไม่รับทราบ" หมายถึงสถานะ
+        <code>active</code> ที่ gateway รายงานมา ไม่ใช่การจำในเบราว์เซอร์ —
+        ทุกจอจึงเห็นตัวเลขเดียวกัน และการกดรับทราบที่ใดก็ตามจะเคลียร์ให้ทุกจอพร้อมกัน
+      </div>
+      <div id="alertsAll"></div>
+    </div>
+  </div>
+
   <div class="view" id="view-admin">
+    <div class="panel">
+      <h2>💬 โควตา LINE เดือนนี้<div class="spacer"></div>
+        <button class="btn sm" onclick="loadQuota()">รีเฟรช</button></h2>
+      <div id="quotaBox"><div class="calibstatus">กำลังโหลด…</div></div>
+    </div>
     <div class="panel">
       <h2>🏥 โรงพยาบาล<div class="spacer"></div>
         <button class="btn sm hide" id="addHospBtn" onclick="addHospital()">＋ เพิ่มโรงพยาบาล</button></h2>
@@ -663,7 +740,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.9.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.10.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -798,6 +875,7 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('view-'+name).classList.add('active');
+  if(name==='alerts') renderAlertsTab();
   if(name==='report') loadReport();
   if(name==='calib') renderCalibList();
   if(name==='admin') renderAdmin();
@@ -811,6 +889,8 @@ function watchBeds(){
   bedsRef.on('value', snap=>{
     beds = snap.exists()? snap.val() : {};
     renderAll(beds);
+    updateAlertBadge();
+    if(activeTab==='alerts') renderAlertsTab();
     populateReportBedSelect();
     // The calibration list reads the same beds object for its status pills,
     // so it has to be repainted here too — without this it stays frozen on
@@ -1121,6 +1201,100 @@ function alertLabel(id){
 }
 
 function closeDetail(){ selectedBed=null; renderAll(beds); }
+
+/* ═══════════ alerts tab (v3.10.0) ═══════════════════════════════════════
+   Every alert in the hospital in one list, because the dashboard's alert box
+   is per bed: an alert on BED-03 was invisible while someone was looking at
+   BED-01, and with three hospitals and five beds that is most of the time.
+
+   collectAllAlerts() reads the SAME beds object the dashboard renders from,
+   so there is no second subscription and no way for the two views to drift.  */
+function collectAllAlerts(){
+  const out=[];
+  Object.keys(beds||{}).sort().forEach(bid=>{
+    const b=beds[bid]||{};
+    const label=(b.config&&b.config.bedLabel)||bid;
+    Object.entries(b.alerts||{}).forEach(([id,a])=>{
+      if(!a) return;
+      if(a.phase!=='active' && a.phase!=='acked') return;
+      out.push({bid:bid, bedLabel:label, id:id,
+                sev:a.sev||0, phase:a.phase, detail:a.detail||'',
+                raisedTs:a.raisedTs||0});
+    });
+  });
+  return out;
+}
+
+/* The badge counts phase==='active' only. See the v3.10.0 changelog for why
+   this is not a per-browser "unread" flag: the nurse station monitor and a
+   phone in someone's pocket must never disagree about whether an alert has
+   been dealt with. */
+function updateAlertBadge(){
+  const el=$('alertBadge'); if(!el) return;
+  const act=collectAllAlerts().filter(a=>a.phase==='active');
+  const n=act.length;
+  el.classList.toggle('hide', n===0);
+  el.textContent = n>99 ? '99+' : String(n);
+  /* Amber when nothing outstanding is worse than a warning, red otherwise —
+     so a screen glanced at from across the ward says severity, not just
+     count. A bay of low batteries should not look like a dislocation. */
+  el.classList.toggle('warnonly', n>0 && Math.max(...act.map(a=>a.sev||0))<2);
+}
+
+function renderAlertsTab(){
+  const w=$('alertsAll'); if(!w) return;
+  const all=collectAllAlerts();
+  if(!all.length){
+    w.innerHTML='<div class="calibstatus" style="padding:18px 2px">'+
+      '✅ ไม่มีแจ้งเตือนค้างอยู่ในโรงพยาบาลนี้</div>';
+    return;
+  }
+  const sevPill=[['pill','เฝ้าดู'],['pill warn','เตือน'],['pill bad','สำคัญ'],['pill bad','วิกฤต']];
+  /* Same ordering rule as the dashboard's per-bed box: unacknowledged first,
+     then worst first. Consistency matters more than cleverness here — staff
+     move between the two views and should not have to re-learn the order. */
+  const sorted=[...all].sort((a,b)=>{
+    const ap=(a.phase==='active')?0:1, bp=(b.phase==='active')?0:1;
+    return ap!==bp ? ap-bp : (b.sev-a.sev) || (a.raisedTs-b.raisedTs);
+  });
+  const nAct=all.filter(a=>a.phase==='active').length;
+  const nAck=all.length-nAct;
+
+  /* Group the ack-all buttons by bed: commands/ackAll is a per-bed node, so
+     one button per bed that still has something outstanding. */
+  const bedsWithActive=[...new Set(all.filter(a=>a.phase==='active').map(a=>a.bid))];
+
+  w.innerHTML=
+    '<div class="ahead" style="margin-bottom:10px">ยังไม่รับทราบ '+nAct+' รายการ'+
+      (nAck?' <span class="calibstatus" style="font-weight:400">· รับทราบแล้วแต่ยังไม่หาย '+nAck+' รายการ</span>':'')+
+    '</div>'+
+    sorted.map(a=>{
+      const s=sevPill[Math.min(3,Math.max(0,a.sev))];
+      const acked=(a.phase==='acked');
+      return '<div class="alertrow'+(acked?' acked':'')+'">'+
+        '<span class="'+s[0]+'">'+s[1]+'</span>'+
+        '<span class="abed">'+a.bedLabel+'</span>'+
+        '<span class="aname">'+alertLabel(a.id)+'</span>'+
+        (a.detail?'<span class="adet">'+a.detail+'</span>':'')+
+        (acked?'<span class="pill">✓ รับทราบแล้ว</span>':'')+
+        '<span class="aspacer"></span>'+
+        '<span class="calibstatus">'+agoPlain(a.raisedTs)+'</span>'+
+        ((!acked&&canWriteConfig())
+          ? '<button class="btn sm" style="padding:2px 8px;font-size:.7rem" '+
+            'title="รับทราบเฉพาะรายการนี้" '+
+            'onclick="ackOneAlert(\''+a.bid+'\',\''+a.id+'\')">✓</button>'
+          : '')+
+        '</div>';
+    }).join('')+
+    ((canWriteConfig()&&bedsWithActive.length)
+      ? '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+        bedsWithActive.map(bid=>{
+          const lbl=(beds[bid]&&beds[bid].config&&beds[bid].config.bedLabel)||bid;
+          return '<button class="btn sm" onclick="ackAllAlerts(\''+bid+'\')">'+
+                 'รับทราบทั้งหมด · '+lbl+'</button>';
+        }).join('')+'</div>'
+      : '');
+}
 
 // ═══════════ writes ═══════════
 async function toggleCfg(bid,key){
@@ -1476,6 +1650,93 @@ async function renderAdmin(){
   await renderHospList();
   renderAdminBedList();
   await renderCurHospLabel();
+  loadQuota();
+}
+
+/* ═══════════ LINE quota + digest settings (v3.10.0) ═════════════════════
+   Reads action=quota, which is Code_v7.gs v7.4.0's counter (hhquota:YYYYMM).
+   NOT action=getQuota — that is an older endpoint in the same script reading
+   'lineCount_YYYY-MM', which nothing has fed since the Phase 2 merge. It
+   would have rendered a confident gauge with no relationship to the messages
+   actually sent, which is worse than no gauge.
+
+   Both this and saveSetting() fail SOFT: against Code_v7.gs v7.3.0 the
+   endpoints do not exist, and this panel says so in one line rather than
+   throwing. That is what makes this file safe to deploy in either order
+   relative to the GAS update.                                              */
+async function loadQuota(){
+  const box=$('quotaBox'); if(!box) return;
+  box.innerHTML='<div class="calibstatus">กำลังโหลด…</div>';
+  let q;
+  try{
+    const r=await fetch(GAS_URL+'?action=quota',{redirect:'follow'});
+    q=await r.json();
+  }catch(e){
+    box.innerHTML='<div class="calibstatus">อ่านโควตาไม่ได้: '+e.message+'</div>';
+    return;
+  }
+  if(!q || q.status!=='ok' || typeof q.used!=='number'){
+    box.innerHTML='<div class="infonote" style="margin:0">'+
+      'ยังอ่านโควตาไม่ได้ — ต้องติดตั้ง <code>Code_v7.gs v7.4.0</code> ก่อน '+
+      '(endpoint <code>?action=quota</code> ยังไม่มีในเวอร์ชันที่ deploy อยู่)</div>';
+    return;
+  }
+
+  const cap=q.hardCap||300, used=q.used||0;
+  const pct=Math.min(100, Math.round(used*100/Math.max(1,cap)));
+  const cls = used>=cap ? 'bad' : (used>=(q.softBudget||cap*0.8) ? 'warn' : '');
+
+  let html='<div class="qrow"><b>ทั้งเดือน '+(q.month||'')+'</b>'+
+           '<span>'+used+' / '+cap+' ข้อความ · เหลือ '+(q.remaining!=null?q.remaining:cap-used)+'</span></div>'+
+           '<div class="qbar"><i class="'+cls+'" style="width:'+pct+'%"></i></div>';
+
+  const cats=q.categories||{};
+  const catTh={HIP_ANGLE:'มุมสะโพกผิดปกติ', DEVICE_OFFLINE:'อุปกรณ์ขาดการเชื่อมต่อ', DIGEST:'สรุปรายวัน'};
+  Object.keys(cats).forEach(k=>{
+    const c=cats[k]||{}, b=c.budget||0, u=c.used||0;
+    if(!b) return;
+    const p=Math.min(100,Math.round(u*100/b));
+    html+='<div style="margin-top:10px"><div class="qrow"><span>'+(catTh[k]||k)+'</span>'+
+          '<span>'+u+' / '+b+'</span></div>'+
+          '<div class="qbar"><i class="'+(u>=b?'bad':(p>=80?'warn':''))+'" style="width:'+p+'%"></i></div></div>';
+  });
+
+  /* Battery and pump compliance are deliberately absent from LINE — say so
+     here, or the first question every month will be why they never appear. */
+  html+='<div class="infonote" style="margin:14px 0 0">'+
+        'ℹ️ <b>แบตเตอรี่</b> และ <b>การบริหารข้อเท้า</b> ไม่ถูกส่งเข้า LINE โดยตั้งใจ — '+
+        'แบตหมดคือตารางเวลา ไม่ใช่เหตุฉุกเฉิน จึงรวมส่งเป็น <b>สรุปรายวันฉบับเดียวต่อโรงพยาบาล</b> '+
+        'และแสดงเต็มรูปแบบที่แท็บ 🔔 แจ้งเตือน · โควตาที่ประหยัดไว้สงวนให้ HIP_ANGLE</div>';
+
+  const st=q.settings||{};
+  html+='<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+        '<label style="font-size:.8rem">เวลาส่งสรุปรายวัน</label>'+
+        '<select id="setDigestHour" onchange="saveSetting(\'digestHour\', this.value)">'+
+          Array.from({length:24},(_,h)=>'<option value="'+h+'"'+
+            (String(st.digestHour)===String(h)?' selected':'')+'>'+
+            String(h).padStart(2,'0')+':00</option>').join('')+
+        '</select>'+
+        '<label style="font-size:.8rem;margin-left:8px">เปิดสรุปรายวัน</label>'+
+        '<select id="setDigestOn" onchange="saveSetting(\'digestEnabled\', this.value)">'+
+          '<option value="true"'+(String(st.digestEnabled)!=='false'?' selected':'')+'>เปิด</option>'+
+          '<option value="false"'+(String(st.digestEnabled)==='false'?' selected':'')+'>ปิด</option>'+
+        '</select>'+
+        '<span class="calibstatus" id="setStatus"></span></div>';
+
+  box.innerHTML=html;
+}
+
+async function saveSetting(key, value){
+  const el=$('setStatus'); if(el) el.textContent='กำลังบันทึก…';
+  try{
+    const r=await fetch(GAS_URL+'?action=setSetting&key='+encodeURIComponent(key)+
+                        '&value='+encodeURIComponent(value),{redirect:'follow'});
+    const j=await r.json();
+    if(el) el.textContent = (j&&j.status==='ok') ? '✓ บันทึกแล้ว'
+                          : ('บันทึกไม่สำเร็จ: '+((j&&j.message)||'ไม่ทราบสาเหตุ'));
+  }catch(e){
+    if(el) el.textContent='บันทึกไม่สำเร็จ: '+e.message;
+  }
 }
 async function renderCurHospLabel(){
   const el=$('curHospLabel');

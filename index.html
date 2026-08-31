@@ -22,7 +22,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.16.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.17.0 (Phase 2 — real schema)
+
+  v3.17.0 (2026-08-31)
+    Needs the widened hipPitch/hipRoll range in database.rules.json.
+
+    1. THE ANGLE WAS BEING TRUNCATED, TWICE OVER. The firmware reports a
+       SIGNED angle — an IMU's atan2 gives -180..180 — so a node rotated
+       to 209 deg arrives as -151. v3.11.0 took Math.abs() and clamped
+       at 180, turning 209 into 151: a number nobody could reconcile
+       with the pillow in front of them. Normalising into 0..360
+       recovers the real bearing and the wedge is now the angle all the
+       way round the dial.
+
+       The deeper cause was in the rules, not here. The live node is a
+       strict whitelist and hipPitch was bounded at +/-180, so past half
+       a turn the ENTIRE live write was refused — the 31 Aug log has 13
+       "live DENIED by rules (401)" — and the dashboard simply froze on
+       the last accepted reading. What looked like a wrong number was a
+       bed that had silently stopped updating.
+
+    2. FSR BALANCE DIAL beside the angle. The two hip sensors were a
+       line of raw ADC counts, which answers nothing on its own: nobody
+       knows whether 2100/1800 is good. What the reading is FOR is
+       whether the patient's weight sits centred on the pillow — a
+       ratio — so the dial shows the ratio and keeps the counts beneath
+       it. A centred patient is a clean half circle, the one shape that
+       reads at a glance and from an angle. Amber past 65/35, and grey
+       below a total-pressure floor, because a ratio from two near-zero
+       readings is noise wearing the costume of a measurement.
+
+       It also fixes a composition problem: the HIP block showed one
+       gauge where each ankle showed one, and a lone circle beside a
+       column of text read as though something had failed to load.
 
   v3.16.0 (2026-08-31)
     Pairs with gateway v3.30.0.
@@ -1063,7 +1095,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.16.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.17.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1272,6 +1304,44 @@ function gaugeHtml(pct,label,size){
     '<span class="gnum">'+Math.round(pct)+'%'+(label?'<small>'+label+'</small>':'')+'</span></div>';
 }
 
+/* ═══════════ FSR balance dial (v3.17.0) ═════════════════════
+   The two hip FSRs were a line of raw ADC counts under the bed card, which
+   answers nothing on its own: nobody knows whether 2100/1800 is good. What
+   the reading is FOR is whether the patient's weight sits centred on the
+   pillow, and that is a ratio — so the dial shows the ratio and keeps the
+   counts underneath for whoever wants them.
+
+   The wedge starts at 12 o'clock and grows clockwise with the LEFT share, so
+   a centred patient is a clean half circle: the one shape that reads
+   correctly at a glance and from an angle, with no number to parse. Amber
+   past a 65/35 split. Below a floor of total pressure it goes grey and says
+   so, because a ratio computed from two near-zero readings is noise wearing
+   the costume of a measurement. */
+function fsrGaugeHtml(fsrL, fsrR, size, stale){
+  const l = Math.max(0, Number(fsrL)||0), r = Math.max(0, Number(fsrR)||0);
+  const tot = l + r;
+  const cls = 'gauge'+(size==='sm'?' sm':'');
+
+  if(stale || tot < 400){          /* ~5% of one sensor's full scale */
+    return '<div class="'+cls+'" style="background:var(--bg2)">'+
+      '<span class="gnum">—<small>'+(stale?'ไม่ทราบ':'ไม่มีน้ำหนัก')+'</small></span>'+
+      '<span class="gcap">สมดุล ซ้าย/ขวา</span></div>';
+  }
+
+  const lp = l*100/tot;
+  const off = Math.abs(lp-50);
+  let from,to,glow;
+  if(off>15){ from='var(--warn)'; to='var(--danger)';
+              glow='color-mix(in srgb,var(--warn) 40%,transparent)'; }
+  else      { from='var(--accent)';
+              to='color-mix(in srgb,var(--accent) 50%,var(--ok) 50%)'; glow='transparent'; }
+
+  return '<div class="'+cls+'" style="--gglow:'+glow+';background:conic-gradient(from 0deg,'+
+      from+' 0deg,'+to+' '+(lp*3.6)+'deg,color-mix(in srgb,var(--dim) 45%,transparent) '+(lp*3.6)+'deg)">'+
+    '<span class="gnum">'+Math.round(lp)+'<small>ซ้าย %</small></span>'+
+    '<span class="gcap">'+l+' / '+r+'</span></div>';
+}
+
 /* ═══════════ hip angle dial (v3.11.0) ═══════════════════════════════════
    ONE DEGREE OF HIP = ONE DEGREE OF ARC. Not a percentage of anything.
 
@@ -1302,7 +1372,7 @@ function angleGaugeHtml(deg, thresholdDeg, label, size, stale){
       from+' 0deg,'+to+' '+d+'deg,var(--bg2) '+d+'deg)">'+
     '<span class="gnum">'+(stale?'—':d.toFixed(0)+'°')+
       (label?'<small>'+label+'</small>':'')+'</span>'+
-    '<span class="gtick" style="transform:rotate('+Math.min(180,th)+'deg)"></span>'+
+    '<span class="gtick" style="transform:rotate('+(th%360)+'deg)"></span>'+
     '<span class="gcap">เตือนที่ '+th+'°</span>'+
   '</div>';
 }
@@ -1452,14 +1522,16 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
      ankles showed one — the row read as though the pillow were doing less.
      It is measuring the thing the alert actually fires on, so it now shows
      that instead. */
+  /* v3.17.0 — two dials, side by side. The HIP block showed one gauge where
+     each ankle showed one, and a lone circle beside a column of text read as
+     though something had failed to load. The pillow measures two things; it
+     now shows two, and the raw counts move under the balance dial where they
+     have something to qualify. */
   const angRow = angle
-    ? '<div class="nodegauge ang">'+
-      angleGaugeHtml(angle.deg, angle.thresh, null, 'sm', !angle.fresh)+
-      '<div><div class="kv" style="border:none;padding:0"><span>มุมสะโพกตอนนี้</span></div>'+
-      '<b style="color:var(--accent);font-size:1.05rem">'+
-        (angle.fresh?angle.deg.toFixed(1)+'°':'—')+
-        '<span style="color:var(--dim);font-size:.75rem"> เอียง '+
-        (angle.fresh?angle.roll.toFixed(0)+'°':'—')+'</span></b></div></div>'
+    ? '<div class="nodegauge ang" style="gap:20px;justify-content:flex-start">'+
+      angleGaugeHtml(angle.deg, angle.thresh, 'มุมสะโพก', 'sm', !angle.fresh)+
+      fsrGaugeHtml(angle.fsrL, angle.fsrR, 'sm', !angle.fresh)+
+      '</div>'
     : '';
   const pumpRow = pumpCount!=null
     ? '<div class="nodegauge">'+gaugeHtml(target?pumpCount/target*100:0,null,'sm')+
@@ -1573,7 +1645,8 @@ function renderDetail(bid,data){
     (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">🔔 ปุ่มทดสอบด้านล่างส่งคำสั่งผ่าน Firebase ไปยัง gateway (เฟิร์มแวร์ v3.20.0 ขึ้นไป) และรายงานผลกลับที่ป้ายข้างปุ่ม — <b>ทดสอบเสียง</b>ใช้ได้จริงแล้ว ส่วน <b>ทดสอบการสั่น</b> จะตอบว่า <i>ยังไม่รองรับ</i> เพราะโปรโตคอล ESP-NOW ยังไม่มีชนิดข้อความสำหรับสั่งสั่นที่ข้อเท้า (ต้องเพิ่มแล้วแฟลชโหนดข้อเท้าใหม่)</div>':'')+
     '<div class="three">'+
       nodeBlock('HIP', nodes.hip, null, 'testAudio', bid, null,
-                {deg:Math.abs(live.hipPitch||0), roll:(live.hipRoll||0),
+                {deg:(live.hipPitch||0), roll:(live.hipRoll||0),
+                 fsrL:(live.fsrL||0), fsrR:(live.fsrR||0),
                  thresh:(cfg.hipThresholdDeg!=null?cfg.hipThresholdDeg:60),
                  fresh:fresh}, fresh)+
       nodeBlock('ข้อเท้าซ้าย', nodes.ankleL, live.pumpL, 'testVibrateAnkleL', bid, cfg.pumpTargetPerSide||150, null, fresh)+

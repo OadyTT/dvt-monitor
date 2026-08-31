@@ -22,7 +22,30 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.17.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.18.0 (Phase 2 — real schema)
+
+  v3.18.0 (2026-08-31)
+    The 0..360 normalisation that v3.17.0's changelog described was
+    never actually in v3.17.0 — I lost the edit and shipped the note
+    without the code. On the bench the dial read a flat 180 while the
+    row below it read 216.0 for the same pillow. Two numbers for one
+    measurement is worse than either being wrong alone, because there
+    is no way to tell which to believe.
+
+    Both now go through one deg360() helper. Each having its own
+    arithmetic is how they came to disagree, so there is now a single
+    definition and no second copy to drift. The signed figure the
+    firmware sent is kept in brackets on the row for anyone reading
+    against a serial log.
+
+    COLOUR STILL KEYS OFF DISTANCE FROM UPRIGHT, not the bearing: 350
+    deg is ten degrees from level, not three hundred and fifty, and the
+    dial must not go red for a pillow that is very nearly flat.
+
+    The two HIP dials are centred rather than left-packed. Each ankle
+    column is gauge + text and fills its width; HIP is gauge + gauge
+    and was leaving dead space on the right that read as a third thing
+    having failed to load.
 
   v3.17.0 (2026-08-31)
     Needs the widened hipPitch/hipRoll range in database.rules.json.
@@ -1095,7 +1118,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.17.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.18.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1354,10 +1377,27 @@ function fsrGaugeHtml(fsrL, fsrR, size, stale){
 
    The red tick sits at the configured alert threshold, so the gap between the
    wedge edge and the tick is the remaining margin.                         */
+/* Signed IMU reading -> compass bearing. One definition, used by the dial and
+   by the row beneath it; having each do its own arithmetic is how they came to
+   disagree in the first place. */
+function deg360(v){ return Math.round(((Number(v)||0) % 360 + 360) % 360); }
+
 function angleGaugeHtml(deg, thresholdDeg, label, size, stale){
   const th = Math.max(1, Number(thresholdDeg)||60);
-  const d  = Math.max(0, Math.min(180, Number(deg)||0));
-  const ratio = d/th;
+  /* v3.18.0 — A FULL TURN, NOT A HALF ONE.
+   *
+   * The firmware reports a SIGNED angle: an IMU's atan2 gives -180..180, so a
+   * node rotated to 216 deg arrives as -144. Taking Math.abs() and clamping
+   * at 180 produced a flat 180 on the dial while the row below it read the
+   * raw value as 216 — two numbers for one pillow, which is worse than either
+   * being wrong on its own. Normalising into 0..360 recovers the real
+   * bearing, and the wedge is then genuinely the angle all the way round.
+   *
+   * The colour still keys off DISTANCE FROM UPRIGHT, not the raw figure:
+   * 350 deg is ten degrees from flat, not three hundred and fifty, and the
+   * dial must not turn red for a pillow that is very nearly level. */
+  const d  = ((Number(deg)||0) % 360 + 360) % 360;
+  const ratio = Math.min(d, 360-d)/th;
   let from,to,glow;
   if(stale){                       from='var(--dim)';  to='var(--dim)';  glow='transparent'; }
   else if(ratio>=1){               from='var(--warn)'; to='var(--danger)';
@@ -1370,7 +1410,7 @@ function angleGaugeHtml(deg, thresholdDeg, label, size, stale){
   const cls='gauge'+(size==='sm'?' sm':'');
   return '<div class="'+cls+'" style="--gglow:'+glow+';background:conic-gradient(from 0deg,'+
       from+' 0deg,'+to+' '+d+'deg,var(--bg2) '+d+'deg)">'+
-    '<span class="gnum">'+(stale?'—':d.toFixed(0)+'°')+
+    '<span class="gnum">'+(stale?'—':Math.round(d)+'°')+
       (label?'<small>'+label+'</small>':'')+'</span>'+
     '<span class="gtick" style="transform:rotate('+(th%360)+'deg)"></span>'+
     '<span class="gcap">เตือนที่ '+th+'°</span>'+
@@ -1528,7 +1568,10 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
      now shows two, and the raw counts move under the balance dial where they
      have something to qualify. */
   const angRow = angle
-    ? '<div class="nodegauge ang" style="gap:20px;justify-content:flex-start">'+
+    ? /* Centred, not left-packed. Each ankle column is gauge + text and fills its
+   width; HIP is gauge + gauge and was leaving a block of dead space on the
+   right, which read as a third thing having failed to load. */
+      '<div class="nodegauge ang" style="gap:26px;justify-content:center">'+
       angleGaugeHtml(angle.deg, angle.thresh, 'มุมสะโพก', 'sm', !angle.fresh)+
       fsrGaugeHtml(angle.fsrL, angle.fsrR, 'sm', !angle.fresh)+
       '</div>'
@@ -1653,8 +1696,16 @@ function renderDetail(bid,data){
       nodeBlock('ข้อเท้าขวา', nodes.ankleR, live.pumpR, 'testVibrateAnkleR', bid, cfg.pumpTargetPerSide||150, null, fresh)+
     '</div>'+
     gatewayBlock(live, fresh)+
+    /* v3.18.0 — same normalisation as the dial above it. These two disagreed
+       (180 on the circle, 216.0 on this line) and a reader has no way to tell
+       which to believe, so one of them has to give: both now report the
+       bearing, and the signed reading the firmware actually sent is kept in
+       brackets for anyone debugging against a serial log. */
     '<div class="kv"><span>มุมสะโพก (pitch / roll)</span><b>'+
-      (fresh?(live.hipPitch||0).toFixed(1)+'° / '+(live.hipRoll||0).toFixed(1)+'°':'—')+'</b></div>'+
+      (fresh?deg360(live.hipPitch)+'° / '+deg360(live.hipRoll)+'°'+
+             '<span style="color:var(--dim);font-weight:400;font-size:.75rem"> (ดิบ '+
+             (live.hipPitch||0).toFixed(1)+' / '+(live.hipRoll||0).toFixed(1)+')</span>'
+            :'—')+'</b></div>'+
     '<div class="kv"><span>แรงกดหมอน ซ้าย/ขวา (FSR)</span><b>'+
       (fresh?(live.fsrL||0)+' / '+(live.fsrR||0):'—')+'</b></div>'+
     '<div class="kv"><span>อัปเดตล่าสุด</span><b>'+agoText(live.ts)+'</b></div>'+

@@ -22,7 +22,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.13.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.14.0 (Phase 2 — real schema)
+
+  v3.14.0 (2026-08-31)
+    gwStrip() — one gateway line per bed on the grid, so "which box is
+    unhappy" is answerable from the wall without opening a bed.
+
+    SILENT WHEN THERE IS NOTHING TO SAY. A status row that is always
+    present stops being read within a shift, so it appears only for a
+    gateway that is not reporting, has restarted on its own, has weak
+    wifi, is failing pushes, or is filling its command buffer. The
+    thresholds come from the bench logs rather than round numbers:
+    -75 dBm is where the 30 Aug TLS failures started clustering, 2% is
+    well above the 0.55% seen that night, and 75% of the 2048-byte
+    command ceiling still leaves room to act before every web button
+    goes quiet without warning.
 
   v3.13.0 (2026-08-31)
     The gateway becomes visible — and stops being blamed on the nodes.
@@ -550,6 +564,9 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .qbar>i{display:block;height:100%;background:var(--ok)}
 .qbar>i.warn{background:var(--warn)} .qbar>i.bad{background:var(--danger)}
 .qrow{display:flex;justify-content:space-between;font-size:.76rem;color:var(--text2);gap:10px}
+.gwstrip{margin-top:8px;padding:5px 8px;border-radius:7px;font-size:.72rem;line-height:1.35}
+.gwstrip.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn)}
+.gwstrip.bad{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger);font-weight:600}
 .abed{font-size:.72rem;color:var(--accent);font-weight:700;margin-right:8px;white-space:nowrap}
 .view{display:none}
 .view.active{display:block}
@@ -994,7 +1011,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.13.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.14.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1263,7 +1280,8 @@ function renderAll(data){
         '</div>'+
       '</div>'+
       '<div class="pl">ซ้าย '+(live.pumpL||0)+'  ·  ขวา '+(live.pumpR||0)+
-        '  ·  FSR '+(live.fsrL||0)+'/'+(live.fsrR||0)+'</div>';
+        '  ·  FSR '+(live.fsrL||0)+'/'+(live.fsrR||0)+'</div>'+
+      gwStrip(live, fresh);
     g.appendChild(card);
   });
   renderDetail(selectedBed && data[selectedBed] ? selectedBed : null, data);
@@ -1541,6 +1559,41 @@ const ALERT_NODE_TH={hip:'หมอน (HIP)',ankleL:'ข้อเท้าซ�
    The banner comes first and is the point of the whole panel. When live.ts is
    stale the three node blocks above now read "ไม่ทราบ", and this is the line
    that says why and what to go and touch.                                  */
+/* One line per bed, on the grid card. With five beds across three hospitals
+   the question "which box is unhappy" has to be answerable from the wall
+   without opening anything, and a bed whose gateway is quiet is worth
+   spotting before someone walks to it.
+
+   Silent when everything is fine. A row that is always present stops being
+   read within a shift, so this only speaks when there is something to say —
+   the gateway is not reporting, it has restarted on its own, its wifi is
+   weak, pushes are failing, or the command buffer is filling up. */
+function gwStrip(live, fresh){
+  live = live || {};
+  const gw = live.gw;
+
+  if(!fresh){
+    return '<div class="gwstrip bad">⛔ กล่องข้างเตียงไม่ส่งข้อมูล — ตรวจไฟและ Wi-Fi</div>';
+  }
+  if(!gw) return '';
+
+  const tot=(gw.ok||0)+(gw.fail||0);
+  const failPct = tot ? (gw.fail||0)*100/tot : 0;
+  const hwmPct = Math.round((gw.cmdHwm||0)*100/2048);
+  const notes=[];
+  /* Thresholds are the ones the bench log made real, not round numbers:
+     -75 dBm is where the 30 Aug TLS failures began clustering, 2% is well
+     above the 0.55% that night, and 75% of the command ceiling leaves room
+     to act before every web button goes quiet. */
+  if(gw.boot > 1)      notes.push('รีบูตเอง '+gw.boot+' ครั้ง');
+  if(gw.rssi != null && gw.rssi < -75) notes.push('Wi-Fi อ่อน '+gw.rssi+' dBm');
+  if(failPct >= 2)     notes.push('ส่งไม่สำเร็จ '+failPct.toFixed(1)+'%');
+  if(hwmPct >= 75)     notes.push('พื้นที่คำสั่งใกล้เต็ม '+hwmPct+'%');
+
+  if(!notes.length) return '';
+  return '<div class="gwstrip warn">⚠ gateway: '+notes.join(' · ')+'</div>';
+}
+
 function gatewayBlock(live, fresh){
   live = live || {};
   const gw = live.gw;

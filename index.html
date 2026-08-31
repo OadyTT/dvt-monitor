@@ -22,7 +22,54 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.14.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.16.0 (Phase 2 — real schema)
+
+  v3.16.0 (2026-08-31)
+    Pairs with gateway v3.30.0.
+
+    gw.boot now excludes resets caused by the USB host, so the strip
+    warns from the FIRST one rather than the second: on a ward bed
+    nobody attaches USB, and a reboot nobody asked for always means the
+    supply, a watchdog or a panic. Under v3.29.0 the counter included
+    every upload, which is why the first live dashboard showed an amber
+    warning on a gateway whose only problem was having been flashed
+    nine times that morning. The detail row is relabelled to say what
+    it now counts.
+
+    No change was needed to the alert list or the badge: gateway
+    v3.30.0 deletes an alert from Firebase when it resolves, and the
+    badge has always counted phase==='active' straight from that node,
+    so stale entries stop appearing on their own.
+
+  v3.15.0 (2026-08-31)
+    A bed that has NEVER reported is not a bed that has failed.
+
+    v3.14.0 asked one question — is live.ts fresh — and gave every
+    negative answer the same red banner telling someone to go and check
+    the power and the wifi. On the first live screenshot BED-02 and
+    BED-03 both wore it, and neither has a gateway installed: there is
+    no power to check. During a staged rollout to five beds that is the
+    NORMAL state of most of the fleet, and a red alarm shown against
+    beds that are merely not built yet teaches a ward to ignore red by
+    the second install — which would have cost us exactly the thing the
+    v3.13.0 banner was built to buy.
+
+    linkState() now returns never / down / live, and dotClass() derives
+    the status dot from it. agoText() had always drawn this distinction
+    ("ไม่เคยมีข้อมูล" vs "ขาดสัญญาณ"); the strip, the banner and three
+    separate dots were each collapsing it back to a boolean. One
+    function now, so the four places that render link state cannot
+    drift apart again.
+
+      never  grey, "ยังไม่ได้ติดตั้ง gateway ที่เตียงนี้" — a statement,
+             no instruction, because there is nothing to go and touch.
+             The "update to v3.29.0" note is suppressed too: it names a
+             box that is not there.
+      down   red, and now says HOW LONG it has been quiet. "It stopped
+             20 minutes ago" and "it stopped yesterday" call for
+             different responses and the banner was giving both the
+             same words.
+      live   as before.
 
   v3.14.0 (2026-08-31)
     gwStrip() — one gateway line per bed on the grid, so "which box is
@@ -595,6 +642,11 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 }
 @media(prefers-reduced-motion:reduce){ .dot.on::after{animation:none;display:none} }
 .dot.off{background:var(--danger)}
+/* v3.15.0 — a bed that has NEVER reported is not a bed that has failed. During
+   a staged rollout most beds are in this state, and if they wear the same red
+   as a genuine fault then red stops meaning anything by the second install. */
+.dot.idle{background:var(--dim);opacity:.55}
+.gwstrip.idle{background:color-mix(in srgb,var(--dim) 16%,transparent);color:var(--text2)}
 .bed .ago{font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:12px}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .m{background:var(--bg2);border-radius:9px;padding:9px 11px}
@@ -1011,7 +1063,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.14.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.16.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1268,7 +1320,7 @@ function renderAll(data){
     card.className='bed'+(fresh?'':' stale');
     card.onclick=()=>{ selectedBed=bid; renderAll(beds); window.scrollTo({top:0,behavior:'smooth'}); };
     card.innerHTML=
-      '<h3><span class="dot '+(fresh?'on':'off')+'"></span>'+label+'</h3>'+
+      '<h3><span class="dot '+dotClass(live)+'"></span>'+label+'</h3>'+
       '<div class="ago">'+agoText(live.ts)+'</div>'+
       '<div class="cardhead">'+
         gaugeHtml(target?total/target*100:0)+
@@ -1515,7 +1567,7 @@ function renderDetail(bid,data){
   }
 
   w.innerHTML=
-    '<div class="detail"><h2><span class="dot '+(fresh?'on':'off')+'"></span>'+
+    '<div class="detail"><h2><span class="dot '+dotClass(live)+'"></span>'+
       (cfg.bedLabel||bid)+'<button class="btn sm" style="margin-left:auto" onclick="closeDetail()">ปิด</button></h2>'+
     alertHtml+
     (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">🔔 ปุ่มทดสอบด้านล่างส่งคำสั่งผ่าน Firebase ไปยัง gateway (เฟิร์มแวร์ v3.20.0 ขึ้นไป) และรายงานผลกลับที่ป้ายข้างปุ่ม — <b>ทดสอบเสียง</b>ใช้ได้จริงแล้ว ส่วน <b>ทดสอบการสั่น</b> จะตอบว่า <i>ยังไม่รองรับ</i> เพราะโปรโตคอล ESP-NOW ยังไม่มีชนิดข้อความสำหรับสั่งสั่นที่ข้อเท้า (ต้องเพิ่มแล้วแฟลชโหนดข้อเท้าใหม่)</div>':'')+
@@ -1568,12 +1620,42 @@ const ALERT_NODE_TH={hip:'หมอน (HIP)',ankleL:'ข้อเท้าซ�
    read within a shift, so this only speaks when there is something to say —
    the gateway is not reporting, it has restarted on its own, its wifi is
    weak, pushes are failing, or the command buffer is filling up. */
+/* Three link states, not two.  v3.15.0.
+ *
+ * 'never'   live.ts absent — no gateway has ever written to this bed. During
+ *           the staged rollout this is the NORMAL state of most beds, and
+ *           telling someone to go and check the power on a box that was never
+ *           installed is both wrong and, repeated across five beds, the thing
+ *           that teaches a ward to ignore red.
+ * 'down'    live.ts present but stale — it WAS reporting and stopped. This is
+ *           the one that deserves alarm and a physical instruction.
+ * 'live'    reporting now.
+ *
+ * agoText() has always drawn this distinction ("ไม่เคยมีข้อมูล" vs
+ * "ขาดสัญญาณ"); the gateway strip, the detail banner and the status dot were
+ * collapsing it back to a boolean. One function now, so the four places that
+ * render link state cannot drift apart again. */
+function linkState(live){
+  live = live || {};
+  if(!live.ts) return 'never';
+  return (Date.now()-live.ts < STALE_MS) ? 'live' : 'down';
+}
+function dotClass(live){
+  const st=linkState(live);
+  return st==='live' ? 'on' : (st==='never' ? 'idle' : 'off');
+}
+
 function gwStrip(live, fresh){
   live = live || {};
   const gw = live.gw;
 
-  if(!fresh){
-    return '<div class="gwstrip bad">⛔ กล่องข้างเตียงไม่ส่งข้อมูล — ตรวจไฟและ Wi-Fi</div>';
+  const st = linkState(live);
+  if(st === 'never'){
+    return '<div class="gwstrip idle">◻ ยังไม่ได้ติดตั้ง gateway ที่เตียงนี้</div>';
+  }
+  if(st === 'down'){
+    return '<div class="gwstrip bad">⛔ กล่องข้างเตียงหยุดส่งข้อมูล ('+
+           agoPlain(live.ts)+') — ตรวจไฟและ Wi-Fi</div>';
   }
   if(!gw) return '';
 
@@ -1585,7 +1667,12 @@ function gwStrip(live, fresh){
      -75 dBm is where the 30 Aug TLS failures began clustering, 2% is well
      above the 0.55% that night, and 75% of the command ceiling leaves room
      to act before every web button goes quiet. */
-  if(gw.boot > 1)      notes.push('รีบูตเอง '+gw.boot+' ครั้ง');
+  /* From gateway v3.30.0 this counter excludes resets caused by the USB host,
+     so ANY value is a reboot nobody asked for: the supply, a watchdog, or a
+     panic. Under v3.29.0 it also counted every upload, which is why the very
+     first live dashboard showed an amber warning on a bed whose only problem
+     was having been flashed nine times that morning. */
+  if(gw.boot > 0)      notes.push('รีบูตเอง '+gw.boot+' ครั้ง');
   if(gw.rssi != null && gw.rssi < -75) notes.push('Wi-Fi อ่อน '+gw.rssi+' dBm');
   if(failPct >= 2)     notes.push('ส่งไม่สำเร็จ '+failPct.toFixed(1)+'%');
   if(hwmPct >= 75)     notes.push('พื้นที่คำสั่งใกล้เต็ม '+hwmPct+'%');
@@ -1598,21 +1685,34 @@ function gatewayBlock(live, fresh){
   live = live || {};
   const gw = live.gw;
 
-  const banner = !fresh
+  const st = linkState(live);
+  const whyUnknown = '<span style="color:var(--text2);font-weight:400">'+
+      'สถานะของหมอนและข้อเท้าด้านบนจึงเป็น "ไม่ทราบ" ไม่ใช่ว่าเสีย — '+
+      'ทุกค่าเวลาของโหนดถูกเขียนโดย gateway ตัวนี้</span>';
+
+  const banner =
+    st === 'never'
+    ? '<div class="infonote" style="margin:0 0 12px">'+
+      '◻ <b>ยังไม่ได้ติดตั้ง gateway ที่เตียงนี้</b> — เตียงถูกสร้างไว้ในระบบแล้ว '+
+      'แต่ยังไม่เคยมีข้อมูลส่งเข้ามาเลย<br>'+whyUnknown+'</div>'
+    : st === 'down'
     ? '<div class="infonote" style="margin:0 0 12px;border-color:color-mix(in srgb,var(--danger) 45%,transparent);'+
       'background:color-mix(in srgb,var(--danger) 12%,var(--surface));color:var(--danger)">'+
-      '⛔ <b>กล่องข้างเตียงไม่ส่งข้อมูล</b> — ตรวจไฟเลี้ยงและ Wi-Fi ที่ gateway ก่อน<br>'+
+      '⛔ <b>กล่องข้างเตียงหยุดส่งข้อมูล</b> ('+agoPlain(live.ts)+') — '+
+      'ตรวจไฟเลี้ยงและ Wi-Fi ที่ gateway ก่อน<br>'+whyUnknown+' '+
       '<span style="color:var(--text2);font-weight:400">'+
-      'สถานะของหมอนและข้อเท้าด้านบนจึงเป็น "ไม่ทราบ" ไม่ใช่ว่าเสีย — '+
-      'ทุกค่าเวลาของโหนดถูกเขียนโดย gateway ตัวนี้ '+
       'ส่วนการเตือนที่ข้างเตียง (จอ เสียง สั่น) ยังทำงานได้เองแม้ไม่มีเน็ต</span></div>'
     : '';
 
   if(!gw){
     return '<div class="detail" style="margin-top:14px">'+
-      '<h2 style="font-size:.95rem"><span class="dot '+(fresh?'on':'off')+'"></span>Gateway (กล่องข้างเตียง)</h2>'+
+      '<h2 style="font-size:.95rem"><span class="dot '+dotClass(live)+'"></span>Gateway (กล่องข้างเตียง)</h2>'+
       banner+
-      '<div class="calibstatus">เฟิร์มแวร์ยังไม่รายงานสถานะตัวเอง — ต้องอัปเดต gateway เป็น v3.29.0 ขึ้นไป</div>'+
+      /* Only meaningful for a bed that IS reporting. On a bed that has never
+         reported, "update the firmware" names a box that is not there. */
+      (st==='live'
+        ? '<div class="calibstatus">เฟิร์มแวร์ยังไม่รายงานสถานะตัวเอง — ต้องอัปเดต gateway เป็น v3.29.0 ขึ้นไป</div>'
+        : '')+
     '</div>';
   }
 
@@ -1628,15 +1728,15 @@ function gatewayBlock(live, fresh){
     (note?'<span style="color:var(--dim);font-weight:400;font-size:.75rem"> '+note+'</span>':'')+'</b></div>';
 
   return '<div class="detail" style="margin-top:14px">'+
-    '<h2 style="font-size:.95rem"><span class="dot '+(fresh?'on':'off')+'"></span>'+
+    '<h2 style="font-size:.95rem"><span class="dot '+dotClass(live)+'"></span>'+
       'Gateway (กล่องข้างเตียง)'+
       '<span class="pill" style="margin-left:auto">fw '+(gw.fw||'?')+'</span></h2>'+
     banner+
     kv('Wi-Fi', (gw.rssi!=null? gw.rssi+' dBm':'—'),
        gw.ch!=null ? '· ช่อง '+gw.ch : '')+
     kv('หน่วยความจำว่าง', heapK!=null? heapK+' KB' : '—')+
-    kv('รีบูตตั้งแต่เสียบไฟ', (gw.boot!=null? gw.boot+' ครั้ง':'—'),
-       (gw.boot>1?'· ตรวจไฟเลี้ยง':'')) +
+    kv('รีบูตเอง (ไม่นับการอัปโหลด)', (gw.boot!=null? gw.boot+' ครั้ง':'—'),
+       (gw.boot>0?'· ตรวจไฟเลี้ยง':'')) +
     kv('ส่งขึ้นคลาวด์สำเร็จ', okPct!=null? okPct+'%' : '—',
        tot? '· '+(gw.ok||0)+' สำเร็จ / '+(gw.fail||0)+' ล้มเหลว' : '')+
     '<div style="margin-top:10px">'+

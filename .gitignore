@@ -1,2 +1,11 @@
 .vercel
 .env*.local
+@"
+*.bin
+*.elf
+build/
+.vscode/
+*.log
+somepart_gateway_log*.txt
+gateway_log_*.txt
+"@ | Out-File -Encoding utf8 .gitignore

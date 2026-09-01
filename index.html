@@ -22,7 +22,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.26.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.27.0 (Phase 2 — real schema)
+
+  v3.27.0 (2026-09-01)
+    TWO RAW ENUMS WERE BEING SHOWN TO NURSES.
+
+    "status 3" is HH_ST_IMU_OK | HH_ST_I2C_OK — the healthiest a node
+    can be — displayed as a bare number that reads like a fault code.
+    "(band 1)" is HH_BAT_NORMAL, the healthiest a cell can be. Nobody
+    outside this repository could decode either, and the bits that
+    matter most were invisible inside the first: a brownout on the last
+    boot and a missing calibration both hide in that byte.
+
+    status becomes words. The two OK bits collapse to one quiet "✓
+    ปกติ", because three chips saying nothing is wrong across three
+    columns is noise; each fault bit gets its own chip, because each
+    sends you somewhere different — IMU, I2C, brownout, watchdog, queue
+    overflow, uncalibrated.
+
+    Battery becomes a bar that fills the way a cell empties, 3.30 V to
+    4.20 V, with the band in words beside it. The colour comes from the
+    node's OWN band rather than a threshold recomputed here: the
+    firmware decides what LOW means, and the screen must not be able to
+    disagree with it.
+
+    The hip-angle and FSR rows are removed. Both are in the HIP dials
+    above, and a number shown twice is a number that can be read two
+    ways — that row said 216.0 while the dial said 180 for the whole of
+    31 Aug. The dials carry their raw figures in their own captions.
+
+    With those rows gone the node dials grow to 92px, and to 104px on a
+    phone where there is a single column to fill.
 
   v3.26.0 (2026-09-01)
     FOUR GATEWAY DIALS, and signal arcs on every node.
@@ -966,10 +996,11 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
   font-size:1.32rem;color:var(--text);line-height:1.05;text-align:center;letter-spacing:-.5px}
 .gauge .gnum small{display:block;font-size:.6rem;font-weight:400;color:var(--dim);
   margin-top:3px;letter-spacing:0}
-.gauge.sm{width:78px;height:78px}
-.gauge.sm::before{inset:8px}
-.gauge.sm .gnum{font-size:1rem}
-.gauge.sm .gnum small{font-size:.5rem}
+.gauge.sm{width:92px;height:92px}
+.gauge.sm::before{inset:9px}
+.gauge.sm .gnum{font-size:1.15rem}
+.gauge.sm .gnum small{font-size:.55rem}
+@media(max-width:800px){.gauge.sm{width:104px;height:104px}}
 
 /* Threshold tick for the angle dial. Rotated to the configured degree so the
    distance between the wedge edge and the tick IS the remaining margin —
@@ -978,7 +1009,7 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .gauge .gtick::after{content:'';position:absolute;left:50%;top:1px;width:2px;height:11px;
   margin-left:-1px;border-radius:1px;background:var(--danger);opacity:.9;
   transform-origin:50% calc(52px - 1px)}
-.gauge.sm .gtick::after{height:8px;transform-origin:50% calc(39px - 1px)}
+.gauge.sm .gtick::after{height:9px;transform-origin:50% calc(46px - 1px)}
 .gauge .gcap{position:absolute;bottom:-17px;left:0;right:0;text-align:center;
   font-size:.6rem;color:var(--dim);white-space:nowrap}
 .nodegauge.ang{margin-bottom:22px}
@@ -1381,7 +1412,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.26.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.27.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1803,8 +1834,25 @@ function battText(n){
            '<div style="font-size:.68rem;color:var(--dim);font-weight:400">'+
            'ยังไม่ได้ใส่เซลล์ หรือวงจรแบ่งแรงดันยังไม่ต่อ/ยังไม่ปรับค่า</div>';
   }
-  return n.batteryV.toFixed(2)+'V'+
-         (n.batteryBand!=null?' (band '+n.batteryBand+')':'');
+  /* v3.27.0 — "(band 1)" was the enum ordinal from happyhip_packet.h printed
+     raw, next to "status 3" printed raw. One is the healthiest reading a cell
+     can have and the other is the healthiest a node can have, and both looked
+     like fault codes on a ward screen. Words, and a bar that fills the way a
+     cell empties: from 3.30 V (flat, protected) to 4.20 V (full). The colour
+     is the node's OWN band, not a threshold recomputed here — the firmware
+     decides what LOW means and the screen must not disagree with it. */
+  const band = n.batteryBand;
+  const word = ['ไม่ทราบ','ปกติ','ใกล้หมด','วิกฤต','หยุดทำงาน'][band] || 'ไม่ทราบ';
+  const col  = band===1 ? 'var(--ok)' : band===2 ? 'var(--warn)'
+             : (band===3||band===4) ? 'var(--danger)' : 'var(--dim)';
+  const pct  = Math.max(0, Math.min(100, (n.batteryV - 3.30) / (4.20 - 3.30) * 100));
+  return '<span style="display:inline-flex;align-items:center;gap:8px;justify-content:flex-end">'+
+    '<span style="width:46px;height:11px;border-radius:3px;border:1.5px solid '+col+';'+
+      'padding:1.5px;display:inline-block;position:relative">'+
+      '<span style="display:block;height:100%;width:'+pct.toFixed(0)+'%;background:'+col+';'+
+      'border-radius:1px"></span></span>'+
+    '<span style="color:'+col+'">'+n.batteryV.toFixed(2)+'V</span>'+
+    '<span style="color:var(--dim);font-weight:400;font-size:.74rem">'+word+'</span></span>';
 }
 
 function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
@@ -1874,7 +1922,7 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
       (online ? wifiArcs(n.rssi, 30) : '')+
       (n.rssi!=null && !gwDown ? n.rssi+' dBm' : '—')+'</b></div>'+
     '<div class="kv"><span>เห็นล่าสุด</span><b>'+fmtAge(n.lastSeen)+'</b></div>'+
-    '<div class="kv"><span>status</span><b>'+(n.status!=null?n.status:'—')+'</b></div>'+
+    statusRow(n.status, online||gwDown)+
     testBtn+
     '</div>';
 }
@@ -1993,13 +2041,11 @@ function renderDetail(bid,data){
        which to believe, so one of them has to give: both now report the
        bearing, and the signed reading the firmware actually sent is kept in
        brackets for anyone debugging against a serial log. */
-    '<div class="kv"><span>มุมสะโพก (pitch / roll)</span><b>'+
-      (fresh?deg360(live.hipPitch)+'° / '+deg360(live.hipRoll)+'°'+
-             '<span style="color:var(--dim);font-weight:400;font-size:.75rem"> (ดิบ '+
-             (live.hipPitch||0).toFixed(1)+' / '+(live.hipRoll||0).toFixed(1)+')</span>'
-            :'—')+'</b></div>'+
-    '<div class="kv"><span>แรงกดหมอน ซ้าย/ขวา (FSR)</span><b>'+
-      (fresh?(live.fsrL||0)+' / '+(live.fsrR||0):'—')+'</b></div>'+
+    /* v3.27.0 — the hip angle and the FSR counts were removed from here. Both
+       are drawn in the HIP dials above, and a number shown twice is a number
+       that can be read two ways: this row said 216.0 while the dial said 180
+       for the whole of 31 Aug. The dials carry the raw figures in their own
+       captions, which is the one place they belong. */
     '<div class="kv"><span>อัปเดตล่าสุด</span><b>'+agoText(live.ts)+'</b></div>'+
     (ack.ts?'<div class="kv"><span>รับทราบล่าสุด</span><b>'+(ack.by||'-')+' · '+agoPlain(ack.ts)+'</b></div>':'')+
     '<div class="swrow"><div class="sw'+(cfg.vibrationEnabled?' on':'')+ro+'" '+
@@ -2145,6 +2191,39 @@ function wifiArcs(rssi, px){
     arc(4,21)+arc(3,15)+arc(2,9)+
     '<circle cx="24" cy="26" r="3" fill="'+(lvl>=1?col:dim)+'"/></svg>';
 }
+/* The node's health bits, in words.  v3.27.0.
+ *
+ * This row printed the raw byte: "status 3". Three is HH_ST_IMU_OK |
+ * HH_ST_I2C_OK — the healthiest a node can be — and it was displayed on a
+ * ward dashboard as a bare number that reads like a fault code. Nobody
+ * outside this repository could decode it, and the two bits that matter most
+ * (a brownout, a missing calibration) were invisible inside it.
+ *
+ * Bit meanings are from happyhip_packet.h. The two OK bits are shown as one
+ * quiet confirmation when both are set, because "IMU ปกติ, I2C ปกติ" on every
+ * healthy node is three chips of noise across three columns; the fault bits
+ * are shown individually, because each one sends you somewhere different. */
+function statusRow(st, known){
+  if(!known || st==null)
+    return '<div class="kv"><span>เซ็นเซอร์</span><b style="color:var(--dim)">—</b></div>';
+  const s = Number(st)|0;
+  const IMU=1, I2C=2, OVF=4, BROWN=8, WDT=16, NOCAL=32;
+  const faults=[];
+  if(!(s & IMU))   faults.push(['bad','IMU ไม่ตอบสนอง']);
+  if(!(s & I2C))   faults.push(['bad','บัส I2C มีปัญหา']);
+  if(s & BROWN)    faults.push(['bad','ไฟตกตอนบูตล่าสุด']);
+  if(s & WDT)      faults.push(['warn','watchdog รีเซ็ต']);
+  if(s & OVF)      faults.push(['warn','คิวข้อมูลล้น']);
+  if(s & NOCAL)    faults.push(['warn','ยังไม่ได้ตั้งค่าศูนย์']);
+
+  const body = faults.length
+    ? faults.map(f=>'<span class="pill '+(f[0]==='bad'?'bad':'warn')+'">'+f[1]+'</span>').join(' ')
+    : '<span style="color:var(--ok)">✓ ปกติ</span>';
+  return '<div class="kv"><span>เซ็นเซอร์</span>'+
+         '<b style="display:inline-flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">'+
+         body+'</b></div>';
+}
+
 function wifiWord(rssi){
   if(rssi==null || !isFinite(rssi)) return '—';
   return rssi >= -50 ? 'ดีมาก' : rssi >= -60 ? 'ดี' : rssi >= -70 ? 'พอใช้' : 'อ่อน';

@@ -22,7 +22,26 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.20.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.21.0 (Phase 2 — real schema)
+
+  v3.21.0 (2026-09-01)
+    Needs gateway v3.34.0 and the updated database.rules.json.
+
+    "ออนไลน์มาแล้ว" at the top of the gateway panel. The panel could
+    say a bed had restarted once but not whether that was an hour ago
+    or a minute ago, and the two readings only mean something together:
+    "1 restart, up 3 hours" is a bed that had a bad moment and settled;
+    "1 restart, up 4 minutes" is a bed still in trouble.
+
+    So the grid strip now qualifies its restart warning with the uptime
+    whenever the gateway came back inside the last ten minutes — short
+    enough to still be inside the event — and the panel row reads
+    "ตั้งแต่เปิดเครื่อง" when nothing has restarted at all, so the two
+    lines cannot be misread as contradicting each other.
+
+    upText() gives the coarsest unit that still answers the question.
+    Nobody reads "3 ชม. 47 นาที 12 วิ" off a status panel; they want to
+    know whether it has been up long enough to trust.
 
   v3.20.0 (2026-09-01)
     Needs Code_v7.gs v7.6.0.
@@ -1215,7 +1234,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.20.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.21.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1866,6 +1885,22 @@ function dotClass(live){
   return st==='live' ? 'on' : (st==='never' ? 'idle' : 'off');
 }
 
+/* Seconds -> the coarsest unit that still answers the question. Nobody needs
+   "3 ชม. 47 นาที 12 วิ" from a status panel; they need to know whether it has
+   been up long enough to trust. */
+function upText(s){
+  s = Number(s);
+  if(!isFinite(s) || s < 0) return '—';
+  if(s < 60)    return Math.round(s)+' วินาที';
+  if(s < 3600)  return Math.round(s/60)+' นาที';
+  if(s < 86400){
+    const h=Math.floor(s/3600), m=Math.round((s%3600)/60);
+    return m ? h+' ชม. '+m+' นาที' : h+' ชม.';
+  }
+  const d=Math.floor(s/86400), h=Math.round((s%86400)/3600);
+  return h ? d+' วัน '+h+' ชม.' : d+' วัน';
+}
+
 function gwStrip(live, fresh){
   live = live || {};
   const gw = live.gw;
@@ -1893,7 +1928,13 @@ function gwStrip(live, fresh){
      panic. Under v3.29.0 it also counted every upload, which is why the very
      first live dashboard showed an amber warning on a bed whose only problem
      was having been flashed nine times that morning. */
-  if(gw.boot > 0)      notes.push('รีบูตเอง '+gw.boot+' ครั้ง');
+  /* v3.21.0 — uptime qualifies the restart count rather than replacing it.
+     A bed that restarted once and has been up for hours has recovered; one
+     that restarted once four minutes ago has not, and only the pair says
+     which. Under ten minutes is short enough to still be inside the event. */
+  if(gw.boot > 0)      notes.push('รีบูตเอง '+gw.boot+' ครั้ง'+
+                                  (gw.up!=null && gw.up < 600
+                                    ? ' (เพิ่ง '+upText(gw.up)+'ที่แล้ว)' : ''));
   if(gw.rssi != null && gw.rssi < -75) notes.push('Wi-Fi อ่อน '+gw.rssi+' dBm');
   if(failPct >= 2)     notes.push('ส่งไม่สำเร็จ '+failPct.toFixed(1)+'%');
   if(hwmPct >= 75)     notes.push('พื้นที่คำสั่งใกล้เต็ม '+hwmPct+'%');
@@ -1953,6 +1994,12 @@ function gatewayBlock(live, fresh){
       'Gateway (กล่องข้างเตียง)'+
       '<span class="pill" style="margin-left:auto">fw '+(gw.fw||'?')+'</span></h2>'+
     banner+
+    /* v3.21.0 — uptime first, because it is the line that says whether the
+       reboot count below it is old news or a bed still in trouble. Reads
+       "ตั้งแต่เปิดเครื่อง" when nothing has restarted, so the two lines
+       cannot be misread as contradicting each other. */
+    kv('ออนไลน์มาแล้ว', upText(gw.up),
+       (gw.up!=null && !gw.boot) ? '· ตั้งแต่เปิดเครื่อง' : '')+
     kv('Wi-Fi', (gw.rssi!=null? gw.rssi+' dBm':'—'),
        gw.ch!=null ? '· ช่อง '+gw.ch : '')+
     kv('หน่วยความจำว่าง', heapK!=null? heapK+' KB' : '—')+

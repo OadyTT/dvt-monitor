@@ -22,7 +22,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.22.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.23.0 (Phase 2 — real schema)
+
+  v3.23.0 (2026-09-01)
+    The bed detail is re-ordered to follow cause, not urgency:
+    GATEWAY -> the three nodes -> alerts.
+
+    The gateway goes first because nothing below it means anything
+    without it. nodes.<role>.lastSeen is written BY the gateway, so
+    when the box is quiet all three nodes freeze together and a reader
+    who starts at the nodes concludes three devices have failed. That
+    misreading is the reason v3.13.0 added the three-state logic; this
+    puts the trust anchor where it is read first instead of last.
+
+    Alerts move BELOW the readings. Since v3.10.0 the 🔔 tab with its
+    badge has been the watch surface, which makes the bed detail a
+    DIAGNOSTIC view — and in a diagnostic view the causal order reads
+    better: is the box alive, what do the sensors say, and therefore
+    what fired. An alert is the consequence of the rows above it.
+
+    The ordering must not cost anyone the ability to see there is work,
+    so the bed header now carries a red count chip that scrolls to the
+    alert box. Opening a bed still says at once that something is
+    outstanding; it just no longer forces the alert list between the
+    reader and the measurements that explain it.
+
+    The gateway panel gains three dials in the node row's shape — the
+    three ways the box fails: it loses the air, it loses the cloud, or
+    it fills its command node. As the first block on the page a wall of
+    text rows read as small print rather than as the health of the
+    thing everything depends on. Each dial keeps its raw figure
+    underneath, the way the FSR dial keeps its counts: the ring is for
+    reading across the room, the number is for acting on.
 
   v3.22.0 (2026-09-01)
     The pulsing dot reaches the node headers.
@@ -1253,7 +1284,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.22.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.23.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1768,6 +1799,7 @@ function renderDetail(bid,data){
                         .filter(a=>a.phase==='active'||a.phase==='acked');
   const activeAlerts=allAlerts.filter(a=>a.phase==='active');
   let alertHtml='';
+  const nUnacked = activeAlerts.length;   /* v3.23.0 — used by the header chip */
   if(allAlerts.length){
     // Sort by severity so the thing that matters most is not buried under a
     // pair of low-battery warnings, which is exactly how it read before.
@@ -1805,7 +1837,7 @@ function renderDetail(bid,data){
             : '')+
           '</div>';
       };
-    alertHtml='<div class="alertbox">'+
+    alertHtml='<div class="alertbox" id="bedAlerts">'+
       '<div class="ahead">⚠️ แจ้งเตือนที่ยังไม่ได้รับทราบ ('+activeAlerts.length+')'+
         (ackedN?'<span class="calibstatus" style="font-weight:400;margin-left:6px">'+
                 'และรับทราบแล้วอีก '+ackedN+' รายการ ที่ยังไม่หายไป</span>':'')+'</div>'+
@@ -1827,8 +1859,19 @@ function renderDetail(bid,data){
 
   w.innerHTML=
     '<div class="detail"><h2><span class="dot '+dotClass(live)+'"></span>'+
-      (cfg.bedLabel||bid)+'<button class="btn sm" style="margin-left:auto" onclick="closeDetail()">ปิด</button></h2>'+
-    alertHtml+
+      (cfg.bedLabel||bid)+
+      /* v3.23.0 — alerts moved below the readings (see the changelog), so the
+         header carries the count. Opening a bed still says at once that
+         something is outstanding, and the chip jumps to it — the ordering
+         change must not cost anyone the ability to see there is work. */
+      (nUnacked
+        ? '<button class="btn sm" style="margin-left:12px;background:color-mix(in srgb,var(--danger) 18%,transparent);'+
+          'border-color:color-mix(in srgb,var(--danger) 45%,transparent);color:var(--danger)" '+
+          'onclick="document.getElementById(\'bedAlerts\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">'+
+          '⚠️ ยังไม่รับทราบ '+nUnacked+'</button>'
+        : '')+
+      '<button class="btn sm" style="margin-left:auto" onclick="closeDetail()">ปิด</button></h2>'+
+    gatewayBlock(live, fresh)+
     (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">🔔 ปุ่มทดสอบด้านล่างส่งคำสั่งผ่าน Firebase ไปยัง gateway (เฟิร์มแวร์ v3.20.0 ขึ้นไป) และรายงานผลกลับที่ป้ายข้างปุ่ม — <b>ทดสอบเสียง</b>ใช้ได้จริงแล้ว ส่วน <b>ทดสอบการสั่น</b> จะตอบว่า <i>ยังไม่รองรับ</i> เพราะโปรโตคอล ESP-NOW ยังไม่มีชนิดข้อความสำหรับสั่งสั่นที่ข้อเท้า (ต้องเพิ่มแล้วแฟลชโหนดข้อเท้าใหม่)</div>':'')+
     '<div class="three">'+
       nodeBlock('HIP', nodes.hip, null, 'testAudio', bid, null,
@@ -1839,7 +1882,7 @@ function renderDetail(bid,data){
       nodeBlock('ข้อเท้าซ้าย', nodes.ankleL, live.pumpL, 'testVibrateAnkleL', bid, cfg.pumpTargetPerSide||150, null, fresh)+
       nodeBlock('ข้อเท้าขวา', nodes.ankleR, live.pumpR, 'testVibrateAnkleR', bid, cfg.pumpTargetPerSide||150, null, fresh)+
     '</div>'+
-    gatewayBlock(live, fresh)+
+    alertHtml+
     /* v3.18.0 — same normalisation as the dial above it. These two disagreed
        (180 on the circle, 216.0 on this line) and a reader has no way to tell
        which to believe, so one of them has to give: both now report the
@@ -1916,6 +1959,29 @@ function dotClass(live){
 /* Seconds -> the coarsest unit that still answers the question. Nobody needs
    "3 ชม. 47 นาที 12 วิ" from a status panel; they need to know whether it has
    been up long enough to trust. */
+/* A plain percentage ring. angleGaugeHtml and fsrGaugeHtml each encode a
+   specific meaning in the shape they draw; this one carries none, so anything
+   measured 0-100 can use it and still look like the rest of the page without
+   a fourth bespoke gauge being invented for it. */
+function ringHtml(pct, label, caption, state){
+  const cls='gauge sm';
+  if(pct==null){
+    return '<div class="'+cls+'" style="background:var(--bg2)">'+
+      '<span class="gnum">\u2014<small>'+label+'</small></span>'+
+      '<span class="gcap">'+(caption||'')+'</span></div>';
+  }
+  const p=Math.max(0,Math.min(100,pct));
+  const col = state==='bad'
+      ? ['var(--warn)','var(--danger)','color-mix(in srgb,var(--danger) 50%,transparent)']
+    : state==='warn'
+      ? ['var(--ok)','var(--warn)','color-mix(in srgb,var(--warn) 35%,transparent)']
+      : ['var(--accent)','color-mix(in srgb,var(--accent) 50%,var(--ok) 50%)','transparent'];
+  return '<div class="'+cls+'" style="--gglow:'+col[2]+';background:conic-gradient(from 0deg,'+
+      col[0]+' 0deg,'+col[1]+' '+(p*3.6)+'deg,var(--bg2) '+(p*3.6)+'deg)">'+
+    '<span class="gnum">'+Math.round(p)+'<small>'+label+'</small></span>'+
+    '<span class="gcap">'+(caption||'')+'</span></div>';
+}
+
 function upText(s){
   s = Number(s);
   if(!isFinite(s) || s < 0) return '—';
@@ -2014,6 +2080,26 @@ function gatewayBlock(live, fresh){
   const hwmCls = hwm>=2048 ? 'bad' : (hwmPct>=75 ? 'warn' : '');
   const heapK = gw.heap!=null ? Math.round(gw.heap/1024) : null;
 
+  /* v3.23.0 — three dials, the same shape the nodes wear.
+     The gateway is now the first thing on the page, and a first block made of
+     nothing but text rows reads as small print rather than as the health of
+     the box everything else depends on. These are the three ways it fails:
+     it loses the air, it loses the cloud, or it fills its command node. Each
+     keeps its raw figure underneath, the way the FSR dial keeps its counts —
+     the ring is for reading across the room, the number is for acting on. */
+  const wifiPct = gw.rssi==null ? null
+                : Math.max(0, Math.min(100, Math.round((gw.rssi + 95) * 100 / 60)));
+  const okPctG  = okPct==null ? null : okPct;
+  const dials =
+    '<div class="nodegauge ang" style="gap:34px;justify-content:center;margin:4px 0 20px">'+
+      ringHtml(wifiPct, 'Wi-Fi', (gw.rssi!=null? gw.rssi+' dBm':'—'),
+               wifiPct==null?null:(wifiPct<25?'bad':wifiPct<45?'warn':'ok'))+
+      ringHtml(okPctG, 'ส่งขึ้นคลาวด์', tot? (gw.ok||0)+'/'+tot : '—',
+               okPctG==null?null:(okPctG<90?'bad':okPctG<99?'warn':'ok'))+
+      ringHtml(hwmPct, 'พื้นที่คำสั่ง', hwm+'/2048',
+               hwmPct>=100?'bad':hwmPct>=75?'warn':'ok')+
+    '</div>';
+
   const kv=(k,v,note)=>'<div class="kv"><span>'+k+'</span><b>'+v+
     (note?'<span style="color:var(--dim);font-weight:400;font-size:.75rem"> '+note+'</span>':'')+'</b></div>';
 
@@ -2022,6 +2108,7 @@ function gatewayBlock(live, fresh){
       'Gateway (กล่องข้างเตียง)'+
       '<span class="pill" style="margin-left:auto">fw '+(gw.fw||'?')+'</span></h2>'+
     banner+
+    dials+
     /* v3.21.0 — uptime first, because it is the line that says whether the
        reboot count below it is old news or a bed still in trouble. Reads
        "ตั้งแต่เปิดเครื่อง" when nothing has restarted, so the two lines

@@ -22,7 +22,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.24.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.25.0 (Phase 2 — real schema)
+
+  v3.25.0 (2026-09-01)
+    The gateway strip on a bed card no longer disappears when the
+    gateway is healthy.
+
+    v3.14.0 returned nothing in that case, on the principle that a row
+    always present stops being read within a shift. The principle
+    holds, but silence turned out to be ambiguous in a way I had not
+    allowed for: on a wall of cards a healthy bed and a bed with no
+    gateway data look identical, and the cards end up different heights
+    with a hole where the row belongs.
+
+    So the healthy state speaks recessively — no fill, no icon, dim
+    text — and carries the uptime, which is the one thing worth knowing
+    about a gateway that is behaving. It reads as background rather
+    than as a message, which is what "nothing is wrong" should look
+    like, and the amber and red states keep their contrast because
+    nothing else is competing for it.
 
   v3.24.0 (2026-09-01)
     THREE QUANTITIES, THREE SHAPES. v3.23.0 drew all three gateway
@@ -870,6 +888,9 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
    that the flex row does not otherwise give it. */
 .kv .dot{margin-right:1px}
 .gwstrip.idle{background:color-mix(in srgb,var(--dim) 16%,transparent);color:var(--text2)}
+/* No fill and no icon: the healthy state must hold the row's space without
+   asking for attention, or the amber and red ones stop standing out. */
+.gwstrip.ok{background:transparent;color:var(--dim);padding-left:2px}
 .gtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 18px}
 .gtile{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;
   padding:12px 8px 11px;border-radius:11px;min-height:104px;
@@ -1322,7 +1343,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.24.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.25.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2115,7 +2136,25 @@ function gwStrip(live, fresh){
   if(failPct >= 2)     notes.push('ส่งไม่สำเร็จ '+failPct.toFixed(1)+'%');
   if(hwmPct >= 75)     notes.push('พื้นที่คำสั่งใกล้เต็ม '+hwmPct+'%');
 
-  if(!notes.length) return '';
+  /* v3.25.0 — SAY SO WHEN IT IS FINE, QUIETLY.
+   *
+   * This used to return '' when the gateway was healthy, on the principle
+   * that a row which is always present stops being read within a shift. That
+   * principle still holds — but silence turned out to be ambiguous in a way I
+   * had not allowed for: on a wall of cards, a bed with no strip and a bed
+   * whose gateway has never reported look identical, and the cards end up
+   * different heights with a hole where the row should be.
+   *
+   * So the healthy state speaks, but recessively: no fill, dim text, no icon
+   * competing with the amber and red ones. It reads as background rather than
+   * as a message, which is what "nothing is wrong" should look like — while
+   * still carrying the uptime, which is the one thing worth knowing about a
+   * gateway that is behaving.
+   */
+  if(!notes.length){
+    return '<div class="gwstrip ok">gateway ปกติ'+
+           (gw.up!=null ? ' · ออนไลน์ '+upText(gw.up) : '')+'</div>';
+  }
   return '<div class="gwstrip warn">⚠ gateway: '+notes.join(' · ')+'</div>';
 }
 

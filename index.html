@@ -22,7 +22,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.28.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.29.0 (Phase 2 — real schema)
+
+  v3.29.0 (2026-09-01)
+    The FSR display becomes a CENTRE-OUT SEGMENTED BAR.
+
+    Left-versus-right has a natural centre, so each side now grows
+    outward from the middle and the answer is in the SHAPE: even wings
+    mean even weight, a long wing means the patient has rolled that
+    way. No number has to be read to see it.
+
+    THE COLOUR RAMP IS THE SATURATION WARNING. Segments run green
+    through amber to red as they travel away from the centre, so a wing
+    reaching the red end means that sensor is near the top of the
+    12-bit ADC and has stopped being able to measure. That is exactly
+    what the bench hit at 4095/4095 — and in the v3.26.0 ratio ring it
+    appeared as a perfect 50%, the healthiest number that gauge could
+    draw. Here it is visibly at the end of its travel.
+
+    A bar rather than a dial because a bar has two ends and this
+    quantity has two sides. The angle dial keeps its circle, because an
+    angle has no left and right — and it now sits centred ABOVE the
+    bar, over the point the two wings grow from, instead of beside it.
 
   v3.28.0 (2026-09-01)
     THE FSR RING WAS THE WRONG GRAPH, and the bench proved it.
@@ -1034,10 +1055,19 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .gauge .gcap{position:absolute;bottom:-17px;left:0;right:0;text-align:center;
   font-size:.6rem;color:var(--dim);white-space:nowrap}
 .nodegauge.ang{margin-bottom:22px}
-/* Same footprint as .gauge.sm so the HIP pair stays balanced. */
-.fsrbox{width:92px;min-height:92px;display:flex;flex-direction:column;
-  align-items:center;justify-content:flex-end;gap:4px;flex-shrink:0}
-@media(max-width:800px){.fsrbox{width:104px}}
+/* Full column width: a left-right quantity wants both ends of the row, and
+   the angle dial above it is centred over the middle of this bar. */
+.fsrbox{width:100%;display:flex;flex-direction:column;gap:5px;margin-top:2px}
+.fsrhead{display:flex;justify-content:space-between;font-size:.6rem;color:var(--dim)}
+.fsrbar{display:flex;align-items:stretch;gap:3px;height:19px}
+.fsrwing{flex:1;display:flex;gap:2px}
+.fsrwing.flip{flex-direction:row-reverse}
+.fsrwing i{flex:1;border-radius:2px;transition:background .35s ease}
+/* The centre tick: the datum both wings grow from, so "even" is a shape you
+   can check against a line rather than a number you have to compare. */
+.fsrbar u{width:2px;border-radius:1px;background:var(--brd);flex:0 0 auto}
+.fsrverdict{font-size:.72rem;font-weight:600;text-align:center}
+.fsrverdict span{color:var(--dim);font-weight:400;font-size:.66rem}
 .cardhead{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .cardhead .metrics{flex:1;margin-bottom:0}
 .nodegauge{display:flex;align-items:center;gap:10px;margin:8px 0}
@@ -1437,7 +1467,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.28.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.29.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1661,39 +1691,50 @@ function gaugeHtml(pct,label,size){
    the costume of a measurement. */
 function fsrGaugeHtml(fsrL, fsrR, size, stale){
   const l = Math.max(0, Number(fsrL)||0), r = Math.max(0, Number(fsrR)||0);
-  const MAX = 4095, FLOOR = 200, SAT = 4000;
+  const MAX = 4095, FLOOR = 200, SAT = 4000, SEG = 11;
 
-  /* v3.28.0 — TWO BARS, NOT A RATIO RING.
+  /* v3.29.0 — A CENTRE-OUT SEGMENTED BAR.
    *
-   * The ring showed the LEFT SHARE of the total, and on the bench both
-   * sensors read 4095 — the top of the 12-bit ADC — which came out as a
-   * flawless 50%, the best-looking number the gauge can produce. A reading
-   * that is off the end of the scale must never render as the healthiest
-   * thing on the screen.
+   * The pillow's question is left-versus-right, and left-versus-right has a
+   * natural centre. Growing each side outward from the middle puts the answer
+   * in the SHAPE: even wings mean even weight, a long wing means the patient
+   * has rolled that way, and you read it without reading anything.
    *
-   * A ratio also throws away magnitude, and magnitude is half the question: a
-   * patient resting evenly and a pillow with nothing on it are both "50/50".
-   * Two bars against a common scale show BOTH at once — how much, and whether
-   * the two sides agree — and saturation becomes visible as two bars pinned
-   * to the top instead of hiding inside a division. */
-  const bar = (v, lab) => {
-    const h = Math.max(2, Math.min(100, v * 100 / MAX));
-    const col = stale ? 'var(--dim)'
-              : v >= SAT ? 'var(--danger)'
-              : v < FLOOR ? 'color-mix(in srgb,var(--dim) 50%,transparent)'
-              : 'var(--accent)';
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+
-      '<div style="width:17px;height:56px;border-radius:4px;background:var(--bg2);'+
-        'display:flex;align-items:flex-end;overflow:hidden">'+
-        '<div style="width:100%;height:'+h.toFixed(0)+'%;background:'+col+
-        ';border-radius:3px;transition:height .4s ease"></div></div>'+
-      '<div style="font-size:.58rem;color:var(--dim)">'+lab+'</div></div>';
+   * THE COLOUR RAMP IS THE SATURATION WARNING. Segments run green through
+   * amber to red as they move away from the centre, so a wing reaching the
+   * red end means that sensor is close to the top of the 12-bit ADC and has
+   * stopped being able to measure. That is the exact failure the bench hit —
+   * 4095/4095 — and in the old ratio ring it appeared as a perfect 50%, the
+   * healthiest number the gauge could draw. Here it is visibly at the end of
+   * its travel, which is the truth.
+   *
+   * A bar rather than a dial because a bar has two ends and this quantity has
+   * two sides; the angle dial above it keeps the circle, because an angle has
+   * no left and right. */
+  const segCol = (k) => {          /* k: 0 at the centre, SEG-1 at the end */
+    const t = k / (SEG - 1);
+    return t < .45 ? 'var(--ok)'
+         : t < .70 ? 'color-mix(in srgb,var(--ok) 45%,var(--warn))'
+         : t < .88 ? 'var(--warn)'
+         : 'var(--danger)';
+  };
+  const wing = (v, dir) => {
+    const lit = stale ? 0 : Math.round(Math.min(1, v / MAX) * SEG);
+    let out = '';
+    for (let k = 0; k < SEG; k++) {
+      const on = k < lit;
+      out += '<i style="background:'+(on ? segCol(k)
+             : 'color-mix(in srgb,var(--dim) 22%,transparent)')+'"></i>';
+    }
+    /* The left wing is emitted centre-first and then flipped, so segment 0 of
+       both wings sits against the middle and the ramps mirror each other. */
+    return '<div class="fsrwing'+(dir<0?' flip':'')+'">'+out+'</div>';
   };
 
   let verdict, vcol;
-  if(stale)                       { verdict='ไม่ทราบ';                vcol='var(--dim)'; }
-  else if(l>=SAT || r>=SAT)       { verdict='เกินช่วงวัด';            vcol='var(--danger)'; }
-  else if(l<FLOOR && r<FLOOR)     { verdict='ไม่มีน้ำหนัก';           vcol='var(--dim)'; }
+  if(stale)                   { verdict='ไม่ทราบ';          vcol='var(--dim)'; }
+  else if(l>=SAT || r>=SAT)   { verdict='เกินช่วงวัด';      vcol='var(--danger)'; }
+  else if(l<FLOOR && r<FLOOR) { verdict='ไม่มีน้ำหนัก';     vcol='var(--dim)'; }
   else {
     const share = l*100/(l+r), off = Math.abs(share-50);
     verdict = off<=15 ? 'สมดุล' : (share>50 ? 'เอียงซ้าย' : 'เอียงขวา');
@@ -1701,12 +1742,10 @@ function fsrGaugeHtml(fsrL, fsrR, size, stale){
   }
 
   return '<div class="fsrbox">'+
-    '<div style="display:flex;gap:14px;align-items:flex-end;height:70px">'+
-      bar(l,'ซ้าย')+bar(r,'ขวา')+
-    '</div>'+
-    '<div class="gtnum" style="font-size:.82rem;color:'+vcol+'">'+verdict+'</div>'+
-    '<div class="gcap" style="position:static">'+
-      (stale ? '\u2014' : l+' / '+r)+'</div>'+
+    '<div class="fsrhead"><span>\u25c4 ซ้าย</span><span>ขวา \u25ba</span></div>'+
+    '<div class="fsrbar">'+wing(l,-1)+'<u></u>'+wing(r,1)+'</div>'+
+    '<div class="fsrverdict" style="color:'+vcol+'">'+verdict+
+      '<span> · '+(stale ? '\u2014' : l+' / '+r)+'</span></div>'+
   '</div>';
 }
 
@@ -1937,14 +1976,17 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
      though something had failed to load. The pillow measures two things; it
      now shows two, and the raw counts move under the balance dial where they
      have something to qualify. */
+  /* v3.29.0 — DIAL ABOVE, BAR BELOW.
+     The two sat side by side while the FSR was a ring. It is now a left-right
+     bar, and a bar next to a circle is neither balanced nor legible: the bar
+     wants the full width of the column, because the thing it measures has a
+     left end and a right end. The dial is centred over the middle of it, so
+     the angle sits directly above the point the two wings grow from. */
   const angRow = angle
-    ? /* Centred, not left-packed. Each ankle column is gauge + text and fills its
-   width; HIP is gauge + gauge and was leaving a block of dead space on the
-   right, which read as a third thing having failed to load. */
-      '<div class="nodegauge ang" style="gap:38px;justify-content:center">'+
-      angleGaugeHtml(angle.deg, angle.thresh, 'มุมสะโพก', 'sm', !angle.fresh)+
-      fsrGaugeHtml(angle.fsrL, angle.fsrR, 'sm', !angle.fresh)+
-      '</div>'
+    ? '<div class="nodegauge ang" style="justify-content:center;margin-bottom:10px">'+
+        angleGaugeHtml(angle.deg, angle.thresh, 'มุมสะโพก', 'sm', !angle.fresh)+
+      '</div>'+
+      fsrGaugeHtml(angle.fsrL, angle.fsrR, 'sm', !angle.fresh)
     : '';
   const pumpRow = pumpCount!=null
     ? '<div class="nodegauge">'+gaugeHtml(target?pumpCount/target*100:0,null,'sm')+

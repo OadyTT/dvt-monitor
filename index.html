@@ -22,7 +22,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.25.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.26.0 (Phase 2 — real schema)
+
+  v3.26.0 (2026-09-01)
+    FOUR GATEWAY DIALS, and signal arcs on every node.
+
+    Cloud, memory and command space are now needle gauges with coloured
+    bands, matching the Wi-Fi arcs beside them so the row reads as one
+    instrument panel. Memory is new — it was a text row, and a heap leak
+    is exactly the kind of slow drift a number cannot show but a needle
+    walking left over days can.
+
+    THE SCALES ARE ARGUMENTS, NOT DEFAULTS.
+      Cloud runs 90-100%, not 0-100. Push reliability has never left
+      that band on this hardware, so a full-range dial would pin the
+      needle hard right forever and hide the only movement worth
+      watching. Below 90 it pins left in red.
+      Memory runs 0-160 KB with red under 40, because a TLS session on
+      this board needs about 40 KB — below that the cloud pushes fail
+      before anything else visibly breaks. The gateway boots at 125-135.
+      Command space is drawn as space LEFT rather than space used, so
+      that all four needles point right when healthy. A gauge with one
+      member running backwards is a gauge that gets misread in a hurry.
+
+    Each node's signal row now carries the same arcs at row size, from
+    the same thresholds, so a signal reading looks like a signal reading
+    wherever it appears — and on a node it is the figure that answers
+    "is the IPEX antenna actually clicked in". The arcs are suppressed
+    when the node is offline: drawing them from a stale rssi would claim
+    a link that is not there.
+
+    Four tiles across on a desktop, two-by-two under 900px, one column
+    under 420px. The bedside tablet and a nurse's handset get the same
+    four facts; only the fold moves.
 
   v3.25.0 (2026-09-01)
     The gateway strip on a bed card no longer disappears when the
@@ -891,7 +923,13 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 /* No fill and no icon: the healthy state must hold the row's space without
    asking for attention, or the amber and red ones stop standing out. */
 .gwstrip.ok{background:transparent;color:var(--dim);padding-left:2px}
-.gtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 18px}
+/* Four tiles on a desktop, two-by-two on a phone. The bedside tablet and a
+   nurse's handset get the same four facts; only the fold moves. */
+.gtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0 18px}
+@media(max-width:900px){.gtiles{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.gtiles{grid-template-columns:1fr}}
+/* The node signal arcs sit inline in their row and must not stretch it. */
+.wifimini{display:inline-block;vertical-align:-3px;margin-right:6px}
 .gtile{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;
   padding:12px 8px 11px;border-radius:11px;min-height:104px;
   background:color-mix(in srgb,var(--surface2) 40%,transparent);
@@ -1343,7 +1381,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.25.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.26.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1826,7 +1864,15 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
     angRow+
     pumpRow+
     '<div class="kv"><span>แบตเตอรี่</span><b>'+battText(n)+'</b></div>'+
-    '<div class="kv"><span>สัญญาณ</span><b>'+(n.rssi!=null?n.rssi+' dBm':'—')+'</b></div>'+
+    /* v3.26.0 — the same arcs the gateway tile uses, at row size. A signal
+       reading should look like a signal reading wherever it appears, and on a
+       node this is the figure that answers "is the IPEX antenna clicked in".
+       Suppressed when the node is offline: arcs drawn from a stale rssi would
+       claim a link that is not there. */
+    '<div class="kv"><span>สัญญาณ</span>'+
+      '<b style="display:inline-flex;align-items:center">'+
+      (online ? wifiArcs(n.rssi, 30) : '')+
+      (n.rssi!=null && !gwDown ? n.rssi+' dBm' : '—')+'</b></div>'+
     '<div class="kv"><span>เห็นล่าสุด</span><b>'+fmtAge(n.lastSeen)+'</b></div>'+
     '<div class="kv"><span>status</span><b>'+(n.status!=null?n.status:'—')+'</b></div>'+
     testBtn+
@@ -2040,49 +2086,125 @@ function dotClass(live){
 
 /* Thresholds are the conventional ones: better than -50 dBm excellent, to
    -60 good, to -70 fair, weak below. That is the scale wifi is discussed on. */
-function wifiTile(rssi){
+/* ═══════════ arc gauge (v3.26.0) ═══════════════════════════════════════
+   A dial with a needle and coloured bands, matching the shape of the Wi-Fi
+   arcs beside it so the four gateway tiles read as one instrument panel.
+
+   THE SCALE IS AN ARGUMENT, NOT A DEFAULT. Each caller passes the range that
+   makes its own quantity legible: cloud reliability is scaled 90-100% because
+   it never lives below that and a 0-100 dial would park the needle on the
+   right forever, hiding the only movement that matters. Bands are passed in
+   for the same reason — "poor" means something different for free heap than
+   it does for a success rate, and inventing one shared palette would have
+   made three different questions look like one. */
+function arcGauge(value, lo, hi, bands, big, small, caption){
+  const R=34, CX=44, CY=40;
+  const known = value!=null && isFinite(value);
+  const frac = known ? Math.max(0, Math.min(1, (value-lo)/(hi-lo))) : 0;
+  const pt = (a,r) => {                       /* 180deg (left) .. 0deg (right) */
+    const rad = Math.PI * (1 - a);
+    return [CX + r*Math.cos(rad), CY - r*Math.sin(rad)];
+  };
+  let seg='', from=0;
+  bands.forEach(b=>{
+    const to=Math.max(from, Math.min(1,(b.upTo-lo)/(hi-lo)));
+    if(to>from){
+      const [x1,y1]=pt(from,R), [x2,y2]=pt(to,R);
+      seg+='<path d="M '+x1.toFixed(1)+' '+y1.toFixed(1)+' A '+R+' '+R+' 0 0 1 '+
+           x2.toFixed(1)+' '+y2.toFixed(1)+'" fill="none" stroke="'+b.col+
+           '" stroke-width="8" stroke-linecap="butt"/>';
+    }
+    from=to;
+  });
+  const [nx,ny]=pt(frac,R-4);
+  const needle = known
+    ? '<line x1="'+CX+'" y1="'+CY+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+
+      '" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/>'+
+      '<circle cx="'+CX+'" cy="'+CY+'" r="3.4" fill="var(--text)"/>'
+    : '<circle cx="'+CX+'" cy="'+CY+'" r="3.4" fill="var(--dim)"/>';
+  return '<div class="gtile">'+
+    '<svg viewBox="0 0 88 48" width="88" height="48" aria-hidden="true">'+seg+needle+'</svg>'+
+    '<div class="gtnum">'+big+(small?'<small>'+small+'</small>':'')+'</div>'+
+    '<div class="gtcap">'+caption+'</div></div>';
+}
+
+/* Just the arcs, for a node row. Same thresholds as the gateway tile, so a
+   signal reading means the same thing wherever it appears on the page. */
+function wifiArcs(rssi, px){
   const known = (rssi != null && isFinite(rssi));
   const lvl = !known ? 0 : rssi >= -50 ? 4 : rssi >= -60 ? 3 : rssi >= -70 ? 2 : 1;
   const col = lvl===4 ? 'var(--ok)' : lvl===3 ? 'var(--accent)'
             : lvl===2 ? 'var(--warn)' : lvl===1 ? 'var(--danger)' : 'var(--dim)';
   const dim = 'color-mix(in srgb,var(--dim) 32%,transparent)';
-  const word = ['\u2014','อ่อน','พอใช้','ดี','ดีมาก'][lvl];
   const arc = (i,r) =>
     '<path d="M '+(24-r)+' 26 A '+r+' '+r+' 0 0 1 '+(24+r)+' 26" fill="none" stroke="'+
     (lvl>=i?col:dim)+'" stroke-width="4" stroke-linecap="round"/>';
-  return '<div class="gtile">'+
-    '<svg viewBox="0 0 48 32" width="56" height="37" aria-hidden="true">'+
-      arc(4,21)+arc(3,15)+arc(2,9)+
-      '<circle cx="24" cy="26" r="3" fill="'+(lvl>=1?col:dim)+'"/>'+
-    '</svg>'+
-    '<div class="gtnum" style="color:'+col+';font-size:.95rem">'+word+'</div>'+
-    '<div class="gtcap">Wi-Fi · '+(known? rssi+' dBm':'\u2014')+'</div></div>';
+  const w = px||56;
+  return '<svg class="wifimini" viewBox="0 0 48 32" width="'+w+'" height="'+
+    Math.round(w*32/48)+'" aria-hidden="true">'+
+    arc(4,21)+arc(3,15)+arc(2,9)+
+    '<circle cx="24" cy="26" r="3" fill="'+(lvl>=1?col:dim)+'"/></svg>';
+}
+function wifiWord(rssi){
+  if(rssi==null || !isFinite(rssi)) return '—';
+  return rssi >= -50 ? 'ดีมาก' : rssi >= -60 ? 'ดี' : rssi >= -70 ? 'พอใช้' : 'อ่อน';
 }
 
+function wifiTile(rssi){
+  const known = (rssi != null && isFinite(rssi));
+  const lvl = !known ? 0 : rssi >= -50 ? 4 : rssi >= -60 ? 3 : rssi >= -70 ? 2 : 1;
+  const col = lvl===4 ? 'var(--ok)' : lvl===3 ? 'var(--accent)'
+            : lvl===2 ? 'var(--warn)' : lvl===1 ? 'var(--danger)' : 'var(--dim)';
+  return '<div class="gtile">'+
+    '<div style="height:48px;display:flex;align-items:center">'+wifiArcs(rssi,62)+'</div>'+
+    '<div class="gtnum" style="color:'+col+';font-size:.95rem">'+wifiWord(rssi)+'</div>'+
+    '<div class="gtcap">Wi-Fi \u00b7 '+(known? rssi+' dBm':'\u2014')+'</div></div>';
+}
+
+/* SCALED 90-100%, NOT 0-100. Push reliability has never left that band on
+   this hardware, so a full-range dial would pin the needle hard right forever
+   and hide the only movement worth watching. Below 90 it pins left in red,
+   which is the correct picture for a bed in real trouble. */
 function cloudTile(ok, fail){
   const tot=(ok||0)+(fail||0);
-  if(!tot) return '<div class="gtile"><div class="gtnum" style="color:var(--dim)">\u2014</div>'+
-                  '<div class="gtcap">ส่งขึ้นคลาวด์</div></div>';
+  if(!tot) return arcGauge(null, 90, 100, [{upTo:100,col:'var(--bg2)'}],
+                           '\u2014', '', 'ส่งขึ้นคลาวด์');
   const pct = ok*100/tot;
-  const col = fail===0 ? 'var(--ok)' : pct>=99 ? 'var(--warn)' : 'var(--danger)';
-  const zoom = Math.max(0, Math.min(100, (pct-90)*10));   /* 90..100 -> 0..100 */
-  return '<div class="gtile">'+
-    '<div class="gtnum" style="color:'+col+'">'+(fail||0)+
-      '<small style="color:var(--dim)"> ล้มเหลว</small></div>'+
-    '<div class="gtbar"><i style="width:'+zoom+'%;background:'+col+'"></i></div>'+
-    '<div class="gtcap">ส่งขึ้นคลาวด์ '+pct.toFixed(1)+'% · '+tot+' ครั้ง</div></div>';
+  const bands=[{upTo:97,col:'var(--danger)'},{upTo:99,col:'var(--warn)'},
+               {upTo:99.9,col:'color-mix(in srgb,var(--ok) 55%,var(--warn))'},
+               {upTo:100,col:'var(--ok)'}];
+  return arcGauge(pct, 90, 100, bands, String(fail||0), ' ล้มเหลว',
+                  'ส่งขึ้นคลาวด์ '+pct.toFixed(1)+'% \u00b7 '+tot+' ครั้ง');
+}
+
+/* FREE HEAP, AND THE RED BAND IS NOT ARBITRARY. A TLS session on this board
+   needs roughly 40 KB; below that the cloud pushes fail before anything else
+   visibly breaks. The gateway boots at 125-135 KB, so the dial runs to 160 and
+   a healthy bed sits near the top — which makes a slow leak read as a needle
+   walking left over days, the one thing a single number can never tell you. */
+function memTile(heapBytes){
+  if(heapBytes==null) return arcGauge(null, 0, 160, [{upTo:160,col:'var(--bg2)'}],
+                                      '\u2014', '', 'หน่วยความจำว่าง');
+  const kb = heapBytes/1024;
+  const bands=[{upTo:40,col:'var(--danger)'},{upTo:70,col:'var(--warn)'},
+               {upTo:110,col:'color-mix(in srgb,var(--ok) 55%,var(--warn))'},
+               {upTo:160,col:'var(--ok)'}];
+  return arcGauge(kb, 0, 160, bands, String(Math.round(kb)), ' KB',
+                  'หน่วยความจำว่าง \u00b7 TLS ต้องการ ~40 KB');
 }
 
 /* Amber from three quarters: this is the ceiling that silently swallowed
    every web command for ten hours on 30 Aug. */
+/* Drawn as SPACE LEFT, not space used, so every dial on the row points the
+   same way: needle right is healthy on all four. A gauge where one member
+   runs backwards is a gauge that gets misread in a hurry. */
 function cmdTile(hwm){
-  const used = hwm||0, pct = Math.min(100, Math.round(used*100/2048));
-  const col = pct>=100 ? 'var(--danger)' : pct>=75 ? 'var(--warn)' : 'var(--ok)';
-  return '<div class="gtile">'+
-    '<div class="gtnum" style="color:'+col+'">'+(100-pct)+
-      '<small style="color:var(--dim)">% ว่าง</small></div>'+
-    '<div class="gtbar"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
-    '<div class="gtcap">พื้นที่คำสั่ง '+used+' / 2048 ไบต์</div></div>';
+  const used = hwm||0, freePct = Math.max(0, 100 - Math.min(100, used*100/2048));
+  const bands=[{upTo:10,col:'var(--danger)'},{upTo:25,col:'var(--warn)'},
+               {upTo:60,col:'color-mix(in srgb,var(--ok) 55%,var(--warn))'},
+               {upTo:100,col:'var(--ok)'}];
+  return arcGauge(freePct, 0, 100, bands, String(Math.round(freePct)), '% ว่าง',
+                  'พื้นที่คำสั่ง '+used+' / 2048 ไบต์');
 }
 
 function upText(s){
@@ -2198,7 +2320,6 @@ function gatewayBlock(live, fresh){
   /* 2048 mirrors HH_CMD_RESP_MAX. Amber from three-quarters: the ceiling was
      hit once already and the only warning was a serial line nobody read. */
   const hwmPct = Math.min(100, Math.round((gw.cmdHwm||0)*100/2048));
-  const heapK = gw.heap!=null ? Math.round(gw.heap/1024) : null;
 
   /* v3.23.0 — three dials, the same shape the nodes wear.
      The gateway is now the first thing on the page, and a first block made of
@@ -2211,6 +2332,7 @@ function gatewayBlock(live, fresh){
     '<div class="gtiles">'+
       wifiTile(gw.rssi)+
       cloudTile(gw.ok||0, gw.fail||0)+
+      memTile(gw.heap!=null? gw.heap : null)+
       cmdTile(gw.cmdHwm||0)+
     '</div>';
 
@@ -2234,7 +2356,6 @@ function gatewayBlock(live, fresh){
        channel is a different fact (and the one that exposed the AP's
        auto-channel drift). */
     kv('ช่อง Wi-Fi', gw.ch!=null ? String(gw.ch) : '—')+
-    kv('หน่วยความจำว่าง', heapK!=null? heapK+' KB' : '—')+
     kv('รีบูตเอง (ไม่นับการอัปโหลด)', (gw.boot!=null? gw.boot+' ครั้ง':'—'),
        (gw.boot>0?'· ตรวจไฟเลี้ยง':'')) +
     (hwmPct>=75

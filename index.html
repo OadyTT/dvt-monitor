@@ -22,7 +22,34 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.23.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.24.0 (Phase 2 — real schema)
+
+  v3.24.0 (2026-09-01)
+    THREE QUANTITIES, THREE SHAPES. v3.23.0 drew all three gateway
+    figures as percentage rings because they sat in a row, and two of
+    them were the wrong shape for what they measure.
+
+    Wi-Fi is a LEVEL. Arc bars are the one signal graphic everyone
+    already reads without being taught, and the thresholds are now the
+    conventional ones — better than -50 dBm excellent, to -60 good, to
+    -70 fair, weak below — rather than the linear percentage of
+    v3.23.0, which invented a number nobody quotes.
+
+    Cloud reliability lives between 99 and 100 percent. A ring
+    compresses that entire range into the last four degrees of the
+    circle: 99.4% and 100% draw the same picture when the difference is
+    the whole point. The failure COUNT is what someone acts on, so the
+    count is what is large, and the bar beneath is zoomed to 90-100%.
+
+    Command space is a fill level, so it is a bar — and it was already
+    a bar in the row below, which meant the ring was the same fact
+    drawn twice.
+
+    The three rows those tiles replace are removed. A number shown in
+    two places is a number that can be read two ways. Only the Wi-Fi
+    CHANNEL survives as a row, because it is a different fact from
+    signal strength and it is the one that exposed the AP's
+    auto-channel drift.
 
   v3.23.0 (2026-09-01)
     The bed detail is re-ordered to follow cause, not urgency:
@@ -843,6 +870,17 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
    that the flex row does not otherwise give it. */
 .kv .dot{margin-right:1px}
 .gwstrip.idle{background:color-mix(in srgb,var(--dim) 16%,transparent);color:var(--text2)}
+.gtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 18px}
+.gtile{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;
+  padding:12px 8px 11px;border-radius:11px;min-height:104px;
+  background:color-mix(in srgb,var(--surface2) 40%,transparent);
+  border:1px solid var(--brd);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)}
+.gtnum{font-family:var(--mono);font-size:1.18rem;font-weight:700;line-height:1.1;letter-spacing:-.5px}
+.gtnum small{font-family:var(--font);font-size:.62rem;font-weight:400;letter-spacing:0}
+.gtbar{width:74%;height:5px;border-radius:3px;background:var(--bg2);overflow:hidden}
+.gtbar>i{display:block;height:100%;border-radius:3px;transition:width .4s ease}
+.gtcap{font-size:.63rem;color:var(--dim);text-align:center;line-height:1.35}
 .bed .ago{font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:12px}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .m{background:var(--bg2);border-radius:9px;padding:9px 11px}
@@ -1284,7 +1322,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.23.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.24.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1959,27 +1997,71 @@ function dotClass(live){
 /* Seconds -> the coarsest unit that still answers the question. Nobody needs
    "3 ชม. 47 นาที 12 วิ" from a status panel; they need to know whether it has
    been up long enough to trust. */
-/* A plain percentage ring. angleGaugeHtml and fsrGaugeHtml each encode a
-   specific meaning in the shape they draw; this one carries none, so anything
-   measured 0-100 can use it and still look like the rest of the page without
-   a fourth bespoke gauge being invented for it. */
-function ringHtml(pct, label, caption, state){
-  const cls='gauge sm';
-  if(pct==null){
-    return '<div class="'+cls+'" style="background:var(--bg2)">'+
-      '<span class="gnum">\u2014<small>'+label+'</small></span>'+
-      '<span class="gcap">'+(caption||'')+'</span></div>';
-  }
-  const p=Math.max(0,Math.min(100,pct));
-  const col = state==='bad'
-      ? ['var(--warn)','var(--danger)','color-mix(in srgb,var(--danger) 50%,transparent)']
-    : state==='warn'
-      ? ['var(--ok)','var(--warn)','color-mix(in srgb,var(--warn) 35%,transparent)']
-      : ['var(--accent)','color-mix(in srgb,var(--accent) 50%,var(--ok) 50%)','transparent'];
-  return '<div class="'+cls+'" style="--gglow:'+col[2]+';background:conic-gradient(from 0deg,'+
-      col[0]+' 0deg,'+col[1]+' '+(p*3.6)+'deg,var(--bg2) '+(p*3.6)+'deg)">'+
-    '<span class="gnum">'+Math.round(p)+'<small>'+label+'</small></span>'+
-    '<span class="gcap">'+(caption||'')+'</span></div>';
+/* ═══════════ gateway health tiles (v3.24.0) ═════════════════════
+   THREE QUANTITIES, THREE SHAPES. v3.23.0 drew all three as percentage rings
+   because they happened to sit in a row, and two were the wrong shape for
+   what they measure:
+
+     Wi-Fi is a LEVEL, and the arc bar is the one signal graphic everybody
+     already reads without being taught. Turning dBm into a percentage first
+     invented a number nobody quotes.
+
+     Cloud reliability lives between 99 and 100 percent. A ring compresses the
+     whole interesting range into the last four degrees of the circle: 99.4%
+     and 100% draw the same picture, when that difference is the entire point.
+     The failure COUNT is what someone acts on, so the count is what is large.
+
+     Command space is a fill level, which is a bar — and it was already drawn
+     as a bar in the row beneath, so the ring was one fact drawn twice.
+
+   The rows these replace are removed below: a number shown in two places is a
+   number that can be read two ways. */
+
+/* Thresholds are the conventional ones: better than -50 dBm excellent, to
+   -60 good, to -70 fair, weak below. That is the scale wifi is discussed on. */
+function wifiTile(rssi){
+  const known = (rssi != null && isFinite(rssi));
+  const lvl = !known ? 0 : rssi >= -50 ? 4 : rssi >= -60 ? 3 : rssi >= -70 ? 2 : 1;
+  const col = lvl===4 ? 'var(--ok)' : lvl===3 ? 'var(--accent)'
+            : lvl===2 ? 'var(--warn)' : lvl===1 ? 'var(--danger)' : 'var(--dim)';
+  const dim = 'color-mix(in srgb,var(--dim) 32%,transparent)';
+  const word = ['\u2014','อ่อน','พอใช้','ดี','ดีมาก'][lvl];
+  const arc = (i,r) =>
+    '<path d="M '+(24-r)+' 26 A '+r+' '+r+' 0 0 1 '+(24+r)+' 26" fill="none" stroke="'+
+    (lvl>=i?col:dim)+'" stroke-width="4" stroke-linecap="round"/>';
+  return '<div class="gtile">'+
+    '<svg viewBox="0 0 48 32" width="56" height="37" aria-hidden="true">'+
+      arc(4,21)+arc(3,15)+arc(2,9)+
+      '<circle cx="24" cy="26" r="3" fill="'+(lvl>=1?col:dim)+'"/>'+
+    '</svg>'+
+    '<div class="gtnum" style="color:'+col+';font-size:.95rem">'+word+'</div>'+
+    '<div class="gtcap">Wi-Fi · '+(known? rssi+' dBm':'\u2014')+'</div></div>';
+}
+
+function cloudTile(ok, fail){
+  const tot=(ok||0)+(fail||0);
+  if(!tot) return '<div class="gtile"><div class="gtnum" style="color:var(--dim)">\u2014</div>'+
+                  '<div class="gtcap">ส่งขึ้นคลาวด์</div></div>';
+  const pct = ok*100/tot;
+  const col = fail===0 ? 'var(--ok)' : pct>=99 ? 'var(--warn)' : 'var(--danger)';
+  const zoom = Math.max(0, Math.min(100, (pct-90)*10));   /* 90..100 -> 0..100 */
+  return '<div class="gtile">'+
+    '<div class="gtnum" style="color:'+col+'">'+(fail||0)+
+      '<small style="color:var(--dim)"> ล้มเหลว</small></div>'+
+    '<div class="gtbar"><i style="width:'+zoom+'%;background:'+col+'"></i></div>'+
+    '<div class="gtcap">ส่งขึ้นคลาวด์ '+pct.toFixed(1)+'% · '+tot+' ครั้ง</div></div>';
+}
+
+/* Amber from three quarters: this is the ceiling that silently swallowed
+   every web command for ten hours on 30 Aug. */
+function cmdTile(hwm){
+  const used = hwm||0, pct = Math.min(100, Math.round(used*100/2048));
+  const col = pct>=100 ? 'var(--danger)' : pct>=75 ? 'var(--warn)' : 'var(--ok)';
+  return '<div class="gtile">'+
+    '<div class="gtnum" style="color:'+col+'">'+(100-pct)+
+      '<small style="color:var(--dim)">% ว่าง</small></div>'+
+    '<div class="gtbar"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
+    '<div class="gtcap">พื้นที่คำสั่ง '+used+' / 2048 ไบต์</div></div>';
 }
 
 function upText(s){
@@ -2076,8 +2158,7 @@ function gatewayBlock(live, fresh){
   const okPct = tot ? Math.round((gw.ok||0)*1000/tot)/10 : null;
   /* 2048 mirrors HH_CMD_RESP_MAX. Amber from three-quarters: the ceiling was
      hit once already and the only warning was a serial line nobody read. */
-  const hwm = gw.cmdHwm||0, hwmPct = Math.min(100, Math.round(hwm*100/2048));
-  const hwmCls = hwm>=2048 ? 'bad' : (hwmPct>=75 ? 'warn' : '');
+  const hwmPct = Math.min(100, Math.round((gw.cmdHwm||0)*100/2048));
   const heapK = gw.heap!=null ? Math.round(gw.heap/1024) : null;
 
   /* v3.23.0 — three dials, the same shape the nodes wear.
@@ -2087,17 +2168,11 @@ function gatewayBlock(live, fresh){
      it loses the air, it loses the cloud, or it fills its command node. Each
      keeps its raw figure underneath, the way the FSR dial keeps its counts —
      the ring is for reading across the room, the number is for acting on. */
-  const wifiPct = gw.rssi==null ? null
-                : Math.max(0, Math.min(100, Math.round((gw.rssi + 95) * 100 / 60)));
-  const okPctG  = okPct==null ? null : okPct;
   const dials =
-    '<div class="nodegauge ang" style="gap:34px;justify-content:center;margin:4px 0 20px">'+
-      ringHtml(wifiPct, 'Wi-Fi', (gw.rssi!=null? gw.rssi+' dBm':'—'),
-               wifiPct==null?null:(wifiPct<25?'bad':wifiPct<45?'warn':'ok'))+
-      ringHtml(okPctG, 'ส่งขึ้นคลาวด์', tot? (gw.ok||0)+'/'+tot : '—',
-               okPctG==null?null:(okPctG<90?'bad':okPctG<99?'warn':'ok'))+
-      ringHtml(hwmPct, 'พื้นที่คำสั่ง', hwm+'/2048',
-               hwmPct>=100?'bad':hwmPct>=75?'warn':'ok')+
+    '<div class="gtiles">'+
+      wifiTile(gw.rssi)+
+      cloudTile(gw.ok||0, gw.fail||0)+
+      cmdTile(gw.cmdHwm||0)+
     '</div>';
 
   const kv=(k,v,note)=>'<div class="kv"><span>'+k+'</span><b>'+v+
@@ -2115,20 +2190,18 @@ function gatewayBlock(live, fresh){
        cannot be misread as contradicting each other. */
     kv('ออนไลน์มาแล้ว', upText(gw.up),
        (gw.up!=null && !gw.boot) ? '· ตั้งแต่เปิดเครื่อง' : '')+
-    kv('Wi-Fi', (gw.rssi!=null? gw.rssi+' dBm':'—'),
-       gw.ch!=null ? '· ช่อง '+gw.ch : '')+
+    /* v3.24.0 — Wi-Fi, cloud and command space now live in the tiles above.
+       Only the channel survives here, because the tile shows strength and the
+       channel is a different fact (and the one that exposed the AP's
+       auto-channel drift). */
+    kv('ช่อง Wi-Fi', gw.ch!=null ? String(gw.ch) : '—')+
     kv('หน่วยความจำว่าง', heapK!=null? heapK+' KB' : '—')+
     kv('รีบูตเอง (ไม่นับการอัปโหลด)', (gw.boot!=null? gw.boot+' ครั้ง':'—'),
        (gw.boot>0?'· ตรวจไฟเลี้ยง':'')) +
-    kv('ส่งขึ้นคลาวด์สำเร็จ', okPct!=null? okPct+'%' : '—',
-       tot? '· '+(gw.ok||0)+' สำเร็จ / '+(gw.fail||0)+' ล้มเหลว' : '')+
-    '<div style="margin-top:10px">'+
-      '<div class="qrow"><span>พื้นที่คำสั่งจากเว็บ</span><span>'+hwm+' / 2048 ไบต์</span></div>'+
-      '<div class="qbar"><i class="'+hwmCls+'" style="width:'+hwmPct+'%"></i></div>'+
-      (hwmPct>=75
-        ? '<div class="calibstatus" style="color:var(--warn)">ใกล้เต็ม — ถ้าเต็มเมื่อไหร่ ปุ่มบนเว็บจะหยุดทำงานทั้งหมดโดยไม่มีข้อความแจ้ง</div>'
-        : '')+
-    '</div>'+
+    (hwmPct>=75
+      ? '<div class="calibstatus" style="color:var(--warn);margin-top:8px">'+
+        'พื้นที่คำสั่งใกล้เต็ม — ถ้าเต็มเมื่อไหร่ ปุ่มบนเว็บจะหยุดทำงานทั้งหมดโดยไม่มีข้อความแจ้ง</div>'
+      : '')+
   '</div>';
 }
 

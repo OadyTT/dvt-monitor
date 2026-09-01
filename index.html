@@ -22,7 +22,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.29.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.30.0 (Phase 2 — real schema)
+
+  v3.30.0 (2026-09-01)
+    STALE READINGS WERE STILL BEING DRAWN AS LIVE ONES — the same class
+    of fault this dashboard has been fixing all week, in three places I
+    had missed.
+
+    Found on a bench screenshot taken while NOTHING was powered on: the
+    red "กล่องข้างเตียงหยุดส่งข้อมูล (57 นาที)" banner was correct, the
+    node headers correctly read "ไม่ทราบ", and directly beneath them
+    sat four bright green gateway tiles and a red "IMU ไม่ตอบสนอง".
+
+    1. statusRow was called with (online || gwDown). That is backwards.
+       gwDown means we have NO current knowledge of the node, and it was
+       the condition switching the chips ON. An ankle node that has
+       never been powered reports status 0 — every bit clear — which the
+       decoder read as two hard faults invented for a device sitting
+       unplugged on the bench.
+
+    2. The battery row rendered regardless. It comes through the gateway
+       like everything else, so it is only as current as the gateway is;
+       it was showing a confident "3.63V ปกติ" in full colour on a bed
+       whose box had been silent for an hour.
+
+    3. The gateway's own four tiles kept their colour after it went
+       quiet. Four green tiles under a red banner is the screen
+       contradicting itself. They are now desaturated rather than
+       blanked, with a line saying so: the LAST reading before a bed
+       went silent is exactly what you want when working out why — a
+       wifi level that was already weak is a different story from one
+       that was fine a second earlier.
 
   v3.29.0 (2026-09-01)
     The FSR display becomes a CENTRE-OUT SEGMENTED BAR.
@@ -1000,6 +1030,8 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .gtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0 18px}
 @media(max-width:900px){.gtiles{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:420px){.gtiles{grid-template-columns:1fr}}
+.gtiles.stale{opacity:.4;filter:grayscale(.85)}
+.gtstale{font-size:.66rem;color:var(--dim);text-align:center;margin:-10px 0 16px}
 /* The node signal arcs sit inline in their row and must not stretch it. */
 .wifimini{display:inline-block;vertical-align:-3px;margin-right:6px}
 .gtile{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;
@@ -1467,7 +1499,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.29.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.30.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2004,7 +2036,12 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
       '<span class="dot '+stateDot+'"></span>'+stateTxt+'</b></div>'+
     angRow+
     pumpRow+
-    '<div class="kv"><span>แบตเตอรี่</span><b>'+battText(n)+'</b></div>'+
+    /* v3.30.0 — the battery reading comes through the gateway like everything
+       else, so it is only as current as the gateway is. It was showing a
+       confident "3.63V ปกติ" in full colour on a bed whose box had been
+       silent for an hour. */
+    '<div class="kv"><span>แบตเตอรี่</span><b>'+
+      (online ? battText(n) : '<span style="color:var(--dim)">—</span>')+'</b></div>'+
     /* v3.26.0 — the same arcs the gateway tile uses, at row size. A signal
        reading should look like a signal reading wherever it appears, and on a
        node this is the figure that answers "is the IPEX antenna clicked in".
@@ -2015,7 +2052,13 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
       (online ? wifiArcs(n.rssi, 30) : '')+
       (n.rssi!=null && !gwDown ? n.rssi+' dBm' : '—')+'</b></div>'+
     '<div class="kv"><span>เห็นล่าสุด</span><b>'+fmtAge(n.lastSeen)+'</b></div>'+
-    statusRow(n.status, online||gwDown)+
+    /* v3.30.0 — was statusRow(n.status, online||gwDown), which is backwards:
+       gwDown means we have NO current knowledge of this node, and it was the
+       condition that switched the chips ON. An ankle node that was never
+       powered on reports status 0, every bit clear, and the decoder read that
+       as "IMU ไม่ตอบสนอง · บัส I2C มีปัญหา" — two red faults invented for a
+       device sitting unplugged on the bench. */
+    statusRow(n.status, online)+
     testBtn+
     '</div>';
 }
@@ -2501,7 +2544,15 @@ function gatewayBlock(live, fresh){
      keeps its raw figure underneath, the way the FSR dial keeps its counts —
      the ring is for reading across the room, the number is for acting on. */
   const dials =
-    '<div class="gtiles">'+
+    /* v3.30.0 — DESATURATED WHEN THE GATEWAY IS STALE.
+       These are the box's own numbers, so when the box stops reporting they
+       stop being current — and four green tiles under a red "หยุดส่งข้อมูล"
+       banner is the screen contradicting itself. They are kept rather than
+       blanked because the LAST reading before a bed went quiet is exactly
+       what you want when working out why: a wifi level that was already weak
+       is a different story from one that was fine a second before. The
+       caption says which they are. */
+    '<div class="gtiles'+(fresh?'':' stale')+'">'+
       wifiTile(gw.rssi)+
       cloudTile(gw.ok||0, gw.fail||0)+
       memTile(gw.heap!=null? gw.heap : null)+
@@ -2517,6 +2568,7 @@ function gatewayBlock(live, fresh){
       '<span class="pill" style="margin-left:auto">fw '+(gw.fw||'?')+'</span></h2>'+
     banner+
     dials+
+    (fresh ? '' : '<div class="gtstale">\u2191 ค่าล่าสุดก่อน gateway เงียบ ไม่ใช่ค่าปัจจุบัน</div>')+
     /* v3.21.0 — uptime first, because it is the line that says whether the
        reboot count below it is old news or a bed still in trouble. Reads
        "ตั้งแต่เปิดเครื่อง" when nothing has restarted, so the two lines

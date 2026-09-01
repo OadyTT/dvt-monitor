@@ -22,7 +22,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.27.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.28.0 (Phase 2 — real schema)
+
+  v3.28.0 (2026-09-01)
+    THE FSR RING WAS THE WRONG GRAPH, and the bench proved it.
+
+    It drew the LEFT SHARE of the total. With both sensors reading 4095
+    — the top of the 12-bit ADC — that came out as a flawless 50%: the
+    best-looking number the gauge can produce, from a reading that is
+    off the end of its scale. A measurement that has run out of range
+    must never render as the healthiest thing on the screen.
+
+    A ratio also discards magnitude, and magnitude is half the
+    question. A patient resting evenly and an empty pillow are both
+    "50/50".
+
+    Two bars against a common scale answer both at once: how much
+    weight, and whether the sides agree. Saturation is then visible as
+    two bars pinned to the top rather than hidden inside a division,
+    and the verdict beneath says which case it is in words —
+    เกินช่วงวัด / ไม่มีน้ำหนัก / สมดุล / เอียงซ้าย / เอียงขวา, checked
+    in that order so an out-of-range reading can never be reported as
+    balanced.
 
   v3.27.0 (2026-09-01)
     TWO RAW ENUMS WERE BEING SHOWN TO NURSES.
@@ -1013,6 +1034,10 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
 .gauge .gcap{position:absolute;bottom:-17px;left:0;right:0;text-align:center;
   font-size:.6rem;color:var(--dim);white-space:nowrap}
 .nodegauge.ang{margin-bottom:22px}
+/* Same footprint as .gauge.sm so the HIP pair stays balanced. */
+.fsrbox{width:92px;min-height:92px;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;gap:4px;flex-shrink:0}
+@media(max-width:800px){.fsrbox{width:104px}}
 .cardhead{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .cardhead .metrics{flex:1;margin-bottom:0}
 .nodegauge{display:flex;align-items:center;gap:10px;margin:8px 0}
@@ -1412,7 +1437,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.27.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.28.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1636,27 +1661,53 @@ function gaugeHtml(pct,label,size){
    the costume of a measurement. */
 function fsrGaugeHtml(fsrL, fsrR, size, stale){
   const l = Math.max(0, Number(fsrL)||0), r = Math.max(0, Number(fsrR)||0);
-  const tot = l + r;
-  const cls = 'gauge'+(size==='sm'?' sm':'');
+  const MAX = 4095, FLOOR = 200, SAT = 4000;
 
-  if(stale || tot < 400){          /* ~5% of one sensor's full scale */
-    return '<div class="'+cls+'" style="background:var(--bg2)">'+
-      '<span class="gnum">—<small>'+(stale?'ไม่ทราบ':'ไม่มีน้ำหนัก')+'</small></span>'+
-      '<span class="gcap">สมดุล ซ้าย/ขวา</span></div>';
+  /* v3.28.0 — TWO BARS, NOT A RATIO RING.
+   *
+   * The ring showed the LEFT SHARE of the total, and on the bench both
+   * sensors read 4095 — the top of the 12-bit ADC — which came out as a
+   * flawless 50%, the best-looking number the gauge can produce. A reading
+   * that is off the end of the scale must never render as the healthiest
+   * thing on the screen.
+   *
+   * A ratio also throws away magnitude, and magnitude is half the question: a
+   * patient resting evenly and a pillow with nothing on it are both "50/50".
+   * Two bars against a common scale show BOTH at once — how much, and whether
+   * the two sides agree — and saturation becomes visible as two bars pinned
+   * to the top instead of hiding inside a division. */
+  const bar = (v, lab) => {
+    const h = Math.max(2, Math.min(100, v * 100 / MAX));
+    const col = stale ? 'var(--dim)'
+              : v >= SAT ? 'var(--danger)'
+              : v < FLOOR ? 'color-mix(in srgb,var(--dim) 50%,transparent)'
+              : 'var(--accent)';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+
+      '<div style="width:17px;height:56px;border-radius:4px;background:var(--bg2);'+
+        'display:flex;align-items:flex-end;overflow:hidden">'+
+        '<div style="width:100%;height:'+h.toFixed(0)+'%;background:'+col+
+        ';border-radius:3px;transition:height .4s ease"></div></div>'+
+      '<div style="font-size:.58rem;color:var(--dim)">'+lab+'</div></div>';
+  };
+
+  let verdict, vcol;
+  if(stale)                       { verdict='ไม่ทราบ';                vcol='var(--dim)'; }
+  else if(l>=SAT || r>=SAT)       { verdict='เกินช่วงวัด';            vcol='var(--danger)'; }
+  else if(l<FLOOR && r<FLOOR)     { verdict='ไม่มีน้ำหนัก';           vcol='var(--dim)'; }
+  else {
+    const share = l*100/(l+r), off = Math.abs(share-50);
+    verdict = off<=15 ? 'สมดุล' : (share>50 ? 'เอียงซ้าย' : 'เอียงขวา');
+    vcol    = off<=15 ? 'var(--ok)' : 'var(--warn)';
   }
 
-  const lp = l*100/tot;
-  const off = Math.abs(lp-50);
-  let from,to,glow;
-  if(off>15){ from='var(--warn)'; to='var(--danger)';
-              glow='color-mix(in srgb,var(--warn) 40%,transparent)'; }
-  else      { from='var(--accent)';
-              to='color-mix(in srgb,var(--accent) 50%,var(--ok) 50%)'; glow='transparent'; }
-
-  return '<div class="'+cls+'" style="--gglow:'+glow+';background:conic-gradient(from 0deg,'+
-      from+' 0deg,'+to+' '+(lp*3.6)+'deg,color-mix(in srgb,var(--dim) 45%,transparent) '+(lp*3.6)+'deg)">'+
-    '<span class="gnum">'+Math.round(lp)+'<small>ซ้าย %</small></span>'+
-    '<span class="gcap">'+l+' / '+r+'</span></div>';
+  return '<div class="fsrbox">'+
+    '<div style="display:flex;gap:14px;align-items:flex-end;height:70px">'+
+      bar(l,'ซ้าย')+bar(r,'ขวา')+
+    '</div>'+
+    '<div class="gtnum" style="font-size:.82rem;color:'+vcol+'">'+verdict+'</div>'+
+    '<div class="gcap" style="position:static">'+
+      (stale ? '\u2014' : l+' / '+r)+'</div>'+
+  '</div>';
 }
 
 /* ═══════════ hip angle dial (v3.11.0) ═══════════════════════════════════

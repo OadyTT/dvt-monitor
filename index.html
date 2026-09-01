@@ -22,7 +22,33 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.19.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.20.0 (Phase 2 — real schema)
+
+  v3.20.0 (2026-09-01)
+    Needs Code_v7.gs v7.6.0.
+
+    A LINE PAUSE THAT EXPIRES BY ITSELF, not an off switch. Bench
+    testing generates alerts that spend a monthly allowance of 300 on
+    nobody, so the need is real — but a permanent mute on the channel
+    that tells a ward about a possible dislocation is a trap: you
+    silence it to test, you forget, and the ward gets nothing while
+    every screen reports healthy. That is the exact failure this
+    project spent two days chasing, and building a switch for it would
+    have been worse than the bug.
+
+    So: 1, 8 or 24 hours, and it lifts on its own. The end time is
+    computed here and stored as an instant rather than a duration,
+    because a mute whose end nobody can name is the same trap wearing a
+    timer. While it is in force the admin panel carries a red banner
+    naming the time it ends, and says plainly what is NOT paused — the
+    bedside screen, the dashboard, the alert tab, and the log all carry
+    on, so the study loses nothing and the bed is still noisy where a
+    patient actually is.
+
+    Separately, lineCategoryOff is a standing ward POLICY switch, per
+    category and with no expiry, for a decision like "we do not want
+    offline alerts on LINE at all". It cannot take out the whole
+    channel by accident because there is no "all".
 
   v3.19.0 (2026-08-31)
     1. HIP, LEFT and RIGHT each get a raised panel. They are three
@@ -1189,7 +1215,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.19.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.20.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2467,6 +2493,35 @@ async function loadQuota(){
         'และแสดงเต็มรูปแบบที่แท็บ 🔔 แจ้งเตือน · โควตาที่ประหยัดไว้สงวนให้ HIP_ANGLE</div>';
 
   const st=q.settings||{};
+
+  /* v3.20.0 — the pause, and the banner that makes it impossible to forget.
+     A mute you cannot see is the trap this whole feature had to avoid: you
+     silence LINE to test, you forget, and the ward gets nothing while every
+     screen reports healthy. So the state is stated in words, in red, with the
+     time it ends, for as long as it is in force. */
+  if(q.pausedNow){
+    const until=new Date(parseInt(st.linePauseUntil,10));
+    html='<div class="infonote" style="margin:0 0 14px;'+
+      'border-color:color-mix(in srgb,var(--danger) 50%,transparent);'+
+      'background:color-mix(in srgb,var(--danger) 12%,var(--surface));color:var(--danger)">'+
+      '🔕 <b>หยุดส่ง LINE ชั่วคราวอยู่</b> — จะกลับมาส่งเองเวลา '+
+      until.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})+
+      '<br><span style="color:var(--text2);font-weight:400">'+
+      'การแจ้งเตือนยังขึ้นที่จอข้างเตียง หน้าเว็บ และแท็บ 🔔 ตามปกติ '+
+      'และยังถูกบันทึกลงประวัติครบทุกรายการ — หยุดเฉพาะ LINE เท่านั้น</span></div>'+html;
+  }
+
+  html+='<div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--brd);'+
+        'display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+    '<label style="font-size:.8rem">การส่ง LINE</label>'+
+    '<select id="setLinePause" onchange="pauseLine(this.value)">'+
+      '<option value="0"'+(q.pausedNow?'':' selected')+'>ส่งตามปกติ</option>'+
+      '<option value="1">หยุด 1 ชั่วโมง</option>'+
+      '<option value="8">หยุด 8 ชั่วโมง</option>'+
+      '<option value="24">หยุด 24 ชั่วโมง</option>'+
+    '</select>'+
+    '<span class="calibstatus">ใช้ตอนทดสอบบนโต๊ะ · กลับมาเองเมื่อครบเวลา</span></div>';
+
   html+='<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
         '<label style="font-size:.8rem">เวลาส่งสรุปรายวัน</label>'+
         '<select id="setDigestHour" onchange="saveSetting(\'digestHour\', this.value)">'+
@@ -2482,6 +2537,17 @@ async function loadQuota(){
         '<span class="calibstatus" id="setStatus"></span></div>';
 
   box.innerHTML=html;
+}
+
+/* Hours -> an absolute end time, computed HERE and stored as an instant.
+   Storing "8 hours" would leave the end point depending on when the setting
+   was next read, and a mute whose end nobody can name is the thing this is
+   built to prevent. */
+async function pauseLine(hours){
+  const h=parseInt(hours,10)||0;
+  const until = h>0 ? (Date.now()+h*3600000) : 0;
+  await saveSetting('linePauseUntil', String(until));
+  loadQuota();
 }
 
 async function saveSetting(key, value){

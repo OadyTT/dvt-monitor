@@ -22,7 +22,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.21.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.22.0 (Phase 2 — real schema)
+
+  v3.22.0 (2026-09-01)
+    The pulsing dot reaches the node headers.
+
+    The bed card, the bed detail and the gateway panel all carried it;
+    HIP and the two ankles carried only coloured words. "Live" is one
+    idea and should have one appearance — a nurse who has learnt that a
+    breathing green dot means a working link should not have to learn a
+    second vocabulary two lines down the same card.
+
+    Only the 'on' state animates, so an offline node shows a still dot.
+    The absence of motion is itself the signal, which reads faster than
+    colour and survives being seen at a glance, from an angle, or by
+    someone colour-blind. The three-state logic is unchanged: grey and
+    still when the gateway itself is quiet, because the node's state is
+    then unknown rather than bad.
 
   v3.21.0 (2026-09-01)
     Needs gateway v3.34.0 and the updated database.rules.json.
@@ -792,6 +808,9 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
    a staged rollout most beds are in this state, and if they wear the same red
    as a genuine fault then red stops meaning anything by the second install. */
 .dot.idle{background:var(--dim);opacity:.55}
+/* The ring expands beyond the 9px dot, so inside a node header it needs room
+   that the flex row does not otherwise give it. */
+.kv .dot{margin-right:1px}
 .gwstrip.idle{background:color-mix(in srgb,var(--dim) 16%,transparent);color:var(--text2)}
 .bed .ago{font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:12px}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -1234,7 +1253,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.21.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.22.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -1674,6 +1693,14 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
   const online = !gwDown && n.lastSeen && (Date.now()-n.lastSeen < STALE_MS);
   const stateTxt = gwDown ? 'ไม่ทราบ' : (online ? 'เชื่อมต่อ' : 'ขาดการเชื่อมต่อ');
   const stateCol = gwDown ? 'var(--dim)' : (online ? 'var(--ok)' : 'var(--danger)');
+  /* v3.22.0 — the same pulsing dot the gateway and the bed already wear.
+     "Live" is one idea and it should have one appearance: a nurse who has
+     learnt that a breathing green dot means a working link should not have to
+     learn a second vocabulary two lines further down the same card. Only the
+     'on' state animates, so an offline node is a still dot — absence of
+     motion is the signal, which reads faster than colour alone and survives
+     being seen from an angle or by someone colour-blind. */
+  const stateDot = gwDown ? 'idle' : (online ? 'on' : 'off');
   /* The HIP node has no pump count, so its gauge slot sat empty while both
      ankles showed one — the row read as though the pillow were doing less.
      It is measuring the thing the alert actually fires on, so it now shows
@@ -1704,7 +1731,8 @@ function nodeBlock(name,n,pumpCount,testCmdKey,bid,target,angle,gwFresh){
       cmdPill(bedCmd(bid,testCmdKey), testCmdKey)+'</div>'
     : '';
   return '<div><div class="kv"><span><b style="color:var(--text2)">'+name+'</b></span>'+
-    '<b style="color:'+stateCol+'">'+stateTxt+'</b></div>'+
+    '<b style="color:'+stateCol+';display:inline-flex;align-items:center;gap:6px">'+
+      '<span class="dot '+stateDot+'"></span>'+stateTxt+'</b></div>'+
     angRow+
     pumpRow+
     '<div class="kv"><span>แบตเตอรี่</span><b>'+battText(n)+'</b></div>'+

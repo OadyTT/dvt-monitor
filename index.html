@@ -22,7 +22,27 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.30.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.31.0 (Phase 2 — real schema)
+
+  v3.31.0 (2026-09-02)
+    THE REPORT INVENTED A DAY AND HID A REAL ONE. Pairs with gateway
+    v3.35.0, which fixes the other half.
+
+    todayRowFor() stamped live.pumpL/pumpR with today's date, always. A
+    gateway that stopped at 17:45 yesterday still holds yesterday's
+    totals in live, so the report showed "2026-09-02 (วันนี้) · 50 / 21
+    · กำลังนับ" for a bed that had not counted one pump today — while
+    09-01 was missing entirely, because a day is only archived at a
+    rollover and that rollover had not happened yet.
+
+    Two errors pointing the same way: the day that existed was hidden,
+    and a day that did not was invented in its place.
+
+    The row is now dated from live.ts — when the gateway last actually
+    spoke — and is only marked "live" if that was today. When it was
+    not, it reads "ยังไม่ปิดวัน", because that is the true state: real
+    counts, from a real day, that the gateway has not yet closed and
+    archived.
 
   v3.30.0 (2026-09-01)
     STALE READINGS WERE STILL BEING DRAWN AS LIVE ONES — the same class
@@ -1499,7 +1519,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.30.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.31.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2821,13 +2841,30 @@ async function loadReport(){
    fetch, no GAS change. It is tagged in-progress and deliberately excluded
    from the goal-day count, because a day still being counted has not
    failed to reach its goal — it just has not finished. */
+/* v3.31.0 — THE LIVE COUNTS BELONG TO THE DAY THEY WERE COUNTED ON.
+ *
+ * This stamped live.pumpL/pumpR with TODAY'S date unconditionally. A gateway
+ * that stopped at 17:45 yesterday still has yesterday's totals sitting in
+ * live, and the report showed them as "2026-09-02 (วันนี้) · 50 / 21 ·
+ * กำลังนับ" on a bed that had not counted a single pump today — while the
+ * real 09-01 row was missing, because a day is only archived at a rollover
+ * and that rollover had not happened yet. Two errors pointing the same way:
+ * the day that existed was hidden and a day that did not was invented.
+ *
+ * live.ts is when the gateway last spoke. If that was on an earlier calendar
+ * day then these counts are that day's, and the row is labelled with it —
+ * and not marked live, so it is not excluded from the goal tally the way an
+ * unfinished day should be. If the gateway has never spoken at all there is
+ * nothing to add. */
 function todayRowFor(bedId){
-  const b=beds[bedId]; if(!b||!b.live) return null;
+  const b=beds[bedId]; if(!b||!b.live||!b.live.ts) return null;
   const L=Number(b.live.pumpL)||0, R=Number(b.live.pumpR)||0;
-  const d=new Date();
-  const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
-            String(d.getDate()).padStart(2,'0');
-  return { date:key, pumpL:L, pumpR:R, pumpTotal:L+R, alerts:0, live:true };
+  const dayKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
+                      String(d.getDate()).padStart(2,'0');
+  const stamp = new Date(b.live.ts);
+  const isToday = dayKey(stamp) === dayKey(new Date());
+  return { date:dayKey(stamp), pumpL:L, pumpR:R, pumpTotal:L+R,
+           alerts:0, live:isToday, stale:!isToday };
 }
 
 /* ── v3.6.0 · alert history ───────────────────────────────────────────────
@@ -2968,6 +3005,8 @@ function renderReport(rows){
     const reached=(r.pumpTotal||0)>=pumpGoal;
     const goalBadge=r.live
       ? '<span class="pill wait">กำลังนับ '+(r.pumpTotal||0)+'/'+pumpGoal+'</span>'
+      : r.stale
+      ? '<span class="pill warn">ยังไม่ปิดวัน '+(r.pumpTotal||0)+'/'+pumpGoal+'</span>'
       : (reached?'<span style="color:var(--ok)">✅ ครบ</span>'
                :'<span style="color:var(--warn)">'+(r.pumpTotal||0)+'/'+pumpGoal+'</span>');
     // v3.6.0: the count is now openable. A number nobody can drill into is

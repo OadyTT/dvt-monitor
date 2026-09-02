@@ -22,7 +22,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.31.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.32.0 (Phase 2 — real schema)
+
+  v3.32.0 (2026-09-02)
+    ONE RULE FOR ALL FOUR REPORT STATS: an unfinished day does not count.
+
+    The four summary boxes each decided this separately and disagreed.
+    "วันที่ครบเป้า" already excluded today's live row, but the average
+    divided the finished-day total by ALL rows including today's partial
+    zero — 583 over 7 instead of 6, pulling 97 down to 83. A report that
+    goes to an IRB should not read lower than the truth because a
+    still-counting day was averaged in as a full one.
+
+    The rows are now split once: only today's live row is excluded. A
+    "ยังไม่ปิดวัน" row is a real finished day the gateway has not
+    archived yet, so it still counts — which is why 09-01's 71 is in
+    every figure the moment it appears.
 
   v3.31.0 (2026-09-02)
     THE REPORT INVENTED A DAY AND HID A REAL ONE. Pairs with gateway
@@ -1519,7 +1534,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.31.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.32.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2991,10 +3006,24 @@ function renderReport(rows){
     if(chartReportInst){ chartReportInst.destroy(); chartReportInst=null; }
     return;
   }
-  const totalPump=rows.reduce((s,r)=>s+(r.pumpTotal||0),0);
-  const avgPump=Math.round(totalPump/rows.length);
-  const goalDays=rows.filter(r=>!r.live && (r.pumpTotal||0)>=pumpGoal).length;
-  const totalAlerts=rows.reduce((s,r)=>s+(r.alerts||0),0);
+  /* v3.32.0 — ONE RULE FOR ALL FOUR STATS: an unfinished day does not count.
+   *
+   * The four boxes each decided this for themselves and disagreed. "วันที่
+   * ครบเป้า" already excluded r.live, but the average divided the finished-day
+   * total by ALL rows including today's partial 0 — 512 over 6 instead of 5,
+   * pulling 102 down to 85. "แจ้งเตือนรวม" summed a live row too, though its
+   * alert count is always 0 so it happened to be harmless. Splitting the rows
+   * once, here, makes the four numbers describe the same set of days — and a
+   * report that goes to an IRB should not read lower than the truth because
+   * a still-counting day was averaged in as if it were a full one.
+   *
+   * A "ยังไม่ปิดวัน" row (r.stale) is a real, finished day the gateway has
+   * not archived yet, so it COUNTS — only today's live row is excluded. */
+  const closed = rows.filter(r=>!r.live);
+  const totalPump=closed.reduce((s,r)=>s+(r.pumpTotal||0),0);
+  const avgPump=closed.length ? Math.round(totalPump/closed.length) : 0;
+  const goalDays=closed.filter(r=>(r.pumpTotal||0)>=pumpGoal).length;
+  const totalAlerts=closed.reduce((s,r)=>s+(r.alerts||0),0);
   // innerHTML, not textContent: the unit <small> lives inside these nodes and
   // textContent would silently delete it on the first render.
   $('rptTotalPump').innerHTML=totalPump.toLocaleString()+'<small>ครั้ง</small>';

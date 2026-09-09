@@ -22,7 +22,45 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.32.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.33.0 (Phase 2 — real schema)
+
+  v3.33.0 (2026-09-08)
+    THE VIBRATION BANNER WAS LYING, AND IT COST A DAY OF DEBUGGING.
+
+    The bed panel carried a note saying ทดสอบการสั่น would answer
+    "ยังไม่รองรับ" because ESP-NOW had no message type for it. That
+    stopped being true on 2026-08-28, when HH_MSG_TEST_VIBRATE shipped
+    in ankle node v1.1.0. On 8 Sep the button was pressed on hardware,
+    the node logged "[link] TEST_VIBRATE received from gateway (600 ms
+    @ level 255)", and the motor ran.
+
+    The cost was not cosmetic. When AnkleR's motor went quiet after
+    perfboard assembly, this banner was read as the explanation, and
+    the search went to the protocol instead of to the four solder
+    joints where the fault actually was. A UI that describes the
+    firmware has to be re-checked whenever the firmware moves, or it
+    becomes a confident wrong answer that no log can outvote.
+
+    The banner now states what the two buttons do and what a result
+    means — "สั่งสำเร็จ" is the node acknowledging the command, not the
+    motor being observed to turn, and nothing in the system can report
+    the latter.
+
+    ALSO IN THIS VERSION:
+      - HIP_ANGLE was labelled "ท่านอนผิด (มุมสะโพก)". The device
+        measures an angle; it does not know what a patient was doing or
+        whether anyone was at fault. It now reads "มุมสะโพกเกินเกณฑ์",
+        which is what the sensor can actually support, and reads as an
+        instrument reading rather than a judgement on the person in the
+        bed or the nurse who positioned them.
+      - The acknowledged-alert line said "ที่ยังไม่หายไป", which does
+        not explain WHY they have not gone away. Acknowledging silences
+        an alert; only the condition clearing removes it. That
+        distinction is now spelled out, because a nurse who thinks the
+        button fixes the problem will stop pressing it when it doesn't.
+      - The NIA SID-KRU funder mark sits beside the project mark, and
+        both are larger. On the topbar the pair identifies the study at
+        a glance, which matters on a screen a ward may share.
 
   v3.32.0 (2026-09-02)
     ONE RULE FOR ALL FOUR REPORT STATS: an unfinished day does not count.
@@ -1275,7 +1313,15 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
 .alertcount{background:none;border:none;padding:0;font:inherit;color:var(--danger);
   cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 
-.brandmark{height:34px;width:auto;display:block;flex:none}
+/* v3.33.0 — 34px -> 46px. At 34 the SID-KRU wordmark inside the funder
+   mark was below the size its smallest letters survive, and the two marks
+   read as decoration rather than as the identity of a funded study. 46px
+   still clears the topbar's 56px row with the plate padding on. */
+.brandmark{height:46px;width:auto;display:block;flex:none}
+/* The funder mark. Same plate, same height, so the pair reads as one lockup
+   rather than as a logo with a sticker next to it. Its own art is circular
+   and already has an outer ring, so it needs no extra rule of its own. */
+.partnermark{height:46px;width:auto;display:block;flex:none}
 .login .lockup{width:min(260px,62vw);height:auto;display:block;margin:0 auto 6px}
 /* The art is drawn for a light background. On the dark theme a plain white
    card behind it would glare, so it sits on a soft translucent plate that
@@ -1294,7 +1340,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
    A single blurred shadow gives a sticker; the pair gives a card. Kept low
    in contrast on purpose — the boot screen's breath is where this interface
    spends its boldness, and a chrome-heavy logo would compete with it. */
-.brandmark,.login .lockup{
+.brandmark,.partnermark,.login .lockup{
   border-radius:12px;padding:4px 6px;
   background:linear-gradient(163deg,#ffffff 0%,#ffffff 46%,#eef3f4 100%);
   box-shadow:
@@ -1308,6 +1354,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
    rim brightens and the ambient shadow deepens, because on a dark surface a
    soft shadow reads as depth where a light one disappears. */
 [data-theme="dark"] .brandmark,
+[data-theme="dark"] .partnermark,
 [data-theme="dark"] .login .lockup{
   background:linear-gradient(163deg,#ffffff 0%,#fbfdfd 52%,#e6eef0 100%);
   box-shadow:
@@ -1317,7 +1364,8 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     0 10px 24px -8px rgba(0,0,0,.65),
     0 0 0 1px rgba(255,255,255,.06)}
 
-.topbar:hover .brandmark{
+.topbar:hover .brandmark,
+.topbar:hover .partnermark{
   transform:translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.95),
@@ -1440,6 +1488,9 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
 <div class="wrap hide" id="appView">
   <div class="top">
     <img class="brandmark" alt="" aria-hidden="true" src="data:image/png;base64,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">
+    <img class="partnermark" alt="สำนักงานนวัตกรรมแห่งชาติ · SID-KRU หน่วยขับเคลื่อนนวัตกรรมเพื่อสังคมประจำพื้นที่ภาคตะวันตก"
+         title="NIA · SID-KRU — ผู้สนับสนุนทุนวิจัย (NIA SID-10/2569)"
+         src="data:image/png;base64,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">
     <div class="brand">Happy HIP DVT Monitor
       <small>Investigational Device · Research Use Only</small></div>
     <div class="spacer"></div>
@@ -1534,7 +1585,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.32.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.33.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2164,7 +2215,7 @@ function renderDetail(bid,data){
     alertHtml='<div class="alertbox" id="bedAlerts">'+
       '<div class="ahead">⚠️ แจ้งเตือนที่ยังไม่ได้รับทราบ ('+activeAlerts.length+')'+
         (ackedN?'<span class="calibstatus" style="font-weight:400;margin-left:6px">'+
-                'และรับทราบแล้วอีก '+ackedN+' รายการ ที่ยังไม่หายไป</span>':'')+'</div>'+
+                'และรับทราบแล้ว '+ackedN+' รายการ — เงียบเสียงแล้ว แต่ยังไม่ได้แก้</span>':'')+'</div>'+
       shown.map(row).join('')+
       (rest.length
         ? '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.75rem;'+
@@ -2196,7 +2247,7 @@ function renderDetail(bid,data){
         : '')+
       '<button class="btn sm" style="margin-left:auto" onclick="closeDetail()">ปิด</button></h2>'+
     gatewayBlock(live, fresh)+
-    (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">🔔 ปุ่มทดสอบด้านล่างส่งคำสั่งผ่าน Firebase ไปยัง gateway (เฟิร์มแวร์ v3.20.0 ขึ้นไป) และรายงานผลกลับที่ป้ายข้างปุ่ม — <b>ทดสอบเสียง</b>ใช้ได้จริงแล้ว ส่วน <b>ทดสอบการสั่น</b> จะตอบว่า <i>ยังไม่รองรับ</i> เพราะโปรโตคอล ESP-NOW ยังไม่มีชนิดข้อความสำหรับสั่งสั่นที่ข้อเท้า (ต้องเพิ่มแล้วแฟลชโหนดข้อเท้าใหม่)</div>':'')+
+    (canWriteMeta()?'<div class="infonote" style="margin-bottom:12px">🔔 ปุ่มทดสอบด้านล่างส่งคำสั่งผ่าน Firebase ไปยัง gateway แล้วส่งต่อถึงโหนดด้วย ESP-NOW · <b>ทดสอบเสียง</b> ให้เสียงที่กล่องข้างเตียง · <b>ทดสอบการสั่น</b> สั่งมอเตอร์ที่ข้อเท้า (ต้องเป็นโหนดข้อเท้า v1.1.0 ขึ้นไป) — ป้ายข้างปุ่มที่ขึ้นว่า <i>สำเร็จ</i> หมายถึงโหนดรับคำสั่งและตอบกลับแล้ว <b>ไม่ได้ยืนยันว่ามอเตอร์หมุนจริง</b> ระบบไม่มีทางรู้ข้อนั้น ต้องใช้มือแตะหรือฟังเสียงที่ตัวอุปกรณ์</div>':'')+
     '<div class="three">'+
       nodeBlock('HIP', nodes.hip, null, 'testAudio', bid, null,
                 {deg:(live.hipPitch||0), roll:(live.hipRoll||0),
@@ -2233,7 +2284,7 @@ function renderDetail(bid,data){
    to alert_engine.h later, which is better than hiding an alert we cannot
    name yet. */
 const ALERT_TYPE_TH={BATTERY:'แบตเตอรี่ต่ำ',DEVICE_OFFLINE:'อุปกรณ์ขาดการเชื่อมต่อ',
-  OFFLINE:'อุปกรณ์ขาดการเชื่อมต่อ',HIP_ANGLE:'ท่านอนผิด (มุมสะโพก)',
+  OFFLINE:'อุปกรณ์ขาดการเชื่อมต่อ',HIP_ANGLE:'มุมสะโพกเกินเกณฑ์',
   PUMP_BEHIND:'กระดกเท้าน้อยกว่าเป้า',PUMP_COMPLIANCE:'กระดกเท้าน้อยกว่าเป้า'};
 const ALERT_NODE_TH={hip:'หมอน (HIP)',ankleL:'ข้อเท้าซ้าย',ankleR:'ข้อเท้าขวา',bed:'เตียง'};
 /* ═══════════ gateway panel (v3.13.0) ═════════════════════════════════════
@@ -2697,7 +2748,7 @@ function renderAlertsTab(){
 
   w.innerHTML=
     '<div class="ahead" style="margin-bottom:10px">ยังไม่รับทราบ '+nAct+' รายการ'+
-      (nAck?' <span class="calibstatus" style="font-weight:400">· รับทราบแล้วแต่ยังไม่หาย '+nAck+' รายการ</span>':'')+
+      (nAck?' <span class="calibstatus" style="font-weight:400">· รับทราบแล้ว '+nAck+' รายการ (เงียบเสียง แต่ยังไม่ได้แก้)</span>':'')+
     '</div>'+
     sorted.map(a=>{
       const s=sevPill[Math.min(3,Math.max(0,a.sev))];

@@ -20,9 +20,40 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!-- v3.36.0 — JPG export only. Loaded async and never awaited at startup: if
+     the CDN is unreachable the report still renders and prints, and only the
+     JPG button reports that it is unavailable. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.35.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.36.0 (Phase 2 — real schema)
+
+  v3.36.0 (2026-09-10)
+    The report can now be printed, saved as PDF, or saved as a JPG, and it
+    carries a header identifying the bed, the range and the moment it was
+    taken so a printout still means something once it leaves the screen.
+
+    PDF goes through the browser's own print dialogue rather than a PDF
+    library: it keeps the text selectable and searchable, embeds Thai
+    correctly, and adds no dependency to a page a ward relies on. JPG uses
+    html2canvas because there is no built-in way to rasterise a DOM subtree.
+
+    The printed sheet forces a light theme regardless of the screen. Printing
+    the dark UI wastes toner, and the pale greys it uses for secondary text
+    come out illegible on paper.
+
+    A settings block is printed with the report — pump target, hip threshold,
+    dwell, offline window, quiet hours — because a compliance figure cannot
+    be read without the target it was scored against. This is the same point
+    the changelog for v3.35.0 raised and does not fix: the report scores past
+    days against TODAY's target. Printing the settings at least records what
+    the sheet in your hand was scored with.
+
+    THE CONFIG FIELDS ARE NOT EDITABLE FROM HERE YET. That was asked for and
+    is deliberately held back: saving any bed config from the web currently
+    fails with PERMISSION_DENIED, because database.rules.json has not been
+    updated for the offlineStaleMs key that v3.34.0 began writing. Adding a
+    second place to trigger the same failure would only spread it.
 
   v3.35.0 (2026-09-10)
     THE BED EDITOR CLAIMED MORE THAN IT DELIVERS, AND SHOWED NO DIFFERENCE
@@ -1364,6 +1395,36 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
 /* v3.35.0 — bed-editor field states. The amber edge is deliberately on the
    left border rather than a background wash: the group is long, and a row of
    tinted boxes reads as an error state rather than as "not filled in yet". */
+/* v3.36.0 — print / export. .printonly is hidden on screen and shown on
+   paper; .noprint the reverse. Both also apply while a JPG is being taken,
+   via the .exporting class, so the image matches the printout. */
+.printonly{display:none}
+.exporting .printonly{display:block}
+.exporting .noprint{display:none!important}
+@media print{
+  /* Force the light palette. The dark theme's secondary greys are unreadable
+     on white paper, and its backgrounds waste toner on a ward printer. */
+  :root,[data-theme="dark"]{
+    --bg:#fff;--card:#fff;--panel:#fff;--text:#111;--text2:#333;--dim:#555;
+    --brd:#bbb;--accent:#0a5c50;
+  }
+  html,body{background:#fff!important;color:#111!important}
+  .topbar,.tabs,.noprint,#chatWidget,.btn,select,.fabchat{display:none!important}
+  .view{display:none!important}
+  .view#view-report{display:block!important}
+  .printonly{display:block!important}
+  .panel{border:none!important;box-shadow:none!important;padding:0!important}
+  table{width:100%;border-collapse:collapse;font-size:11pt}
+  th,td{border:1px solid #999!important;padding:4px 6px!important;color:#111!important}
+  thead{display:table-header-group}          /* repeat header on every page */
+  tr{break-inside:avoid}
+  .chartwrap{break-inside:avoid;max-height:78mm}
+  #rptCfgBox{break-before:auto;break-inside:avoid}
+  .sumgrid{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6mm}
+  .sumcard{border:1px solid #999!important;padding:3mm!important}
+  a[href]:after{content:""}
+  @page{size:A4;margin:14mm 12mm}
+}
 .fg-unset{border-left:3px solid #d99a2b;padding-left:9px;border-radius:0 6px 6px 0}
 .destbadge{display:inline-block;margin-left:7px;padding:1px 6px;border-radius:20px;
   font-family:var(--mono,monospace);font-size:9px;font-weight:600;vertical-align:middle;letter-spacing:.02em}
@@ -1576,11 +1637,17 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
         <div class="spacer"></div>
         <select id="rptBedSel" onchange="loadReport()"></select>
       </h2>
-      <div class="row">
+      <div class="row noprint">
         <button class="btn sm" id="rpt7" onclick="setReportDays(7)">7 วัน</button>
         <button class="btn sm" id="rpt14" onclick="setReportDays(14)">14 วัน</button>
         <button class="btn sm" id="rpt30" onclick="setReportDays(30)">30 วัน</button>
+        <div class="spacer"></div>
+        <button class="btn sm" onclick="printReport()">🖨️ พิมพ์ / บันทึก PDF</button>
+        <button class="btn sm" onclick="exportReportJpg()">🖼️ บันทึกภาพ JPG</button>
       </div>
+      <!-- v3.36.0 — printout-only header. Hidden on screen because the tab and
+           the bed selector already say all this; on paper nothing else does. -->
+      <div id="rptPrintHead" class="printonly"></div>
       <div class="infonote">ℹ️ แถวย้อนหลังดึงจาก GAS/Google Sheets (gateway บันทึกยอดของแต่ละวันตอนเที่ยงคืน) ส่วนแถว <b>วันนี้</b> เป็นค่าสดจากแดชบอร์ดแบบ real-time จึงยังนับเพิ่มได้เรื่อยๆ</div>
       <div class="sumgrid">
         <div class="sumcard"><div class="lbl">Pump รวม</div><div class="val" id="rptTotalPump">0<small>ครั้ง</small></div></div>
@@ -1598,6 +1665,10 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
            the number that prompted it, rather than on a separate screen the
            reader has to hold the number in their head to reach. -->
       <div id="alertHistBox" style="display:none"></div>
+      <!-- v3.36.0 — the settings the numbers above were scored against.
+           Screen-hidden by default and always printed, because a compliance
+           figure without its target is not a finding. -->
+      <div id="rptCfgBox" class="printonly"></div>
     </div>
   </div>
 
@@ -1641,7 +1712,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.35.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.36.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -3087,6 +3158,116 @@ async function showAlertHistory(dayStr){
     host.innerHTML='<div class="ahist"><div class="infonote">'+
       'โหลดประวัติไม่สำเร็จ: '+e.message+
       ' — ตรวจว่า Code_v7.gs เป็น v7.2.0 ขึ้นไป และ deploy เป็น New Version แล้ว</div></div>';
+  }
+}
+
+/* ───────────────────────── report export (v3.36.0) ─────────────────────────
+ * Two paths on purpose.
+ *
+ * PDF goes through window.print(). The browser's own engine lays out Thai
+ * correctly, keeps the text selectable and searchable in the resulting file,
+ * paginates a long table with a repeating header, and costs no dependency on
+ * a page a ward depends on. A PDF library would have to be taught all four.
+ *
+ * JPG needs html2canvas because there is no built-in way to rasterise part of
+ * a DOM. It is loaded async and never awaited at startup, so if the CDN is
+ * unreachable the report still works and only this button says so.
+ *
+ * Both stamp a header first. A printout that does not say which bed, which
+ * range, and when it was taken is not evidence of anything.
+ */
+/* No HTML-escape helper exists in this file, so define one here rather than
+ * assume a name. Bed and ward labels are free text typed by staff, and they
+ * are being concatenated into innerHTML. */
+function rptEsc(v){
+  return String(v==null?'':v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function rptHospName(){
+  const h = hospitalsList[curHid];
+  return (h && h.meta && h.meta.name) || curHid || '—';
+}
+
+function rptStampHeader(){
+  const bedId = $('rptBedSel').value || '—';
+  const cfg   = (beds[bedId] && beds[bedId].config) || {};
+  const now   = new Date();
+  const pad   = n => String(n).padStart(2,'0');
+  const stamp = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+
+                ' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  $('rptPrintHead').innerHTML =
+    '<div style="border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:10px">'+
+      '<div style="font-size:15pt;font-weight:700">รายงานการทำ Ankle Pump</div>'+
+      '<div style="font-size:10pt;margin-top:3px">'+
+        'เตียง: <b>'+rptEsc(cfg.bedLabel||bedId)+'</b> ('+rptEsc(bedId)+')'+
+        (cfg.wardLabel?' · วอร์ด: '+rptEsc(cfg.wardLabel):'')+
+        ' · โรงพยาบาล: '+rptEsc(rptHospName())+
+      '</div>'+
+      '<div style="font-size:10pt">ช่วงข้อมูล: '+reportDays+' วันล่าสุด · พิมพ์เมื่อ '+stamp+'</div>'+
+      '<div style="font-size:8pt;color:#555;margin-top:3px">'+
+        'Happy HIP DVT Monitor · Investigational Device · Research Use Only · NIA SID-10/2569'+
+      '</div>'+
+    '</div>';
+
+  /* The settings the numbers were scored against. Printed because a
+   * compliance percentage is meaningless without the target behind it — and
+   * because the report scores PAST days against the target in force right
+   * now, so the sheet needs to record which target that was. */
+  const secs = v => v==null ? '—' : Math.round(v/1000)+' วินาที';
+  const rows = [
+    ['เป้าหมาย Pump ต่อข้าง/วัน', cfg.pumpTargetPerSide!=null?cfg.pumpTargetPerSide+' ครั้ง':'150 ครั้ง (ค่าเริ่มต้น)'],
+    ['มุมสะโพกที่เริ่มเตือน',     (cfg.hipThresholdDeg!=null?cfg.hipThresholdDeg:60)+' องศา'],
+    ['ผ่อนผันก่อนเตือนท่านอน',   secs(cfg.hipDwellMs!=null?cfg.hipDwellMs:10000)],
+    ['ถือว่าขาดการเชื่อมต่อเมื่อเงียบเกิน', secs(cfg.offlineStaleMs!=null?cfg.offlineStaleMs:120000)],
+    ['ปิดเสียงเตือน',            (cfg.quietHoursStart!=null?cfg.quietHoursStart:22)+':00 – '+
+                                 (cfg.quietHoursEnd!=null?cfg.quietHoursEnd:6)+':00'],
+  ];
+  $('rptCfgBox').innerHTML =
+    '<div style="margin-top:12px">'+
+      '<div style="font-weight:700;font-size:11pt;margin-bottom:5px">ค่าตั้งของเตียงขณะพิมพ์รายงาน</div>'+
+      '<table style="font-size:10pt"><tbody>'+
+      rows.map(r=>'<tr><td style="width:52%">'+r[0]+'</td><td><b>'+r[1]+'</b></td></tr>').join('')+
+      '</tbody></table>'+
+      '<div style="font-size:8pt;color:#555;margin-top:5px">'+
+        'หมายเหตุ: คอลัมน์ "เป้าหมาย" ในตารางย้อนหลังคำนวณจากเป้าหมายค่าปัจจุบันข้างต้น '+
+        'ไม่ใช่เป้าหมายที่ตั้งไว้ในวันนั้น ๆ'+
+      '</div>'+
+    '</div>';
+}
+
+function printReport(){
+  rptStampHeader();
+  /* Let the browser paint the header before the modal print dialogue freezes
+     rendering — without this the first print of a session can omit it. */
+  setTimeout(()=>window.print(), 60);
+}
+
+async function exportReportJpg(){
+  if (typeof html2canvas === 'undefined') {
+    alert('ยังโหลดตัวสร้างภาพไม่สำเร็จ (html2canvas) — ตรวจอินเทอร์เน็ตแล้วลองใหม่ '+
+          'หรือใช้ปุ่มพิมพ์/บันทึก PDF แทน ซึ่งไม่ต้องใช้ตัวนี้');
+    return;
+  }
+  const panel = document.querySelector('#view-report .panel');
+  if (!panel) return;
+  rptStampHeader();
+  document.body.classList.add('exporting');
+  try{
+    /* scale 2 because a ward reads these on a phone and pinches in; white
+       background because the panel is transparent over the page background,
+       which would come out black in the dark theme. */
+    const canvas = await html2canvas(panel, {scale:2, backgroundColor:'#ffffff', useCORS:true});
+    const bedId = ($('rptBedSel').value||'bed').replace(/[^A-Za-z0-9_-]/g,'');
+    const d = new Date(), pad = n => String(n).padStart(2,'0');
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = 'HappyHIP_'+bedId+'_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+
+                 '_'+pad(d.getHours())+pad(d.getMinutes())+'.jpg';
+    a.click();
+  }catch(e){
+    alert('บันทึกภาพไม่สำเร็จ: '+e.message+' — ลองใช้ปุ่มพิมพ์/บันทึก PDF แทน');
+  }finally{
+    document.body.classList.remove('exporting');
   }
 }
 

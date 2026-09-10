@@ -22,7 +22,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.33.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.34.0 (Phase 2 — real schema)
+
+  v3.34.0 (2026-09-10)
+    Adds one field to the bed editor: how long a node may be silent before
+    the bed reports it as disconnected. It has always existed in the
+    firmware as a fixed 120 s; gateway v3.37.0 moves it into the bed config
+    so a ward can change it without a reflash.
+
+    The reason it needs to be adjustable is the 07:00 re-attach. Ankle nodes
+    come off the patient overnight and go back on in the morning, and the
+    handling either side of that is a stretch of legitimate silence. A floor
+    that finds 2 minutes too tight will otherwise see a disconnection alert
+    every single morning on every bed, and staff who are shown a false alarm
+    daily stop reading the true ones.
+
+    Entered in seconds and stored in ms, the same pattern the hip dwell
+    field already uses, clamped to the 30 s - 30 min the firmware enforces
+    so the form cannot offer a value the bed will reject.
 
   v3.33.0 (2026-09-08)
     THE VIBRATION BANNER WAS LYING, AND IT COST A DAY OF DEBUGGING.
@@ -1585,7 +1602,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.33.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.34.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -3451,6 +3468,9 @@ function renderBedEditor(bid){
           Math.round((cfg.hipDwellMs!=null?cfg.hipDwellMs:10000)/1000),'number',
           'ต้องอยู่ในท่าที่มุมเกินค่าข้างบน "ต่อเนื่อง" นานเท่านี้ก่อน จึงจะเตือน (1-300 วินาที, ค่าเริ่มต้น 10) — ตั้งให้ยาวขึ้นถ้าผู้ป่วยพลิกตัวชั่วครู่แล้วกลับท่าเดิมบ่อย จนเตือนถี่เกินจำเป็น')+
     field('ความถี่เตือนซ้ำ (นาที)','beRemind',cfg.reminderIntervalMin!=null?cfg.reminderIntervalMin:60,'number','ถ้ายังไม่กระดกข้อเท้า จะเตือนซ้ำทุกกี่นาที (5-480)')+
+    field('ถือว่าอุปกรณ์ขาดการเชื่อมต่อเมื่อเงียบเกิน (วินาที)','beOfflineStale',
+          Math.round((cfg.offlineStaleMs!=null?cfg.offlineStaleMs:120000)/1000),'number',
+          'โหนดเงียบนานเท่านี้แล้วยังไม่ส่งข้อมูล จะขึ้นแจ้งเตือนว่าขาดการเชื่อมต่อ (30-1800 วินาที, ค่าเริ่มต้น 120) — ตั้งให้ยาวขึ้นถ้าตอนใส่/ถอดอุปกรณ์ช่วงเช้าเย็นใช้เวลานานจนเตือนทุกวัน · ใช้กับโหนดที่ยังไม่เคยส่งข้อมูลเลยตั้งแต่เปิดกล่องข้างเตียงด้วย (ต้องเป็นเฟิร์มแวร์ v3.37.0 ขึ้นไป)')+
     '<div class="row">'+
       field('ปิดเสียงเตือน ตั้งแต่ชม.','beQhStart',cfg.quietHoursStart!=null?cfg.quietHoursStart:22,'number','0-23, เช่น 22 = 4 ทุ่ม',true)+
       field('ถึงชม.','beQhEnd',cfg.quietHoursEnd!=null?cfg.quietHoursEnd:6,'number','0-23, เช่น 6 = 6 โมงเช้า',true)+
@@ -3501,6 +3521,9 @@ async function saveBedEditor(bid){
     // firmware enforces, so the form never shows a value the bed will refuse.
     hipDwellMs: Math.min(300,Math.max(1,Number($('beHipDwell').value)||10))*1000,
     reminderIntervalMin: Number($('beRemind').value)||60,
+    // Seconds in the form, ms in the config, clamped to the same 30 s - 30 min
+    // hh_bed_config_t.offline_stale_ms is clamped to in hh_cloud_config_poll().
+    offlineStaleMs: Math.min(1800,Math.max(30,Number($('beOfflineStale').value)||120))*1000,
     quietHoursStart: Number($('beQhStart').value)||0,
     quietHoursEnd: Number($('beQhEnd').value)||0,
   };

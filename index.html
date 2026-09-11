@@ -26,7 +26,29 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.38.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.39.0 (Phase 2 — real schema)
+
+  v3.39.0 (2026-09-11)
+    The three meta fields — ward, surgery date, approach — were stored and
+    displayed nowhere, so the editor asked for data and then swallowed it.
+    They now print on the report header, with the post-operative day worked
+    out from the surgery date.
+
+    POD is the number the report was missing. A compliance figure of 45 pumps
+    means one thing on the day after surgery and another on day ten, and
+    nothing on the sheet said which. Day of surgery counts as POD 0, matching
+    the orthopaedic convention.
+
+    Both dates are floored to local midnight before subtracting. Using raw
+    timestamps would make the answer depend on the hour the report happened
+    to be printed, so the same day could show two different numbers on two
+    sheets. A missing or malformed date yields no POD line rather than a
+    guess, and a surgery date in the future is treated as a typo and
+    suppressed — a wrong post-op day in a study record is worse than a blank.
+
+    The clinical line only appears when at least one of the three has a value.
+    Printing an empty "วันที่ผ่าตัด: —" on every sheet teaches the reader to
+    skip that row, and then it is missed on the sheet where it is filled in.
 
   v3.38.0 (2026-09-11)
     Sign-in screen rebuilt to the approved key visual: NIA / SID-KRU funder
@@ -1883,7 +1905,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.38.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.39.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -3359,9 +3381,36 @@ function rptHospName(){
   return (h && h.meta && h.meta.name) || curHid || '—';
 }
 
+/* v3.39.0 — post-operative day. Day 0 is the day of surgery, which is the
+ * convention orthopaedic notes use, so a report printed on the operation date
+ * reads "วันผ่าตัด" rather than "วันที่ 1". Both dates are floored to local
+ * midnight first: subtracting raw timestamps makes the answer depend on the
+ * hour the report happened to be printed, which would let the same day show
+ * two different numbers on two printouts. Returns null for a missing or
+ * unparseable date rather than a guess — a wrong post-op day in a study
+ * record is worse than a blank one. */
+function rptPostOpDay(dateStr){
+  if(!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const p = dateStr.split('-').map(Number);
+  /* Buddhist-era years. The date input stores Gregorian, but a value typed or
+   * imported by hand can arrive as 2569 — which the plain arithmetic below
+   * would read as 543 years in the future and suppress, leaving no POD line
+   * and no explanation. Nothing in this study is dated past 2400 CE, so a
+   * four-digit year at or above that is unambiguously BE and is converted
+   * rather than dropped. */
+  if (p[0] >= 2400) p[0] -= 543;
+  const op = new Date(p[0], p[1]-1, p[2]);
+  if(isNaN(op.getTime())) return null;
+  const n = new Date();
+  const today = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  const days = Math.round((today - op) / 86400000);
+  return days < 0 ? null : days;   /* a future date is a typo, not a schedule */
+}
+
 function rptStampHeader(){
   const bedId = $('rptBedSel').value || '—';
   const cfg   = (beds[bedId] && beds[bedId].config) || {};
+  const meta  = (beds[bedId] && beds[bedId].meta)   || {};
   const now   = new Date();
   const pad   = n => String(n).padStart(2,'0');
   const stamp = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+
@@ -3375,6 +3424,23 @@ function rptStampHeader(){
         ' · โรงพยาบาล: '+rptEsc(rptHospName())+
       '</div>'+
       '<div style="font-size:10pt">ช่วงข้อมูล: '+reportDays+' วันล่าสุด · พิมพ์เมื่อ '+stamp+'</div>'+
+      /* The clinical line. Printed only when there is something to print —
+       * an empty "วันผ่าตัด: —" on every sheet trains the reader to skip the
+       * row, and then it is missed on the sheet where it is filled in. */
+      (function(){
+        const bits = [];
+        if (meta.ward) bits.push('แผนก/วอร์ด: <b>'+rptEsc(meta.ward)+'</b>');
+        if (meta.surgeryDate){
+          const d = rptPostOpDay(meta.surgeryDate);
+          bits.push('วันที่ผ่าตัด: <b>'+rptEsc(meta.surgeryDate)+'</b>'+
+                    (d===null ? '' : ' · <b>'+(d===0 ? 'วันผ่าตัด (POD 0)' : 'หลังผ่าตัดวันที่ '+d+' (POD '+d+')')+'</b>'));
+        }
+        if (meta.approach){
+          const th = {anterior:'ด้านหน้า (Anterior)',posterior:'ด้านหลัง (Posterior)',lateral:'ด้านข้าง (Lateral)'};
+          bits.push('วิธีผ่าตัด: <b>'+rptEsc(th[meta.approach]||meta.approach)+'</b>');
+        }
+        return bits.length ? '<div style="font-size:10pt">'+bits.join(' · ')+'</div>' : '';
+      })()+
       '<div style="font-size:8pt;color:#555;margin-top:3px">'+
         'Happy HIP DVT Monitor · Investigational Device · Research Use Only · NIA SID-10/2569'+
       '</div>'+
@@ -3882,8 +3948,8 @@ function renderBedEditor(bid){
 
     '<div style="font-size:.82rem;font-weight:600;color:var(--accent);margin:16px 0 8px">ข้อมูลเคส/ฮาร์ดแวร์ (meta)</div>'+
     '<div class="infonote" style="margin-bottom:12px">ℹ️ กลุ่มนี้แยกคนละที่เก็บข้อมูลจากด้านบน (คนละ node ใน Firebase) และแก้ได้เฉพาะ admin/superadmin เท่านั้น (staff แก้ไม่ได้)</div>'+
-    field('แผนก/วอร์ด (meta — แยกจาก "ชื่อวอร์ด" ด้านบน)','beMetaWard',meta.ward||'','text','ยังไม่ยืนยันว่าใช้แสดงผลที่ไหน อาจซ้ำกับ config ด้านบน',false,'web',meta.ward==null)+
-    field('วันที่ผ่าตัด','beSurgDate',meta.surgeryDate||'','date','รูปแบบ YYYY-MM-DD',false,'web',meta.surgeryDate==null)+
+    field('แผนก/วอร์ด (meta — แยกจาก "ชื่อวอร์ด" ด้านบน)','beMetaWard',meta.ward||'','text','พิมพ์อยู่บนหัวรายงาน (เฉพาะตอนพิมพ์/บันทึกไฟล์) — ถ้าเว้นว่างจะไม่ขึ้นบรรทัดนั้นเลย',false,'web',meta.ward==null)+
+    field('วันที่ผ่าตัด','beSurgDate',meta.surgeryDate||'','date','รูปแบบ YYYY-MM-DD — ใช้คำนวณ "วันที่เท่าไหร่หลังผ่าตัด" (POD) บนหัวรายงาน โดยนับวันผ่าตัดเป็น POD 0',false,'web',meta.surgeryDate==null)+
     '<div class="fg" style="margin-bottom:12px"><label style="color:var(--text2);font-size:.75rem;display:block;margin-bottom:5px">วิธีผ่าตัด (Approach)</label>'+
       '<select id="beApproach" class="txtin" style="width:100%">'+
       approachOpts.map(o=>'<option value="'+o[0]+'"'+(meta.approach===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+

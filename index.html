@@ -26,7 +26,36 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 <!--
   ═══════════════════════════════════════════════════════════════
-  Happy HIP DVT Monitor · Web App v3.42.0 (Phase 2 — real schema)
+  Happy HIP DVT Monitor · Web App v3.43.0 (2026-09-14 — real schema)
+
+  v3.43.0 (2026-09-14)
+    THE HIP FSR STRIP CLAIMED A PRECISION THE SENSOR DOES NOT HAVE, and read
+    as an alarm for a patient simply lying down.
+
+    A bench log of the hip node settled it: across 201 samples, 96% were
+    exactly 0 or exactly 4095, and the handful of in-between values appeared
+    only while a finger was lifting off. With the 10k pull-down fitted, the
+    FSR saturates the 12-bit ADC under almost any real load — it reports
+    contact or no-contact, nothing between, and both pads pin to 4095
+    together the moment someone lies back.
+
+    The old centre-out bar drew that switch as a magnitude: a full red wing
+    per side, which is the alarm colour, for the most ordinary state there
+    is. And it computed a left/right balance from two saturated values, which
+    is not a measurement — 4095/4095 is two pinned sensors that happen to be
+    equal, not "balanced".
+
+    The strip is now two contact pads: left in contact, right in contact, or
+    which one when only one is. That is the whole of what the sensor can say
+    today, and the verdict text ("เกินช่วงวัด" — out of range) is gone,
+    because nothing is out of range: 4095 is the top of the scale, working
+    exactly as built.
+
+    HARDWARE NOTE for the log, not fixed here: dropping the pull-down to
+    2.2k–3.3k would move saturation up into a measurable band and let a real
+    weight-distribution reading come back. Until then the UI does not pretend
+    to have one. This does not affect pump counting or the DVT function — the
+    FSR is posture context only.
 
   v3.42.0 (2026-09-11)
     THE EXPORTED CHART HAD NO READABLE SCALE, in both PDF and JPG, and no
@@ -1435,13 +1464,14 @@ select{padding:8px 11px;background:var(--surface);border:1px solid var(--brd);bo
    the angle dial above it is centred over the middle of this bar. */
 .fsrbox{width:100%;display:flex;flex-direction:column;gap:5px;margin-top:2px}
 .fsrhead{display:flex;justify-content:space-between;font-size:.6rem;color:var(--dim)}
-.fsrbar{display:flex;align-items:stretch;gap:3px;height:19px}
-.fsrwing{flex:1;display:flex;gap:2px}
-.fsrwing.flip{flex-direction:row-reverse}
-.fsrwing i{flex:1;border-radius:2px;transition:background .35s ease}
-/* The centre tick: the datum both wings grow from, so "even" is a shape you
-   can check against a line rather than a number you have to compare. */
-.fsrbar u{width:2px;border-radius:1px;background:var(--brd);flex:0 0 auto}
+/* v3.43.0 — two contact pads replace the centre-out wings. Sized like the old
+   bar so the card layout is unchanged. Lit = in contact; unlit = present but
+   quiet, drawn as a hairline outline rather than a fill so it does not read as
+   a missing sensor. */
+.fsrpads{display:flex;gap:8px;height:19px}
+.fsrpad{flex:1;border-radius:5px;border:1px solid var(--brd);
+  background:transparent;transition:background .25s ease,border-color .25s ease}
+.fsrpad.on{background:var(--ok);border-color:var(--ok)}
 .fsrverdict{font-size:.72rem;font-weight:600;text-align:center}
 .fsrverdict span{color:var(--dim);font-weight:400;font-size:.66rem}
 .cardhead{display:flex;align-items:center;gap:14px;margin-bottom:12px}
@@ -1943,7 +1973,7 @@ tr.today td{background:color-mix(in srgb, var(--accent) 7%, transparent)}
     <div class="infonote">ℹ️ การจัดการบัญชีผู้ใช้ (staff/admin) ยังไม่ทำในเว็บนี้ — ต้องรัน <code>hhAddStaff()</code> จาก Apps Script editor เอง (ตั้งใจ เพราะ PIN เป็นความลับที่ไม่ควรผ่านหน้าเว็บ)</div>
   </div>
 
-  <div class="foot">Happy HIP DVT Monitor · Web App v3.42.0 (Phase 2) · NIA SID-10/2569</div>
+  <div class="foot">Happy HIP DVT Monitor · Web App v3.43.0 (Phase 2) · NIA SID-10/2569</div>
 </div>
 
 <div class="line-fab hide" id="lineFab">
@@ -2167,61 +2197,55 @@ function gaugeHtml(pct,label,size){
    the costume of a measurement. */
 function fsrGaugeHtml(fsrL, fsrR, size, stale){
   const l = Math.max(0, Number(fsrL)||0), r = Math.max(0, Number(fsrR)||0);
-  const MAX = 4095, FLOOR = 200, SAT = 4000, SEG = 11;
 
-  /* v3.29.0 — A CENTRE-OUT SEGMENTED BAR.
+  /* v3.43.0 — A CONTACT INDICATOR, NOT A SCALE.
    *
-   * The pillow's question is left-versus-right, and left-versus-right has a
-   * natural centre. Growing each side outward from the middle puts the answer
-   * in the SHAPE: even wings mean even weight, a long wing means the patient
-   * has rolled that way, and you read it without reading anything.
+   * The bench log settled what this sensor can actually report. Over 201
+   * samples, 96% were exactly 0 or exactly 4095, and the only in-between
+   * values appeared for a fraction of a second while a finger was lifting
+   * off. With a 10k pull-down the FSR saturates the 12-bit ADC under almost
+   * any real load, so the reading is a switch: contact, or none. It cannot
+   * measure how MUCH weight, and both sides pin to 4095 together the moment
+   * a patient lies back.
    *
-   * THE COLOUR RAMP IS THE SATURATION WARNING. Segments run green through
-   * amber to red as they move away from the centre, so a wing reaching the
-   * red end means that sensor is close to the top of the 12-bit ADC and has
-   * stopped being able to measure. That is the exact failure the bench hit —
-   * 4095/4095 — and in the old ratio ring it appeared as a perfect 50%, the
-   * healthiest number the gauge could draw. Here it is visibly at the end of
-   * its travel, which is the truth.
+   * The previous centre-out bar drew that switch as if it were a magnitude —
+   * a full red wing on each side — which reads as an alarm for the ordinary
+   * state of a patient lying down. Worse, it invited a left/right balance
+   * verdict the hardware cannot support: 4095/4095 is not "balanced", it is
+   * two saturated sensors that happen to be equal, and a balance percentage
+   * computed from two pinned values is meaningless.
    *
-   * A bar rather than a dial because a bar has two ends and this quantity has
-   * two sides; the angle dial above it keeps the circle, because an angle has
-   * no left and right. */
-  const segCol = (k) => {          /* k: 0 at the centre, SEG-1 at the end */
-    const t = k / (SEG - 1);
-    return t < .45 ? 'var(--ok)'
-         : t < .70 ? 'color-mix(in srgb,var(--ok) 45%,var(--warn))'
-         : t < .88 ? 'var(--warn)'
-         : 'var(--danger)';
-  };
-  const wing = (v, dir) => {
-    const lit = stale ? 0 : Math.round(Math.min(1, v / MAX) * SEG);
-    let out = '';
-    for (let k = 0; k < SEG; k++) {
-      const on = k < lit;
-      out += '<i style="background:'+(on ? segCol(k)
-             : 'color-mix(in srgb,var(--dim) 22%,transparent)')+'"></i>';
-    }
-    /* The left wing is emitted centre-first and then flipped, so segment 0 of
-       both wings sits against the middle and the ramps mirror each other. */
-    return '<div class="fsrwing'+(dir<0?' flip':'')+'">'+out+'</div>';
-  };
+   * So this now shows only what the sensor knows: is the left pad in
+   * contact, is the right, and — when exactly one is — which side. Raising
+   * the pull-down (2.2k–3.3k) would move saturation up into a measurable
+   * band and let a real magnitude come back; until the hardware changes, the
+   * UI does not claim precision it does not have.
+   *
+   * CONTACT is called at ADC 1500, well above the noise floor and well below
+   * the pins the bench saw at 3300+, so a resting limb reads as contact and
+   * stray pickup does not. */
+  const CONTACT = 1500;
+  const lc = !stale && l >= CONTACT;
+  const rc = !stale && r >= CONTACT;
 
   let verdict, vcol;
-  if(stale)                   { verdict='ไม่ทราบ';          vcol='var(--dim)'; }
-  else if(l>=SAT || r>=SAT)   { verdict='เกินช่วงวัด';      vcol='var(--danger)'; }
-  else if(l<FLOOR && r<FLOOR) { verdict='ไม่มีน้ำหนัก';     vcol='var(--dim)'; }
-  else {
-    const share = l*100/(l+r), off = Math.abs(share-50);
-    verdict = off<=15 ? 'สมดุล' : (share>50 ? 'เอียงซ้าย' : 'เอียงขวา');
-    vcol    = off<=15 ? 'var(--ok)' : 'var(--warn)';
-  }
+  if (stale)            { verdict = 'ไม่ทราบ';               vcol = 'var(--dim)'; }
+  else if (lc && rc)    { verdict = 'สัมผัสทั้งสองข้าง';       vcol = 'var(--ok)'; }
+  else if (lc)          { verdict = 'สัมผัสเฉพาะซ้าย';        vcol = 'var(--warn)'; }
+  else if (rc)          { verdict = 'สัมผัสเฉพาะขวา';         vcol = 'var(--warn)'; }
+  else                  { verdict = 'ไม่มีการสัมผัส';         vcol = 'var(--dim)'; }
+
+  /* Two pads, each lit or not. No ramp, because there is no magnitude to
+   * ramp. The dim state is a hairline outline so an unlit pad still reads as
+   * "a sensor that is present and quiet", not as missing. */
+  const pad = (on, side) =>
+    '<div class="fsrpad'+(on?' on':'')+'" title="'+side+'"></div>';
 
   return '<div class="fsrbox">'+
     '<div class="fsrhead"><span>\u25c4 ซ้าย</span><span>ขวา \u25ba</span></div>'+
-    '<div class="fsrbar">'+wing(l,-1)+'<u></u>'+wing(r,1)+'</div>'+
+    '<div class="fsrpads">'+pad(lc,'ซ้าย')+pad(rc,'ขวา')+'</div>'+
     '<div class="fsrverdict" style="color:'+vcol+'">'+verdict+
-      '<span> · '+(stale ? '\u2014' : l+' / '+r)+'</span></div>'+
+      '<span> \u00b7 '+(stale ? '\u2014' : l+' / '+r)+'</span></div>'+
   '</div>';
 }
 

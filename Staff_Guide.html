@@ -132,7 +132,7 @@ figcaption{font-size:clamp(12px,1vw,14.5px);color:var(--ink-soft);margin-top:8px
 .photo img{width:100%;display:block}
 .hint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(22,36,46,.82);color:#fff;font-size:13px;padding:7px 16px;border-radius:99px;z-index:20}
 
-@media (max-width:900px){
+@media screen and (max-width:900px){
   .split{grid-template-columns:1fr}
   .g3,.g4{grid-template-columns:1fr 1fr}
   .legend{grid-template-columns:1fr}
@@ -150,6 +150,9 @@ figcaption{font-size:clamp(12px,1vw,14.5px);color:var(--ink-soft);margin-top:8px
   .hint{display:none}
   .slide{min-height:0;height:196mm;overflow:hidden;page-break-after:always;border-bottom:none;padding:12mm 15mm}
   .slide:last-child{page-break-after:auto}
+  .cover .inner{height:100%;justify-content:space-between}
+  .cover .banner{max-width:150mm}
+  .cover .lead{max-width:none}
   h1{font-size:40pt}h2{font-size:24pt}h3{font-size:12.5pt}
   p,td,th,ul.bul li,.legend li{font-size:10.5pt}
   .small,figcaption{font-size:9.5pt}.lead{font-size:14pt}.note{font-size:10pt}
